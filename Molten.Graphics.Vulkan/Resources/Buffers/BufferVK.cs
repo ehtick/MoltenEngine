@@ -25,8 +25,11 @@ public unsafe class BufferVK : GpuBuffer
         throw new NotImplementedException();
     }
 
-    protected override void OnCreateResource()
+    protected override void OnApply(GpuCommandList cmd)
     {
+        if (_handle != null)
+            return;
+
         DeviceVK device = Device as DeviceVK;
         _handle = new ResourceHandleVK<Buffer, BufferHandleVK>(this, true, CreateBuffer);
 
@@ -106,7 +109,7 @@ public unsafe class BufferVK : GpuBuffer
             device.VK.DestroyBuffer(device, *_handle.NativePtr, null);
     }
 
-    public override unsafe ResourceHandleVK<Buffer, BufferHandleVK> Handle => _handle;
+    public unsafe ResourceHandleVK<Buffer, BufferHandleVK> Handle => _handle;
 
     public override GpuResourceFormat ResourceFormat { get; protected set; }
 }

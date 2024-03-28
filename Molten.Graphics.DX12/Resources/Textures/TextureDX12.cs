@@ -61,7 +61,13 @@ public abstract class TextureDX12 : GpuTexture, ITexture
             Desc.Flags |= ResourceFlags.AllowDepthStencil;
     }
 
-    protected unsafe override sealed void OnCreateResource()
+    protected override void OnApply(GpuCommandList cmd)
+    {
+        if (_handle == null)
+            OnCreateResource();
+    }
+
+    protected unsafe void OnCreateResource()
     {
         ID3D12Resource1* ptr = OnCreateTexture();
         _handle = OnCreateHandle(ptr);
@@ -153,7 +159,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     protected abstract void SetSRVDescription(ref ShaderResourceViewDesc desc);
 
-    protected override void OnResizeTextureImmediate(ref readonly TextureDimensions dimensions, GpuResourceFormat format)
+    protected override void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format)
     {
         _desc.Width = dimensions.Width;
         _desc.MipLevels = (ushort)dimensions.MipMapCount;
@@ -179,7 +185,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     public new DeviceDX12 Device { get; }
 
-    public override ResourceHandleDX12 Handle => _handle;
+    public ResourceHandleDX12 Handle => _handle;
 
     /// <summary>
     /// Gets the internal resource barrier state of the current <see cref="BufferDX12"/>.

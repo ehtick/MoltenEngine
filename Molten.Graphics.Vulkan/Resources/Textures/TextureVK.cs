@@ -21,13 +21,18 @@ public unsafe abstract class TextureVK : GpuTexture
         _handle = handle;
     }
 
-    protected override sealed void OnCreateResource()
+    protected override void OnApply(GpuCommandList cmd)
+    {
+        if(_handle == null)
+            OnCreateResource();
+    }
+
+    protected void OnCreateResource()
     {
         // In Vulkan, the CPU either has read AND write access, or none at all.
         // If either of the CPU access flags were provided, we need to add both.
         if (Flags.Has(GpuResourceFlags.CpuRead) || Flags.Has(GpuResourceFlags.CpuWrite))
             Flags |= GpuResourceFlags.CpuRead | GpuResourceFlags.CpuWrite;
-
 
         ImageUsageFlags flags = ImageUsageFlags.None;
         if (Flags.Has(GpuResourceFlags.GpuRead))
@@ -147,12 +152,12 @@ public unsafe abstract class TextureVK : GpuTexture
         throw new NotImplementedException();
     }
 
-    internal void Transition(CommandQueueVK cmd, ImageLayout oldLayout, ImageLayout newLayout)
+    internal void Transition(CommandListVK cmd, ImageLayout oldLayout, ImageLayout newLayout)
     {
         Transition(cmd, oldLayout, newLayout, ResourceFormat, MipMapCount, ArraySize);
     }
 
-    internal void Transition(CommandQueueVK cmd, ImageLayout oldLayout, ImageLayout newLayout, GpuResourceFormat newFormat, uint newMipMapCount, uint newArraySize)
+    internal void Transition(CommandListVK cmd, ImageLayout oldLayout, ImageLayout newLayout, GpuResourceFormat newFormat, uint newMipMapCount, uint newArraySize)
     {
         ImageMemoryBarrier barrier = new ImageMemoryBarrier()
         {
@@ -218,7 +223,7 @@ public unsafe abstract class TextureVK : GpuTexture
         _handle = null;
     }
 
-    public override ResourceHandleVK<Image, ImageHandleVK> Handle => _handle;
+    public ResourceHandleVK<Image, ImageHandleVK> Handle => _handle;
 
     public new DeviceVK Device { get; }
 }

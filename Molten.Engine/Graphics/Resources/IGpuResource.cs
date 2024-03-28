@@ -44,11 +44,6 @@ public interface IGpuResource : IDisposable
     GpuResourceFormat ResourceFormat { get; }
 
     /// <summary>
-    /// Gets the <see cref="GpuResourceHandle"/> for the current <see cref="IGpuResource"/>.
-    /// </summary>
-    GpuResourceHandle Handle { get; }
-
-    /// <summary>
     /// Gets the <see cref="GpuDevice"/> that the current <see cref="IGpuResource"/> is bound to.
     /// </summary>
     GpuDevice Device { get; }

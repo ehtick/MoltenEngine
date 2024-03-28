@@ -167,8 +167,7 @@ public abstract class GpuTexture : GpuResource, ITexture
 
     public unsafe void SetDataImmediate(GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0, 
         uint levelCount = 0, uint arrayCount = 0,
-        uint destLevelIndex = 0, uint destArrayIndex = 0,
-        bool discard = false)
+        uint destLevelIndex = 0, uint destArrayIndex = 0)
     {
         TextureSlice level;
         for (uint a = 0; a < arrayCount; a++)
@@ -185,7 +184,7 @@ public abstract class GpuTexture : GpuResource, ITexture
 
                 uint destArray = destArrayIndex + a;
                 uint destLevel = destLevelIndex + m;
-                SetSubResourceDataImmediate(cmd, destLevel, level.Data, 0, level.TotalBytes, level.Pitch, destArray, discard);
+                SetSubResourceDataImmediate(cmd, destLevel, level.Data, 0, level.TotalBytes, level.Pitch, destArray);
             }
         }
     }
@@ -285,8 +284,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     }
 
     internal unsafe void SetSubResourceDataImmediate<T>(GpuCommandList cmd, uint level, T* data, 
-        uint startIndex, uint count, uint pitch, uint arrayIndex = 0, bool discard = false,
-        ResourceRegion? region = null)
+        uint startIndex, uint count, uint pitch, uint arrayIndex = 0, ResourceRegion? region = null)
         where T : unmanaged
     {
         // Calculate size of a single array slice
@@ -295,7 +293,9 @@ public abstract class GpuTexture : GpuResource, ITexture
         uint levelWidth = Width;
         uint levelHeight = Height;
         uint levelDepth = Depth;
-        GpuMapType mapType = discard ? GpuMapType.Discard : GpuMapType.Write;
+
+        if (!Flags.Has(GpuResourceFlags.UploadMemory))
+            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
 
         if (IsBlockCompressed)
         {
@@ -336,7 +336,7 @@ public abstract class GpuTexture : GpuResource, ITexture
 
         if (Flags.Has(GpuResourceFlags.UploadMemory))
         {
-            using (GpuStream stream = cmd.MapResource(this, subLevel, 0, mapType))
+            using (GpuStream stream = cmd.MapResource(this, subLevel, 0, GpuMapType.Write))
             {
                 // Are we constrained to an area of the texture?
                 if (region != null)

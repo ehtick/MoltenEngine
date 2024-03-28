@@ -28,8 +28,11 @@ public class BufferDX12 : GpuBuffer
         Offset = parentBuffer.Offset + offset;
     }
 
-    protected unsafe override void OnCreateResource()
+    protected unsafe override void OnApply(GpuCommandList cmd)
     {
+        if (_handle != null)
+            return;
+
         _handle?.Dispose();
 
         HeapFlags heapFlags = HeapFlags.None;
@@ -200,7 +203,7 @@ public class BufferDX12 : GpuBuffer
     }
 
     /// <inheritdoc/>
-    public override ResourceHandleDX12 Handle => _handle;
+    internal ResourceHandleDX12 Handle => _handle;
 
     /// <inheritdoc/>
     public override GpuResourceFormat ResourceFormat { get; protected set; }

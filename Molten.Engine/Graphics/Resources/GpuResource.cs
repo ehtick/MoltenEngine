@@ -19,23 +19,21 @@ public abstract class GpuResource : GpuObject, IGpuResource
         }
     }
 
-    protected abstract void OnCreateResource();
-
     /// <summary>
     /// Invoked when the current <see cref="GpuObject"/> should apply any changes before being bound to a GPU context.
     /// </summary>
     /// <param name="cmd">The <see cref="GpuCommandList"/> that the current <see cref="GpuObject"/> is to be bound to.</param>
-    public virtual void Apply(GpuCommandList cmd)
+    public void Apply(GpuCommandList cmd)
     {
         if (IsDisposed)
             return;
 
         LastUsedFrameID = Device.Renderer.FrameID;
 
-        // Check if the last known frame buffer size has changed.
-        if (Handle == null)
-            OnCreateResource();
+        OnApply(cmd);
     }
+
+    protected abstract void OnApply(GpuCommandList cmd);
 
     public void CopyTo(GpuPriority priority, GpuResource destination, GpuTask.EventHandler completeCallback = null)
     {
@@ -170,11 +168,6 @@ public abstract class GpuResource : GpuObject, IGpuResource
     /// Gets the resource flags that provided given when the current <see cref="GpuResource"/> was created.
     /// </summary>
     public GpuResourceFlags Flags { get; protected set; }
-
-    /// <summary>
-    /// Gets the underlying native resource handle.
-    /// </summary>
-    public abstract GpuResourceHandle Handle { get; }
 
     /// <summary>
     /// Gets or [protected] sets the <see cref="GpuResourceFormat"/> of the resource.
