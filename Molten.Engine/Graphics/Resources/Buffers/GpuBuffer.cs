@@ -132,7 +132,6 @@ public abstract class GpuBuffer : GpuResource
     /// Sets data on a <see cref="GpuBuffer"/> based on the given <see cref="GpuPriority"/>.
     /// </summary>
     /// <typeparam name="T">The type of data to be set.</typeparam>
-    /// <param name="buffer">The <see cref="GpuBuffer"/> to set data.</param>
     /// <param name="priority"></param>
     /// <param name="data"></param>
     /// <param name="discard">Discard the data currently in the buffer and allocate fresh memory for the provided data.</param>
@@ -183,19 +182,11 @@ public abstract class GpuBuffer : GpuResource
     {
         ulong actualOffset = Offset + byteOffset;
 
-        if (Flags.Has(GpuResourceFlags.UploadMemory))
-        {
-            using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Write))
-                stream.WriteRange(data, startIndex, elementCount);
-        }
-        else
-        {
-            GpuBuffer staging = cmd.Device.Frame.StagingBuffer;
-            using (GpuStream stream = cmd.MapResource(staging, 0, byteOffset, GpuMapType.Write))
-                stream.WriteRange(data, startIndex, ElementCount);
+        if (!Flags.Has(GpuResourceFlags.UploadMemory))
+            throw new Exception("Cannot set data on a non-writable buffer.");
 
-            cmd.CopyResource(staging, this);
-        }
+        using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Write))
+            stream.WriteRange(data, startIndex, elementCount);
     }
 
     /// <summary>Retrieves data from a <see cref="GpuBuffer"/>.</summary>
@@ -241,6 +232,7 @@ public abstract class GpuBuffer : GpuResource
             throw new ArgumentException("The provided destination array is not large enough.");
 
         ulong actualOffset = Offset + byteOffset;
+
         // Now set the structured variable's data
         using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Read))
             stream.ReadRange(destination, startIndex, count);

@@ -19,17 +19,22 @@ public class GpuDiscardBuffer<T> : GpuObject
     }
 
     GpuFrameBuffer<Frame> _frames;
-    ulong _minAllocation;
+    ulong _allocationSize;
     Frame _curFrame;
     uint _stride;
 
-    internal unsafe GpuDiscardBuffer(GpuDevice device, GpuBufferType bufferType, GpuResourceFlags flags, GpuResourceFormat format, ulong initialCapacity) : 
+    internal unsafe GpuDiscardBuffer(GpuDevice device, 
+        GpuBufferType bufferType, 
+        GpuResourceFlags flags, 
+        GpuResourceFormat format,
+        ulong initialCapacity) : 
         base(device)
     {
         BufferType = bufferType;
         Flags = flags;
         Format = format;
         _stride = (uint)sizeof(T);
+        _allocationSize = (1024 * 1024) * 128; // 128 MB - TODO: Get limit from hardware capabilities
 
         throw new NotImplementedException("Intialize buffer with the provided initial capacity");
     }
@@ -47,8 +52,8 @@ public class GpuDiscardBuffer<T> : GpuObject
         // Create a new staging buffer.
         if (buffer == null)
         {
-            ulong uploadBufferBytes = Math.Max(_minAllocation, numElements);
-            GpuBuffer upBuffer = Device.Resources.CreateBuffer<T>(BufferType, Flags, Format, uploadBufferBytes, alignment);
+            ulong uploadBufferBytes = Math.Max(_allocationSize, numElements);
+            GpuBuffer upBuffer = Device.Resources.CreateBuffer<T>(BufferType, Flags, Format, _allocationSize, alignment);
 
             _curFrame.Buffers.Add(buffer);
             buffer = upBuffer.Allocate(_stride, numElements, GpuResourceFlags.UploadMemory, GpuBufferType.Unknown, alignment);
@@ -63,7 +68,7 @@ public class GpuDiscardBuffer<T> : GpuObject
     {
         _curFrame = _frames.Prepare();
 
-        // TODO If there is more than 1 buffer for the new frame, consolidate them all into a single, larger buffer.
+        // TODO Reset allocations for all of the buffers that are part of the new frame.
     }
 
     protected override void OnGraphicsRelease()
