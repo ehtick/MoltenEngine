@@ -333,9 +333,4 @@ public abstract partial class GpuDevice : EngineObject
     /// Gets the <see cref="GpuResourceManager"/> implementation for the current <see cref="GpuDevice"/>. 
     /// </summary>
     public abstract GpuResourceManager Resources { get; }
-
-    /// <summary>
-    /// Gets the <see cref="GpuUploadManager"/> for the current <see cref="GpuDevice"/>, which manages uploading of data to the GPU.
-    /// </summary>
-    internal GpuUploadManager Upload { get; }
 }

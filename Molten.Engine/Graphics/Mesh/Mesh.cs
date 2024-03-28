@@ -29,7 +29,6 @@ public abstract class Mesh : Renderable
 
         IndexFormat = maxIndices > 0 ? GpuResourceFormat.R16_UInt : GpuResourceFormat.Unknown;
         MaxVertices = maxVertices;
-        IsDiscard = flags.IsDiscard();
 
         if (IndexFormat != GpuResourceFormat.Unknown)
         {

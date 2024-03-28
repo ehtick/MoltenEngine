@@ -172,21 +172,20 @@ public abstract class GpuBuffer : GpuResource
         Device.Tasks.Push(priority, op);
     }
 
-    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, bool discard, ulong byteOffset = 0)
+    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, ulong byteOffset = 0)
         where T : unmanaged
     {
-        SetDataImmediate(cmd, data, 0, (ulong)data.LongLength, discard, byteOffset);
+        SetDataImmediate(cmd, data, 0, (ulong)data.LongLength, byteOffset);
     }
 
-    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, uint startIndex, ulong elementCount, bool discard, ulong byteOffset = 0)
+    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, uint startIndex, ulong elementCount, ulong byteOffset = 0)
         where T : unmanaged
     {
         ulong actualOffset = Offset + byteOffset;
-        GpuMapType type = discard ? GpuMapType.Discard : GpuMapType.Write;
 
         if (Flags.Has(GpuResourceFlags.UploadMemory))
         {
-            using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, type))
+            using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Write))
                 stream.WriteRange(data, startIndex, elementCount);
         }
         else

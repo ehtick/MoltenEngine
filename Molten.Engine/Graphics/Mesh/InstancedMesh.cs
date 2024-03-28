@@ -21,7 +21,7 @@ public class InstancedMesh<V, I> : Mesh<V>
         base(renderer, mode, maxVertices, maxIndices, initialVertices, initialIndices)
     {
         MaxInstances = maxInstances;
-        _instanceBuffer = Renderer.Device.Resources.CreateVertexBuffer<I>(GpuResourceFlags.UploadMemory, maxIndices, null);
+        _instanceBuffer = Renderer.Device.Resources.CreateBuffer<I>(GpuBufferType.Vertex, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, maxInstances);
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class InstancedMesh<V, I> : Mesh<V>
         base(renderer, mode, maxVertices, maxIndices, initialVertices, initialIndices)
     {
         MaxInstances = maxInstances;
-        _instanceBuffer = Renderer.Device.Resources.CreateVertexBuffer<I>(GpuResourceFlags.UploadMemory, maxInstances, null);
+        _instanceBuffer = Renderer.Device.Resources.CreateBuffer<I>(GpuBufferType.Vertex, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, maxInstances);
     }
 
     public void SetInstanceData(I[] data)
