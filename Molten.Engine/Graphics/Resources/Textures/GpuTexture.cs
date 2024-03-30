@@ -52,7 +52,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         OnResize?.Invoke(this);
     }
 
-    protected override void ValidateFlags()
+    private void ValidateFlags()
     {
         // Validate RT mip-maps
         if (Flags.Has(GpuResourceFlags.MipMapGeneration))
@@ -61,7 +61,12 @@ public abstract class GpuTexture : GpuResource, ITexture
                 throw new GpuResourceException(this, "Mip-map generation is only available on render-surface shader resources.");
         }
 
-        base.ValidateFlags();
+        // Only staging resources have CPU-write access.
+        if (Flags.Has(GpuResourceFlags.UploadMemory))
+        {
+            if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
+                throw new GpuResourceException(this, "Staging textures cannot allow shader access. Add GraphicsResourceFlags.NoShaderAccess flag.");
+        }
     }
 
     internal void ResizeTextureImmediate(GpuCommandList cmd, in TextureDimensions newDimensions, GpuResourceFormat newFormat)

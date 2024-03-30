@@ -9,16 +9,6 @@ public abstract class GpuResource : GpuObject, IGpuResource
         LastUsedFrameID = Device.Renderer.FrameID;
     }
 
-    protected virtual void ValidateFlags()
-    {
-        // Only staging resources have CPU-write access.
-        if (Flags.Has(GpuResourceFlags.UploadMemory))
-        {
-            if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
-                throw new GpuResourceException(this, "Staging textures cannot allow shader access. Add GraphicsResourceFlags.NoShaderAccess flag.");
-        }
-    }
-
     /// <summary>
     /// Invoked when the current <see cref="GpuObject"/> should apply any changes before being bound to a GPU context.
     /// </summary>
