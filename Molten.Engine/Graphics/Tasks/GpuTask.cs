@@ -38,10 +38,10 @@ public abstract class GpuTask : IPoolable
     }
 
     /// <summary>
-    /// Invoked when the task should be processed by the specified <see cref="GpuCommandQueue"/>.
+    /// Invoked when the task should be processed by the specified <see cref="GpuCommandList"/>.
     /// </summary>
     /// <param name="renderer">The renderer that the task is bound to.</param>
-    /// <param name="cmd">The <see cref="GpuCommandQueue"/> that should process the current <see cref="GpuTask"/>.</param>
+    /// <param name="cmd">The <see cref="GpuCommandList"/> that should process the current <see cref="GpuTask"/>.</param>
     /// <returns></returns>
     protected abstract bool OnProcess(RenderService renderer, GpuCommandList cmd);
 }

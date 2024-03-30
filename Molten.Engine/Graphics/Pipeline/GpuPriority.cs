@@ -8,10 +8,10 @@ public enum GpuPriority
     /// <summary>
     /// The task or command will be executed at the start of the next device frame.
     /// </summary>
-    StartOfFrame = 1,
+    StartOfFrame = 0,
 
     /// <summary>
     /// The task or command will be executed at the end of the current device frame.
     /// </summary>
-    EndOfFrame = 2,
+    EndOfFrame = 1,
 }

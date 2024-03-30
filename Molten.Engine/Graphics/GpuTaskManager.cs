@@ -11,17 +11,21 @@ public class GpuTaskManager : IDisposable
         internal GpuFrameBuffer<GpuCommandList> Cmd;
     }
 
-    Dictionary<GpuPriority, TaskQueue> _queues;
+    TaskQueue[] _queues;
     ConcurrentDictionary<Type, ObjectPool<GpuTask>> _taskPool;
     GpuDevice _device;
 
     internal GpuTaskManager(GpuDevice device)
     {
         _device = device;
-        _queues = new Dictionary<GpuPriority, TaskQueue>();
         GpuPriority[] priorities = Enum.GetValues<GpuPriority>();
-        foreach (GpuPriority p in priorities)
-            _queues[p].Cmd = new GpuFrameBuffer<GpuCommandList>(_device, (gpu) => gpu.GetCommandList());
+        _queues = new TaskQueue[priorities.Length];
+
+        for(int i = 0; i < priorities.Length; i++)
+        {
+            _queues[i] = new TaskQueue();
+            _queues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(_device, (gpu) => gpu.GetCommandList());
+        }
 
         _taskPool = new ConcurrentDictionary<Type, ObjectPool<GpuTask>>();
     }
@@ -53,7 +57,7 @@ public class GpuTaskManager : IDisposable
     {
         if (task.Validate())
         {
-            TaskQueue queue = _queues[priority];
+            TaskQueue queue = _queues[(int)priority];
             queue.Tasks.Enqueue(task);
         }
     }
@@ -86,7 +90,7 @@ public class GpuTaskManager : IDisposable
         foreach (ObjectPool<GpuTask> pool in _taskPool.Values)
             pool.Dispose();
 
-        foreach (TaskQueue queue in _queues.Values)
+        foreach (TaskQueue queue in _queues)
             queue.Cmd.Dispose();
 
         _taskPool.Clear();
@@ -105,7 +109,7 @@ public class GpuTaskManager : IDisposable
         //       - Be executed on the next available compute device queue
         //       - May not finish in the order they were requested due to task size, queue size and device performance.
 
-        TaskQueue queue = _queues[priority];
+        TaskQueue queue = _queues[(int)priority];
         GpuCommandList cmd = queue.Cmd.Prepare();
 
         cmd.Begin();
