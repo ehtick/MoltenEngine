@@ -178,10 +178,4 @@ public abstract class GpuResource : GpuObject, IGpuResource
     /// Gets the ID of the frame that the current <see cref="GpuResource"/> was applied.
     /// </summary>
     public ulong LastUsedFrameID { get; private set; }
-
-    /// <summary>
-    /// Gets the ID of the frame that the current <see cref="GpuTexture"/> was resized. 
-    /// If the texture was never resized then the frame ID will be the ID of the frame that the texture was created.
-    /// </summary>
-    public ulong LastFrameResizedID { get; internal set; }
 }

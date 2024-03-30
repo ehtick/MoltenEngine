@@ -1,21 +1,9 @@
 ﻿using Molten.Graphics.Textures;
-using System.Reflection.Emit;
 
 namespace Molten.Graphics;
 
-/// <summary>
-/// A delegate for texture event handlers.
-/// </summary>
-/// <param name="texture">The texture instance that triggered the event.</param>
-public delegate void TextureHandler(GpuTexture texture);
-
 public abstract class GpuTexture : GpuResource, ITexture
 {
-    /// <summary>
-    /// Invoked after resizing of the texture has completed.
-    /// </summary>
-    public event TextureHandler OnResize;
-
     TextureDimensions _dimensions;
     GpuResourceFormat _format;
 
@@ -47,11 +35,6 @@ public abstract class GpuTexture : GpuResource, ITexture
         ResourceFormat = format;
     }
 
-    protected void InvokeOnResize()
-    {
-        OnResize?.Invoke(this);
-    }
-
     protected override void ValidateFlags()
     {
         // Validate RT mip-maps
@@ -64,74 +47,21 @@ public abstract class GpuTexture : GpuResource, ITexture
         base.ValidateFlags();
     }
 
-    internal void ResizeTextureImmediate(GpuCommandList cmd, in TextureDimensions newDimensions, GpuResourceFormat newFormat)
-    {
-        // Avoid resizing/recreation if nothing has actually changed.
-        if (_dimensions == newDimensions && ResourceFormat == newFormat)
-            return;
+    //internal void ResizeTextureImmediate(GpuCommandList cmd, in TextureDimensions newDimensions, GpuResourceFormat newFormat)
+    //{
+    //    // Avoid resizing/recreation if nothing has actually changed.
+    //    if (_dimensions == newDimensions && ResourceFormat == newFormat)
+    //        return;
 
-        _dimensions = newDimensions;
-        ResourceFormat = newFormat;
+    //    _dimensions = newDimensions;
+    //    ResourceFormat = newFormat;
 
-        OnResizeTextureImmediate(cmd, in newDimensions, newFormat);
-        LastFrameResizedID = Device.Renderer.FrameID;
-        Version++;
+    //    OnResizeTextureImmediate(cmd, in newDimensions, newFormat);
+    //    LastFrameResizedID = Device.Renderer.FrameID;
+    //    Version++;
 
-        OnResize?.Invoke(this);
-    }
-
-    /// <summary>
-    /// Resizes the current <see cref="GpuTexture"/>.
-    /// </summary>
-    /// <param name="priority">The priority of the resize operation.</param>
-    /// <param name="newWidth">The new width.</param>      
-    /// <param name="newMipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="MipMapCount"/> will be used.</param>
-    /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
-    /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, uint newWidth, GpuResourceFormat newFormat = GpuResourceFormat.Unknown, uint newMipMapCount = 0,
-        GpuTask.EventHandler completeCallback = null)
-    {
-        Resize(priority, newWidth, Height, newFormat, ArraySize, newMipMapCount, Depth, completeCallback);
-    }
-
-    /// <summary>
-    /// Resizes the current <see cref="GpuTexture"/>.
-    /// </summary>
-    /// <param name="priority">The priority of the resize operation.</param>
-    /// <param name="width">The new width.</param>
-    /// <param name="height">The new height. If the texture is 1D, height will be defaulted to 1.</param>
-    /// <param name="arraySize">For 3D textures, this is the new depth dimension. 
-    /// For every other texture type, this is the number of array slices/layers, or the array size.
-    /// <para>If set to 0, the existing <see cref="GpuTexture.Depth"/> or <see cref="GpuTexture.ArraySize"/> will be used.</para></param>
-    /// <param name="depth">The new depth. Only applicable for 3D textures.</param>
-    /// <param name="mipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="GpuTexture.MipMapCount"/> will be used.</param>
-    /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
-    /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, uint width, uint height, GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
-        uint arraySize = 0, uint mipMapCount = 0, uint depth = 0, 
-        GpuTask.EventHandler completeCallback = null)
-    {
-        if (this is ITexture1D)
-            height = 1;
-
-        if (this is not ITexture3D)
-            depth = 1;
-
-        TextureResizeTask task = Device.Tasks.Get<TextureResizeTask>();
-        task.NewFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
-        task.Resource = this;
-        task.OnCompleted += completeCallback;
-        task.NewDimensions = new TextureDimensions()
-        {
-            Width = width,
-            Height = height,
-            ArraySize = arraySize > 0 ? arraySize : ArraySize,
-            Depth = depth > 0 ? depth : Depth,
-            MipMapCount = mipMapCount > 0 ? mipMapCount : MipMapCount
-        };
-
-        Device.Tasks.Push(priority, task);
-    }
+    //    OnResize?.Invoke(this);
+    //}
 
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>
     /// <param name="data"></param>
