@@ -36,11 +36,6 @@ public interface INativeSurface : ISwapChainSurface, IWindow
     event WindowSurfaceHandler OnFocusLost;
 
     /// <summary>
-    /// Occurs after the <see cref="INativeSurface"/> is done resizing. Executed by the renderer thread it is bound to.
-    /// </summary>
-    event WindowSurfaceHandler OnResize;
-
-    /// <summary>
     /// Gets whether or not the current <see cref="INativeSurface"/> is focused.
     /// </summary>
     bool IsFocused { get; }
