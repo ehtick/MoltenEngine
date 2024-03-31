@@ -334,7 +334,7 @@ where T : unmanaged, IVertexType
     public ITexture1D CreateTexture1D(TextureData data, string name = null)
     {
         ITexture1D tex = CreateTexture1D(data.Width, data.MipMapLevels, data.ArraySize, data.Format, data.Flags, name);
-        tex.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize);
+        tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize);
         return tex;
     }
 
@@ -369,7 +369,7 @@ where T : unmanaged, IVertexType
             data.MultiSampleQuality,
             name);
 
-        tex.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize);
+        tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize);
         return tex;
     }
 
@@ -393,7 +393,7 @@ where T : unmanaged, IVertexType
     public ITexture3D CreateTexture3D(TextureData data, string name = null)
     {
         ITexture3D tex = CreateTexture3D(data.Width, data.Height, data.Depth, data.MipMapLevels, data.Format, data.Flags, name);
-        tex.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize);
+        tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize);
         return tex;
     }
 
@@ -419,7 +419,7 @@ where T : unmanaged, IVertexType
     public ITextureCube CreateTextureCube(TextureData data, uint cubeCount = 1, string name = null)
     {
         ITextureCube tex = CreateTextureCube(data.Width, data.Height, data.MipMapLevels, data.Format, cubeCount, data.ArraySize, data.Flags, name);
-        tex.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize);
+        tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize);
         return tex;
     }
 

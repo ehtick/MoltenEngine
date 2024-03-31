@@ -1,39 +1,37 @@
-﻿namespace Molten.Graphics;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
 
-internal class BufferSetTask<T> : GpuResourceTask<GpuBuffer>
+namespace Molten.Graphics;
+
+internal struct BufferSetTask<T> : IGpuTask<BufferSetTask<T>>
     where T : unmanaged
 {
+    public GpuBuffer Buffer;
+
     /// <summary>The number of bytes to offset the change, from the start of the provided <see cref="Segment"/>.</summary>
     internal ulong ByteOffset;
 
     /// <summary>The number of elements to be copied.</summary>
     internal ulong ElementCount;
 
-    internal bool Discard;
-
     internal uint DataStartIndex;
 
     /// <summary>The data to be set.</summary>
     internal T[] Data;
 
-    public override void ClearForPool()
-    {
-        ByteOffset = 0;
-        ElementCount = 0;
-        Discard = false;
-        DataStartIndex = 0;
-        Data = null;
-    }
+    public event GpuTaskHandler OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref BufferSetTask<T> t)
     {
-        return true;
-    }
+        ulong actualOffset = t.Buffer.Offset + t.ByteOffset;
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        Resource.SetDataImmediate(cmd, Data, DataStartIndex, ElementCount, Discard, ByteOffset);
+        using (GpuStream stream = cmd.MapResource(t.Buffer, 0, actualOffset, GpuMapType.Write))
+            stream.WriteRange(t.Data, t.DataStartIndex, t.ElementCount);
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }

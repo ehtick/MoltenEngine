@@ -133,13 +133,13 @@ public abstract class GpuBuffer : GpuResource
     /// </summary>
     /// <typeparam name="T">The type of data to be set.</typeparam>
     /// <param name="priority"></param>
+    /// <param name="cmd"></param>
     /// <param name="data"></param>
-    /// <param name="discard">Discard the data currently in the buffer and allocate fresh memory for the provided data.</param>
     /// <param name="completeCallback"></param>
-    public void SetData<T>(GpuPriority priority, T[] data, bool discard, GpuTask.EventHandler completeCallback = null)
+    public void SetData<T>(GpuPriority priority, GpuCommandList cmd, T[] data, GpuTaskHandler completeCallback = null)
         where T : unmanaged
     {
-        SetData(priority, data, 0, (uint)data.Length, discard, 0, completeCallback);
+        SetData(priority, cmd, data, 0, (uint)data.Length, 0, completeCallback);
     }
 
     /// <summary>
@@ -147,46 +147,40 @@ public abstract class GpuBuffer : GpuResource
     /// </summary>
     /// <typeparam name="T">The type of data to be set.</typeparam>
     /// <param name="priority"></param>
+    /// <param name="cmd"></param>
     /// <param name="data"></param>
     /// <param name="startIndex">The start index within <paramref name="data"/> to copy.</param>
     /// <param name="elementCount"></param>
     /// <param name="byteOffset">The start location within the buffer to start copying from, in bytes.</param>
     /// <param name="completeCallback"></param>
-    /// <param name="discard">If true, the previous data will be discarded. Ignored if not applicable to the current buffer.</param>
-    public void SetData<T>(GpuPriority priority, T[] data, ulong startIndex, ulong elementCount, bool discard, uint byteOffset = 0, GpuTask.EventHandler completeCallback = null)
+    public void SetData<T>(GpuPriority priority, GpuCommandList cmd, T[] data, ulong startIndex, ulong elementCount, uint byteOffset = 0, 
+        GpuTaskHandler completeCallback = null)
         where T : unmanaged
     {
-        BufferSetTask<T> op = Device.Tasks.Get<BufferSetTask<T>>();
-        op.ByteOffset = byteOffset;
-        op.Discard = discard;
-        op.ElementCount = elementCount;
-        op.Resource = this;
-        op.OnCompleted += completeCallback;
-
-        // Only copy the part we need from the source data, starting from startIndex.
-        op.Data = new T[data.Length];
-        op.DataStartIndex = 0;
-        Array.Copy(data, (long)startIndex, op.Data, 0, (long)elementCount);
-
-        Device.Tasks.Push(priority, op);
-    }
-
-    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, ulong byteOffset = 0)
-        where T : unmanaged
-    {
-        SetDataImmediate(cmd, data, 0, (ulong)data.LongLength, byteOffset);
-    }
-
-    internal void SetDataImmediate<T>(GpuCommandList cmd, T[] data, uint startIndex, ulong elementCount, ulong byteOffset = 0)
-        where T : unmanaged
-    {
-        ulong actualOffset = Offset + byteOffset;
-
         if (!Flags.Has(GpuResourceFlags.UploadMemory))
             throw new Exception("Cannot set data on a non-writable buffer.");
 
-        using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Write))
-            stream.WriteRange(data, startIndex, elementCount);
+        BufferSetTask<T> task = new();
+        task.ByteOffset = byteOffset;
+        task.ElementCount = elementCount;
+        task.Buffer = this;
+        task.OnCompleted += completeCallback;
+
+        // If executing immediately, we don't need to keep a copy of the data.
+        if (priority == GpuPriority.Immediate)
+        {
+            task.Data = data;
+            task.DataStartIndex = (uint)startIndex;
+        }
+        else
+        {
+            // Only copy the part we need from the source data, starting from startIndex.
+            task.Data = new T[data.Length];
+            task.DataStartIndex = 0;
+            Array.Copy(data, (long)startIndex, task.Data, 0, (long)elementCount);
+        }
+
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <summary>Retrieves data from a <see cref="GpuBuffer"/>.</summary>
@@ -196,7 +190,7 @@ public abstract class GpuBuffer : GpuResource
     /// <param name="count">The number of elements to retrieve</param>
     /// <param name="byteOffset">The start location within the buffer to start copying from, in bytes.</param>
     /// <param name="completionCallback">A callback to run once the operation is completed.</param>
-    public void GetData<T>(GpuPriority priority, T[] destination, uint startIndex, uint count, ulong byteOffset, Action<T[]> completionCallback = null)
+    public void GetData<T>(GpuPriority priority, GpuCommandList cmd, T[] destination, uint startIndex, uint count, ulong byteOffset, Action<T[]> completionCallback = null)
         where T : unmanaged
     {
         if (!Flags.Has(GpuResourceFlags.DownloadMemory))
@@ -205,37 +199,14 @@ public abstract class GpuBuffer : GpuResource
         if (destination.Length < count)
             throw new ArgumentException("The provided destination array is not large enough.");
 
-        BufferGetTask<T> task = Device.Tasks.Get<BufferGetTask<T>>();
+        BufferGetTask<T> task = new();
         task.ByteOffset = byteOffset;
         task.Count = count;
         task.DestArray = destination;
         task.DestIndex = startIndex;
         task.OnGetData += completionCallback;
-        task.Resource = this;
-
-        Device.Tasks.Push(priority, task);
-    }
-
-    /// <summary>Retrieves data from a <see cref="GpuBuffer"/>.</summary>
-    /// <param name="cmd">The command list that will immediately process </param>
-    /// <param name="destination">The destination array. Must be big enough to contain the retrieved data.</param>
-    /// <param name="startIndex">The start index within the destination array at which to place the retrieved data.</param>
-    /// <param name="count">The number of elements to retrieve</param>
-    /// <param name="byteOffset">The start location within the buffer to start copying from, in bytes.</param>
-    internal void GetDataImmediate<T>(GpuCommandList cmd, T[] destination, uint startIndex, uint count, ulong byteOffset)
-        where T : unmanaged
-    {
-        if (!Flags.Has(GpuResourceFlags.DownloadMemory))
-            throw new GpuResourceException(this, "Cannot use GetData() on a non-readable buffer.");
-
-        if (destination.Length < count)
-            throw new ArgumentException("The provided destination array is not large enough.");
-
-        ulong actualOffset = Offset + byteOffset;
-
-        // Now set the structured variable's data
-        using (GpuStream stream = cmd.MapResource(this, 0, actualOffset, GpuMapType.Read))
-            stream.ReadRange(destination, startIndex, count);
+        task.Buffer = this;
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <summary>

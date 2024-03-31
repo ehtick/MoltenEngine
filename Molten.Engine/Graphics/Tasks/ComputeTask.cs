@@ -1,12 +1,12 @@
 ﻿namespace Molten.Graphics;
 
-public struct ComputeTask : IGpuTask<ComputeTask>
+internal struct ComputeTask : IGpuTask<ComputeTask>
 {
     internal Shader Shader;
 
     internal Vector3UI Groups;
 
-    public event GpuTaskHandler<ComputeTask> OnCompleted;
+    public event GpuTaskHandler OnCompleted;
 
     public static bool Process(GpuCommandList cmd, ref ComputeTask t)
     {
@@ -16,6 +16,6 @@ public struct ComputeTask : IGpuTask<ComputeTask>
 
     public void Complete(bool success)
     {
-        OnCompleted?.Invoke(ref this, success);
+        OnCompleted?.Invoke(success);
     }
 }

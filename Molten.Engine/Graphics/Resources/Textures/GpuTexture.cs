@@ -229,7 +229,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <exception cref="Exception"></exception>
     public unsafe void SetSubResourceData<T>(GpuPriority priority, ResourceRegion region, T* data,
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null)
+        GpuTaskHandler completeCallback = null)
         where T : unmanaged
     {
         uint texturePitch = region.Width * bytesPerPixel;

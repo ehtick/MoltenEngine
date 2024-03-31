@@ -1,8 +1,12 @@
-﻿namespace Molten.Graphics;
+﻿using Molten.Graphics.Textures;
 
-internal class BufferGetTask<T> : GpuResourceTask<GpuBuffer> 
+namespace Molten.Graphics;
+
+internal struct BufferGetTask<T> : IGpuTask<BufferGetTask<T>>
     where T : unmanaged
 {
+    internal GpuBuffer Buffer;
+
     /// <summary>The number of bytes to offset the change, from the start of the provided <see cref="SrcSegment"/>.</summary>
     internal ulong ByteOffset;
 
@@ -20,25 +24,19 @@ internal class BufferGetTask<T> : GpuResourceTask<GpuBuffer>
     /// </summary>
     public event Action<T[]> OnGetData;
 
-    public override void ClearForPool()
+    public static bool Process(GpuCommandList cmd, ref BufferGetTask<T> t)
     {
-        ByteOffset = 0;
-        Count = 0;
-        DestIndex = 0;
-    }
+        t.DestArray ??= new T[t.Count];
+        ulong actualOffset = t.Buffer.Offset + t.ByteOffset;
 
-    public override bool Validate()
-    {
-        // TODO validate if destination array is large enough
-        return true;
-    }
+        // Now set the structured variable's data
+        using (GpuStream stream = cmd.MapResource(t.Buffer, 0, actualOffset, GpuMapType.Read))
+            stream.ReadRange(t.DestArray, t.DestIndex, t.Count);
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        DestArray ??= new T[Count];
-        Resource.GetDataImmediate(cmd, DestArray, DestIndex, Count, ByteOffset);
-        OnGetData?.Invoke(DestArray);
+        t.OnGetData?.Invoke(t.DestArray);
 
         return true;
     }
+
+    public void Complete(bool success) { }
 }

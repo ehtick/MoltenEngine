@@ -89,7 +89,8 @@ public class GpuTaskManager : IDisposable
     /// </summary>
     /// <param name="priority">The priority of the task.</param>
     /// <param name="task"></param>
-    /// <param name="cmd"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
     public void Push<T>(GpuPriority priority, ref T task, GpuCommandList cmd)
         where T : struct, IGpuTask<T>
     {
@@ -131,23 +132,34 @@ public class GpuTaskManager : IDisposable
     /// Pushes a compute-based shader as a task.
     /// </summary>
     /// <param name="priority"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
     /// <param name="shader">The compute shader to be run inside the task.</param>
     /// <param name="groupsX">The number of X compute thread groups.</param>
     /// <param name="groupsY">The number of Y compute thread groups.</param>
     /// <param name="groupsZ">The number of Z compute thread groups.</param>
     /// <param name="callback">A callback to run once the task is completed.</param>
-    public void Push(GpuPriority priority, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskHandler<ComputeTask> callback = null)
+    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskHandler callback = null)
     {
-        Push(priority, shader, new Vector3UI(groupsX, groupsY, groupsZ), callback);
+        Push(priority, cmd, shader, new Vector3UI(groupsX, groupsY, groupsZ), callback);
     }
 
-    public void Push(GpuPriority priority, Shader shader, Vector3UI groups, GpuTaskHandler<ComputeTask> callback = null)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="priority"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
+    /// <param name="shader"></param>
+    /// <param name="groups"></param>
+    /// <param name="callback"></param>
+    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, Vector3UI groups, GpuTaskHandler callback = null)
     {
         ComputeTask task = new();
         task.Shader = shader;
         task.Groups = groups;
         task.OnCompleted += callback;
-        Push(priority, ref task);
+        Push(priority, ref task, cmd);
     }
 
     public void Dispose()
