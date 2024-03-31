@@ -1,65 +1,115 @@
 ﻿using Molten.Collections;
-using System.Collections.Concurrent;
 
 namespace Molten.Graphics;
 
 public class GpuTaskManager : IDisposable
 {
+    private abstract class TaskBank
+    {
+        internal abstract void Process(GpuCommandList cmd, uint taskIndex);
+
+        internal int BankIndex { get; init; }
+    }
+
+    private class TaskBank<T> : TaskBank
+        where T : struct, IGpuTask<T>
+    {
+        T[] _tasks = new T[8];
+        
+        uint _nextIndex = 0;
+        Stack<uint> _free = new();
+
+        internal TaskBank(int bankIndex)
+        {
+            BankIndex = bankIndex;
+        }
+
+        internal override void Process(GpuCommandList cmd, uint taskIndex)
+        {
+            ref T task = ref _tasks[taskIndex];
+            bool success = T.Process(cmd, ref task);
+            task.Complete(success);
+            _tasks[taskIndex] = default;
+            _free.Push(taskIndex);
+        }
+
+        internal uint Enqueue(ref T task)
+        {
+            uint index;
+
+            if (_free.Count > 0)
+            {
+                index = _free.Pop();
+            }
+            else
+            {
+                if (_nextIndex >= _tasks.Length)
+                    Array.Resize(ref _tasks, _tasks.Length * 2);
+
+                index = _nextIndex++;
+            }
+
+            _tasks[index] = task;
+            return index;
+        }
+    }
+
+
     private class TaskQueue
     {
-        internal ThreadedQueue<GpuTask> Tasks = new();
+        internal ThreadedQueue<ulong> Tasks = new();
         internal GpuFrameBuffer<GpuCommandList> Cmd;
     }
 
     TaskQueue[] _queues;
-    ConcurrentDictionary<Type, ObjectPool<GpuTask>> _taskPool;
+    List<TaskBank> _banks;
+    Dictionary<Type, TaskBank> _banksByType;
     GpuDevice _device;
 
     internal GpuTaskManager(GpuDevice device)
     {
         _device = device;
-        GpuPriority[] priorities = Enum.GetValues<GpuPriority>();
-        _queues = new TaskQueue[priorities.Length];
+        _queues = new TaskQueue[2];
 
-        for(int i = 0; i < priorities.Length; i++)
+        _banks = new List<TaskBank>();
+        _banksByType = new Dictionary<Type, TaskBank>();
+
+        for(int i = 0; i < _queues.Length; i++)
         {
             _queues[i] = new TaskQueue();
             _queues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(_device, (gpu) => gpu.GetCommandList());
         }
-
-        _taskPool = new ConcurrentDictionary<Type, ObjectPool<GpuTask>>();
-    }
-
-    public T Get<T>() 
-        where T : GpuTask, new()
-    {
-        if(!_taskPool.TryGetValue(typeof(T), out ObjectPool<GpuTask> pool))
-        {
-            pool = new ObjectPool<GpuTask>(() => new T());
-            if(!_taskPool.TryAdd(typeof(T), pool))
-            {
-                _device.Log.Error($"Failed to create render task pool for '{typeof(T).Name}'");
-                return new T();
-            }
-        }
-
-        T task = (T)pool.GetInstance();
-        task.Pool = pool;
-        return task;
     }
 
     /// <summary>
-    /// Pushes a <see cref="GpuTask"/> to the specified priority queue in the current <see cref="GpuTaskManager"/>.
+    /// Pushes a <see cref="IGpuTask{T}"/> to the specified priority queue in the current <see cref="GpuTaskManager"/>.
     /// </summary>
     /// <param name="priority">The priority of the task.</param>
     /// <param name="task"></param>
-    public void Push(GpuPriority priority, GpuTask task)
+    public void Push<T>(GpuPriority priority, ref T task)
+        where T : struct, IGpuTask<T>
     {
-        if (task.Validate())
+        if(priority == GpuPriority.Immediate)
+            throw new Exception("Cannot push a task with 'Immediate' priority.");
+
+        TaskQueue priorityQueue = _queues[(int)priority];
+        TaskBank<T> bank;
+
+        if (!_banksByType.TryGetValue(typeof(T), out TaskBank tb))
         {
-            TaskQueue queue = _queues[(int)priority];
-            queue.Tasks.Enqueue(task);
+            int bankIndex = _banks.Count;
+            bank = new TaskBank<T>(bankIndex);
+            _banks.Add(tb);
+            _banksByType.Add(typeof(T), tb);
         }
+        else
+        {
+            bank = tb as TaskBank<T>;
+        }
+
+        uint taskIndex = bank.Enqueue(ref task);
+        ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
+        priorityQueue.Tasks.Enqueue(queueIndex);
     }
 
     /// <summary>
@@ -71,38 +121,35 @@ public class GpuTaskManager : IDisposable
     /// <param name="groupsY">The number of Y compute thread groups.</param>
     /// <param name="groupsZ">The number of Z compute thread groups.</param>
     /// <param name="callback">A callback to run once the task is completed.</param>
-    public void Push(GpuPriority priority, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTask.EventHandler callback = null)
+    public void Push(GpuPriority priority, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskHandler<ComputeTask> callback = null)
     {
         Push(priority, shader, new Vector3UI(groupsX, groupsY, groupsZ), callback);
     }
 
-    public void Push(GpuPriority priority, Shader shader, Vector3UI groups, GpuTask.EventHandler callback = null)
+    public void Push(GpuPriority priority, Shader shader, Vector3UI groups, GpuTaskHandler<ComputeTask> callback = null)
     {
-        ComputeTask task = Get<ComputeTask>();
+        ComputeTask task = new();
         task.Shader = shader;
         task.Groups = groups;
         task.OnCompleted += callback;
-        Push(priority, task);
+        Push(priority, ref task);
     }
 
     public void Dispose()
     {
-        foreach (ObjectPool<GpuTask> pool in _taskPool.Values)
-            pool.Dispose();
-
         foreach (TaskQueue queue in _queues)
             queue.Cmd.Dispose();
-
-        _taskPool.Clear();
     }
 
     /// <summary>
     /// Processes all tasks held in the manager for the specified priority queue, for the current <see cref="GpuTaskManager"/>.
     /// </summary>
     /// <param name="priority">The priority of the task.</param>
-    /// <param name="cmdQueue">The GPU queue that will execute the command list.</param>
     internal void Process(GpuPriority priority)
     {
+        if (priority == GpuPriority.Immediate)
+            throw new InvalidOperationException("Cannot process immediate priority tasks, as these are not queueable.");
+
         // TODO Implement "AllowBatching" property on RenderTask to allow multiple tasks to be processed in a single Begin()-End() command block
         //      Tasks that don't allow batching will:
         //       - Be executed in individual Begin()-End() command blocks
@@ -113,9 +160,15 @@ public class GpuTaskManager : IDisposable
         GpuCommandList cmd = queue.Cmd.Prepare();
 
         cmd.Begin();
-        cmd.BeginEvent($"Process '{priority}' tasks");
-        while (queue.Tasks.TryDequeue(out GpuTask task))
-            task.Process(cmd);
+        cmd.BeginEvent($"Process queued '{priority}' tasks");
+        while (queue.Tasks.TryDequeue(out ulong queueIndex))
+        {
+            uint bankIndex = (uint)(queueIndex >> 32);
+            uint taskIndex = (uint)(queueIndex & 0xFFFFFFFF);
+
+            TaskBank bank = _banks[(int)bankIndex];
+            bank.Process(cmd, taskIndex);
+        }
 
         cmd.EndEvent();
         cmd.End();

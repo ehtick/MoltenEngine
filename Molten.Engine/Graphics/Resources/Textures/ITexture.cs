@@ -15,6 +15,7 @@ public interface ITexture : IGpuResource
     /// Transfers thte provided <see cref="TextureData"/> to the current <see cref="ITexture"/> and invokes the provided completion callback once the operation is complete.
     /// </summary>
     /// <param name="priority">The priority of the operation.</param>
+    /// <param name="cmd">The command list that sohuld perform the operation.</param>
     /// <param name="data">The <see cref="TextureData"/> to be copied.</param>
     /// <param name="levelStartIndex">The first mip-map level to start copying from.</param>
     /// <param name="arrayStartIndex">The first array slice index to start copying from.</param>
@@ -24,11 +25,10 @@ public interface ITexture : IGpuResource
     /// <param name="destArrayIndex">The destination array slice index to start copying to.</param>
     /// <param name="discard">If true, the destination memory will be reallocated and the existing data discarded for reuse at a later time.</param>
     /// <param name="completeCallback">A callback to invoke once the GPU has completed the data transfer.</param>
-    void SetData(GpuPriority priority, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
+    void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
-        bool discard = false,
-        GpuTask.EventHandler completeCallback = null);
+        GpuTaskHandler<TextureSetDataTask> completeCallback = null);
 
     void SetSubResourceData(GpuPriority priority, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null);
 

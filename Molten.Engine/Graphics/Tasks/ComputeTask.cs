@@ -1,27 +1,21 @@
 ﻿namespace Molten.Graphics;
 
-internal class ComputeTask : GpuTask
+public struct ComputeTask : IGpuTask<ComputeTask>
 {
     internal Shader Shader;
 
     internal Vector3UI Groups;
 
-    public override void ClearForPool()
-    {
-        Shader = null;
-        Groups = Vector3UI.Zero;
-    }
+    public event GpuTaskHandler<ComputeTask> OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref ComputeTask t)
     {
+        cmd.Dispatch(t.Shader, t.Groups);
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        //queue.Begin();
-        cmd.Dispatch(Shader, Groups);
-        //queue.End();
-        return true;
+        OnCompleted?.Invoke(ref this, success);
     }
 }

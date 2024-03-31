@@ -139,8 +139,9 @@ public abstract class GpuTexture : GpuResource, ITexture
     }
 
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>
-    /// <param name="data"></param>
     /// <param name="priority">The priority of the operation.</param>
+    /// <param name="cmd">The command list used when executing the operation immediately. Can be null if not using <see cref="GpuPriority.Immediate"/>.</param>
+    /// <param name="data"></param>
     /// <param name="levelStartIndex">The starting mip-map index within the provided <see cref="TextureData"/>.</param>
     /// <param name="arrayStartIndex">The starting array slice index within the provided <see cref="TextureData"/>.</param>
     /// <param name="levelCount">The number of mip-map levels to copy per array slice, from the provided <see cref="TextureData"/>.</param>
@@ -149,13 +150,12 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="destArrayIndex">The array slice index within the current texture to start copying to.</param>
     /// <param name="discard">If true, a new area of memory will be allocated for the provided data.</param>
     /// <param name="completeCallback">A callback to invoke once the data has been transferred to the GPU.</param>
-    public unsafe void SetData(GpuPriority priority, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
+    public unsafe void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
-        bool discard = false, 
-        GpuTask.EventHandler completeCallback = null)
+        GpuTaskHandler completeCallback = null)
     {
-        TextureSetDataTask task = Device.Tasks.Get<TextureSetDataTask>();
+        TextureSetDataTask task = new();
         task.Data = data;
         task.Resource = this;
         task.LevelStartIndex = levelStartIndex;
@@ -164,33 +164,18 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.ArrayCount = arrayCount;
         task.DestLevelIndex = destLevelIndex;
         task.DestArrayIndex = destArrayIndex;
-        task.Discard = discard;
         task.OnCompleted += completeCallback;
 
-        Device.Tasks.Push(priority, task);
-    }
-
-    public unsafe void SetDataImmediate(GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0, 
-        uint levelCount = 0, uint arrayCount = 0,
-        uint destLevelIndex = 0, uint destArrayIndex = 0)
-    {
-        TextureSlice level;
-        for (uint a = 0; a < arrayCount; a++)
+        if (priority == GpuPriority.Immediate)
         {
-            for (uint m = 0; m < levelCount; m++)
-            {
-                uint slice = arrayStartIndex + a;
-                uint mip = levelStartIndex + m;
-                uint dataID = data.GetLevelID(mip, slice);
-                level = data.Levels[dataID];
+            if (cmd == null)
+                throw new ArgumentNullException("A command list must be provided when using GpuPriority.Immediate.");
 
-                if (level.TotalBytes == 0)
-                    continue;
-
-                uint destArray = destArrayIndex + a;
-                uint destLevel = destLevelIndex + m;
-                SetSubResourceDataImmediate(cmd, destLevel, level.Data, 0, level.TotalBytes, level.Pitch, destArray);
-            }
+            TextureSetDataTask.Process(cmd, ref task);
+        }
+        else
+        {
+            Device.Tasks.Push(priority, ref task);
         }
     }
 

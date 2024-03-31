@@ -1,8 +1,8 @@
 ﻿namespace Molten.Graphics;
-internal unsafe class TextureSetDataTask : GpuResourceTask<GpuTexture>
+internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 {
-    public TextureData Data;
-    internal bool Discard;
+    internal GpuTexture Resource;
+    internal TextureData Data;
     internal uint DestArrayIndex;
     internal uint DestLevelIndex;
     internal uint ArrayCount;
@@ -10,27 +10,34 @@ internal unsafe class TextureSetDataTask : GpuResourceTask<GpuTexture>
     internal uint ArrayStartIndex;
     internal uint LevelStartIndex;
 
-    public override void ClearForPool()
-    {
-        // Clear all fields back to default values
-        Data = null;
-        Discard = false;
-        DestArrayIndex = 0;
-        DestLevelIndex = 0;
-        ArrayCount = 0;
-        LevelCount = 0;
-        ArrayStartIndex = 0;
-        LevelStartIndex = 0;
-    }
+    public event GpuTaskHandler OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref TextureSetDataTask t)
     {
+        TextureSlice level;
+        for (uint a = 0; a < t.ArrayCount; a++)
+        {
+            for (uint m = 0; m < t.LevelCount; m++)
+            {
+                uint slice = t.ArrayStartIndex + a;
+                uint mip = t.LevelStartIndex + m;
+                uint dataID = t.Data.GetLevelID(mip, slice);
+                level = t.Data.Levels[dataID];
+
+                if (level.TotalBytes == 0)
+                    continue;
+
+                uint destArray = t.DestArrayIndex + a;
+                uint destLevel = t.DestLevelIndex + m;
+                SetSubResourceDataImmediate(cmd, destLevel, level.Data, 0, level.TotalBytes, level.Pitch, destArray);
+            }
+        }
+
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        Resource.SetDataImmediate(cmd, Data, LevelStartIndex, ArrayStartIndex, LevelCount, ArrayCount, DestLevelIndex, DestArrayIndex, Discard);        
-        return true;
+        OnCompleted?.Invoke(ref this, success);
     }
 }
