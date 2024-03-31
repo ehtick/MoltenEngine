@@ -166,6 +166,20 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.DestArrayIndex = destArrayIndex;
         task.OnCompleted += completeCallback;
 
+        Device.Tasks.Push(priority, ref task, cmd);
+    }
+
+    public unsafe void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null)
+    {
+        TextureSetSubResourceTask<byte> task = new();
+        task.Initialize(data.Data, 1, 0, data.TotalBytes);
+        task.Pitch = data.Pitch;
+        task.Resource = this;
+        task.ArrayIndex = arraySlice;
+        task.MipLevel = mipIndex;
+        task.OnCompleted += completeCallback;
+        Device.Tasks.Push( priority, task);
+
         if (priority == GpuPriority.Immediate)
         {
             if (cmd == null)
@@ -177,18 +191,6 @@ public abstract class GpuTexture : GpuResource, ITexture
         {
             Device.Tasks.Push(priority, ref task);
         }
-    }
-
-    public unsafe void SetSubResourceData(GpuPriority priority, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null)
-    {
-        TextureSetSubResourceTask task = Device.Tasks.Get<TextureSetSubResourceTask>();
-        task.Initialize(data.Data, 1, 0, data.TotalBytes);
-        task.Pitch = data.Pitch;
-        task.Resource = this;
-        task.ArrayIndex = arraySlice;
-        task.MipLevel = mipIndex;
-        task.OnCompleted += completeCallback;
-        Device.Tasks.Push( priority, task);
     }
 
     public unsafe void SetSubResourceData<T>(GpuPriority priority, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex,
@@ -263,7 +265,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         GpuTask.EventHandler completeCallback = null)
         where T : unmanaged
     {
-        TextureSetSubResourceTask task = Device.Tasks.Get<TextureSetSubResourceTask>();
+        TextureSetSubResourceTask<T> task = new();
         task.Initialize(data, (uint)sizeof(T), startIndex, count);
         task.Pitch = pitch;
         task.Resource = this;
@@ -271,115 +273,6 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.MipLevel = level;
         task.OnCompleted += completeCallback;
         Device.Tasks.Push(priority, task);
-    }
-
-    internal unsafe void SetSubResourceDataImmediate<T>(GpuCommandList cmd, uint level, T* data, 
-        uint startIndex, uint count, uint pitch, uint arrayIndex = 0, ResourceRegion? region = null)
-        where T : unmanaged
-    {
-        // Calculate size of a single array slice
-        uint arraySliceBytes = 0;
-        uint blockSize = 8; // default block size
-        uint levelWidth = Width;
-        uint levelHeight = Height;
-        uint levelDepth = Depth;
-
-        if (!Flags.Has(GpuResourceFlags.UploadMemory))
-            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
-
-        if (IsBlockCompressed)
-        {
-            if (region != null)
-                throw new NotImplementedException("Region-based SetData on block-compressed texture is currently unsupported. Sorry!");
-
-            blockSize = BCHelper.GetBlockSize(ResourceFormat);
-
-            // Collect total level size.
-            for (uint i = 0; i < MipMapCount; i++)
-            {
-                arraySliceBytes += BCHelper.GetBCLevelSize(levelWidth, levelHeight, blockSize) * levelDepth;
-                levelWidth = Math.Max(1, levelWidth / 2);
-                levelHeight = Math.Max(1, levelHeight / 2);
-                levelDepth = Math.Max(1, levelDepth / 2);
-            }
-        }
-        else
-        {
-            // TODO: This is invalid if the format isn't 32bpp/4-bytes-per-pixel/RGBA.
-            for (uint i = 0; i < MipMapCount; i++)
-            {
-                arraySliceBytes += (levelWidth * levelHeight * 4) * levelDepth; //4 color channels. 1 byte each. Width * height * colorByteSize.
-                levelWidth = Math.Max(1, levelWidth / 2);
-                levelHeight = Math.Max(1, levelHeight / 2);
-                levelDepth = Math.Max(1, levelDepth / 2);
-            }
-        }
-
-        //======DATA TRANSFER===========
-        ulong stride = (ulong)sizeof(T);
-        ulong startBytes = startIndex * stride;
-        ulong numBytes = count * stride;
-        byte* ptrData = (byte*)data;
-        ptrData += startBytes;
-
-        uint subLevel = (MipMapCount * arrayIndex) + level;
-
-        if (Flags.Has(GpuResourceFlags.UploadMemory))
-        {
-            using (GpuStream stream = cmd.MapResource(this, subLevel, 0, GpuMapType.Write))
-            {
-                // Are we constrained to an area of the texture?
-                if (region != null)
-                {
-                    ResourceRegion area = region.Value;
-                    ulong areaPitch = stride * area.Width;
-                    ulong sliceBytes = areaPitch * area.Height;
-                    uint aX = area.Left;
-                    uint aY = area.Top;
-                    uint aZ = area.Front;
-
-                    for (uint y = aY, end = area.Bottom; y < end; y++)
-                    {
-                        stream.Position = (long)((sliceBytes * aZ) + (pitch * aY) + (aX * stride));
-                        stream.WriteRange(ptrData, areaPitch);
-                        ptrData += areaPitch;
-                        aY++;
-                    }
-                }
-                else
-                {
-                    stream.WriteRange(ptrData, numBytes);
-                }
-            }
-
-            cmd.Profiler.ResourceMapCalls++;
-        }
-        else
-        {
-            if (IsBlockCompressed)
-            {
-                // Calculate mip-map level size.
-                levelWidth = Math.Max(1, Width >> (int)level);
-                uint bcPitch = BCHelper.GetBCPitch(levelWidth, blockSize);
-
-                // TODO support copy flags (DX11.1 feature)
-                cmd.UpdateResource(this, subLevel, null, ptrData, bcPitch, arraySliceBytes);
-            }
-            else
-            {
-                if (region != null)
-                {
-                    ulong regionPitch = stride * region.Value.Width;
-                    cmd.UpdateResource(this, subLevel, region.Value, ptrData, regionPitch, numBytes);
-                }
-                else
-                {
-                    cmd.UpdateResource(this, subLevel, null, ptrData, pitch, arraySliceBytes);
-                }
-            }
-        }
-
-        Version++;
     }
 
     /// <inheritdoc/>

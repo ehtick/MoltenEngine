@@ -12,9 +12,14 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
     public event GpuTaskHandler OnCompleted;
 
-    public static bool Process(GpuCommandList cmd, ref TextureSetDataTask t)
+    public unsafe static bool Process(GpuCommandList cmd, ref TextureSetDataTask t)
     {
         TextureSlice level;
+
+        TextureSetSubResourceTask<byte> subTask = new();
+        subTask.Resource = t.Resource;
+        subTask.StartIndex = 0;
+
         for (uint a = 0; a < t.ArrayCount; a++)
         {
             for (uint m = 0; m < t.LevelCount; m++)
@@ -29,7 +34,12 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
                 uint destArray = t.DestArrayIndex + a;
                 uint destLevel = t.DestLevelIndex + m;
-                SetSubResourceDataImmediate(cmd, destLevel, level.Data, 0, level.TotalBytes, level.Pitch, destArray);
+                
+                subTask.ArrayIndex = destArray;
+                subTask.MipLevel = destLevel;
+                subTask.InitializeImmediate(level.Data, 1, 0, level.TotalBytes);
+                subTask.Pitch = level.Pitch;
+                TextureSetSubResourceTask<byte>.Process(cmd, ref subTask);
             }
         }
 
@@ -38,6 +48,6 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
     public void Complete(bool success)
     {
-        OnCompleted?.Invoke(ref this, success);
+        OnCompleted?.Invoke(success);
     }
 }

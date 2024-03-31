@@ -29,6 +29,7 @@ public class GpuTaskManager : IDisposable
             ref T task = ref _tasks[taskIndex];
             bool success = T.Process(cmd, ref task);
             task.Complete(success);
+
             _tasks[taskIndex] = default;
             _free.Push(taskIndex);
         }
@@ -86,30 +87,39 @@ public class GpuTaskManager : IDisposable
     /// </summary>
     /// <param name="priority">The priority of the task.</param>
     /// <param name="task"></param>
-    public void Push<T>(GpuPriority priority, ref T task)
+    /// <param name="cmd"></param>
+    public void Push<T>(GpuPriority priority, ref T task, GpuCommandList cmd = null)
         where T : struct, IGpuTask<T>
     {
-        if(priority == GpuPriority.Immediate)
-            throw new Exception("Cannot push a task with 'Immediate' priority.");
-
-        TaskQueue priorityQueue = _queues[(int)priority];
-        TaskBank<T> bank;
-
-        if (!_banksByType.TryGetValue(typeof(T), out TaskBank tb))
+        if (priority == GpuPriority.Immediate)
         {
-            int bankIndex = _banks.Count;
-            bank = new TaskBank<T>(bankIndex);
-            _banks.Add(tb);
-            _banksByType.Add(typeof(T), tb);
+            if (cmd == null)
+                throw new ArgumentNullException("A command list must be provided when using GpuPriority.Immediate.");
+
+            bool success = T.Process(cmd, ref task);
+            task.Complete(success);
         }
         else
         {
-            bank = tb as TaskBank<T>;
-        }
+            TaskQueue priorityQueue = _queues[(int)priority];
+            TaskBank<T> bank;
 
-        uint taskIndex = bank.Enqueue(ref task);
-        ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
-        priorityQueue.Tasks.Enqueue(queueIndex);
+            if (!_banksByType.TryGetValue(typeof(T), out TaskBank tb))
+            {
+                int bankIndex = _banks.Count;
+                bank = new TaskBank<T>(bankIndex);
+                _banks.Add(tb);
+                _banksByType.Add(typeof(T), tb);
+            }
+            else
+            {
+                bank = tb as TaskBank<T>;
+            }
+
+            uint taskIndex = bank.Enqueue(ref task);
+            ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
+            priorityQueue.Tasks.Enqueue(queueIndex);
+        }
     }
 
     /// <summary>

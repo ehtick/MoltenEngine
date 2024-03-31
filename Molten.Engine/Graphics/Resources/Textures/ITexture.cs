@@ -28,7 +28,7 @@ public interface ITexture : IGpuResource
     void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
-        GpuTaskHandler<TextureSetDataTask> completeCallback = null);
+        GpuTaskHandler completeCallback = null);
 
     void SetSubResourceData(GpuPriority priority, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null);
 
