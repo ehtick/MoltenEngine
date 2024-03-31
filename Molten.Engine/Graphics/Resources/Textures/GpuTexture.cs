@@ -114,7 +114,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
     public void Resize(GpuPriority priority, uint width, uint height, GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
         uint arraySize = 0, uint mipMapCount = 0, uint depth = 0, 
-        GpuTask.EventHandler completeCallback = null)
+        GpuTaskHandler completeCallback = null)
     {
         if (this is ITexture1D)
             height = 1;
@@ -148,7 +148,6 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="arrayCount">The number of array slices to copy from the provided <see cref="TextureData"/>.</param>
     /// <param name="destLevelIndex">The mip-map index within the current texture to start copying to.</param>
     /// <param name="destArrayIndex">The array slice index within the current texture to start copying to.</param>
-    /// <param name="discard">If true, a new area of memory will be allocated for the provided data.</param>
     /// <param name="completeCallback">A callback to invoke once the data has been transferred to the GPU.</param>
     public unsafe void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
@@ -169,7 +168,16 @@ public abstract class GpuTexture : GpuResource, ITexture
         Device.Tasks.Push(priority, ref task, cmd);
     }
 
-    public unsafe void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="priority">The priority of the operation.</param>
+    /// <param name="cmd"></param>
+    /// <param name="data"></param>
+    /// <param name="mipIndex"></param>
+    /// <param name="arraySlice"></param>
+    /// <param name="completeCallback">A callback to invoke once the data has been transferred to the GPU.</param>
+    public unsafe void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskHandler completeCallback = null)
     {
         TextureSetSubResourceTask<byte> task = new();
         task.Initialize(data.Data, 1, 0, data.TotalBytes);
@@ -178,19 +186,8 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.ArrayIndex = arraySlice;
         task.MipLevel = mipIndex;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push( priority, task);
 
-        if (priority == GpuPriority.Immediate)
-        {
-            if (cmd == null)
-                throw new ArgumentNullException("A command list must be provided when using GpuPriority.Immediate.");
-
-            TextureSetDataTask.Process(cmd, ref task);
-        }
-        else
-        {
-            Device.Tasks.Push(priority, ref task);
-        }
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     public unsafe void SetSubResourceData<T>(GpuPriority priority, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex,

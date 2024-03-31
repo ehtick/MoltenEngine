@@ -66,10 +66,12 @@ public class GpuTaskManager : IDisposable
     List<TaskBank> _banks;
     Dictionary<Type, TaskBank> _banksByType;
     GpuDevice _device;
+    Interlocker _locker;
 
     internal GpuTaskManager(GpuDevice device)
     {
         _device = device;
+        _locker = new Interlocker();
         _queues = new TaskQueue[2];
 
         _banks = new List<TaskBank>();
@@ -104,6 +106,7 @@ public class GpuTaskManager : IDisposable
             TaskQueue priorityQueue = _queues[(int)priority];
             TaskBank<T> bank;
 
+            _locker.Lock();
             if (!_banksByType.TryGetValue(typeof(T), out TaskBank tb))
             {
                 int bankIndex = _banks.Count;
@@ -118,6 +121,8 @@ public class GpuTaskManager : IDisposable
 
             uint taskIndex = bank.Enqueue(ref task);
             ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
+            _locker.Unlock();
+
             priorityQueue.Tasks.Enqueue(queueIndex);
         }
     }
@@ -171,13 +176,16 @@ public class GpuTaskManager : IDisposable
 
         cmd.Begin();
         cmd.BeginEvent($"Process queued '{priority}' tasks");
+
         while (queue.Tasks.TryDequeue(out ulong queueIndex))
         {
+            _locker.Lock();
             uint bankIndex = (uint)(queueIndex >> 32);
             uint taskIndex = (uint)(queueIndex & 0xFFFFFFFF);
 
             TaskBank bank = _banks[(int)bankIndex];
             bank.Process(cmd, taskIndex);
+            _locker.Unlock();
         }
 
         cmd.EndEvent();
