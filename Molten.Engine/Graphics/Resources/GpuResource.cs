@@ -25,13 +25,13 @@ public abstract class GpuResource : GpuObject, IGpuResource
 
     protected abstract void OnApply(GpuCommandList cmd);
 
-    public void CopyTo(GpuPriority priority, GpuResource destination, GpuTask.EventHandler completeCallback = null)
+    public void CopyTo(GpuPriority priority, GpuCommandList cmd, GpuResource destination, GpuTaskHandler completeCallback = null)
     {
-        if (Flags.IsGpuReadable())
-            throw new ResourceCopyException(this, destination, "Source resource must have the GraphicsResourceFlags.GpuRead flag set.");
+        if (!Flags.IsGpuReadable())
+            throw new ResourceCopyException(this, destination, "Source resource must be GPU-readable.");
 
         if (!destination.Flags.IsGpuWritable())
-            throw new ResourceCopyException(this, destination, "Destination resource must have the GraphicsResourceFlags.GpuWrite flag set.");
+            throw new ResourceCopyException(this, destination, "Destination resource must be GPU-writable.");
 
         // If copying between two images, do a format and bounds check
         if (this is GpuTexture srcTex)
@@ -58,17 +58,18 @@ public abstract class GpuResource : GpuObject, IGpuResource
                 throw new GpuResourceException(this, "The destination buffer is not large enough.");
         }
 
-        ResourceCopyTask task = Device.Tasks.Get<ResourceCopyTask>();
+        ResourceCopyTask task = new ();
+        task.Source = this;
         task.Destination = destination;
         task.OnCompleted += completeCallback;
-        task.Resource = this;
-        Device.Tasks.Push(priority, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <summary>
     /// Copies a sub-resource from the current <see cref="GpuResource"/> to the sub-resource of the destination <see cref="GpuResource"/>.
     /// </summary>
     /// <param name="priority"></param>
+    /// <param name="cmd"></param>
     /// <param name="sourceLevel"></param>
     /// <param name="sourceSlice"></param>
     /// <param name="destination"></param>
@@ -76,10 +77,8 @@ public abstract class GpuResource : GpuObject, IGpuResource
     /// <param name="destSlice"></param>
     /// <param name="completeCallback"></param>
     /// <exception cref="ResourceCopyException"></exception>
-    public void CopyTo(GpuPriority priority,
-    uint sourceLevel, uint sourceSlice,
-    GpuResource destination, uint destLevel, uint destSlice,
-    GpuTask.EventHandler completeCallback = null)
+    public void CopyTo(GpuPriority priority, GpuCommandList cmd,  uint sourceLevel, uint sourceSlice,
+        GpuResource destination, uint destLevel, uint destSlice, GpuTaskHandler completeCallback = null)
     {
         if (!Flags.Has(GpuResourceFlags.UploadMemory))
             throw new ResourceCopyException(this, destination, "The current texture cannot be copied from because the GpuResourceFlags.UploadMemory flag was not set.");
@@ -113,39 +112,21 @@ public abstract class GpuResource : GpuObject, IGpuResource
                 if (destSlice >= destTex.ArraySize)
                     throw new ResourceCopyException(this, destination, "The destination array slice exceeds the total number of slices in the destination texture.");
 
-                SubResourceCopyTask task = Device.Tasks.Get<SubResourceCopyTask>();
+                SubResourceCopyTask task = new();
                 task.SrcRegion = null;
-                task.Resource = this;
+                task.Source = this;
                 task.SrcSubResource = (sourceSlice * srcTex.MipMapCount) + sourceLevel;
-                task.DestResource = destination;
+                task.Destination = destination;
                 task.DestStart = Vector3UI.Zero;
                 task.DestSubResource = (destSlice * destTex.MipMapCount) + destLevel;
                 task.OnCompleted += completeCallback;
-                Device.Tasks.Push(priority, task);
+                Device.Tasks.Push(priority, ref task, cmd);
             }
             else
             {
                 throw new NotImplementedException("Copying a texture to a non-texture is currently unsupported.");
             }
         }
-    }
-
-    /// <summary>Copies all the data in the current <see cref="GpuResource"/> to the destination <see cref="GpuResource"/>.</summary>
-    /// <param name="priority">The priority of the operation</param>
-    /// <param name="destination">The <see cref="GpuResource"/> to copy to.</param>
-    /// <param name="sourceRegion"></param>
-    /// <param name="destByteOffset"></param>
-    /// <param name="completionCallback">A callback to invoke once the operation is completed.</param>
-    public void CopyTo(GpuPriority priority, GpuResource destination, ResourceRegion sourceRegion, uint destByteOffset = 0,
-        GpuTask.EventHandler completionCallback = null)
-    {
-        SubResourceCopyTask task = Device.Tasks.Get<SubResourceCopyTask>();
-        task.DestResource = destination;
-        task.Resource = this;
-        task.DestStart = new Vector3UI(destByteOffset, 0, 0);
-        task.SrcRegion = sourceRegion;
-        task.OnCompleted += completionCallback;
-        Device.Tasks.Push(priority, task);
     }
 
     /// <summary>

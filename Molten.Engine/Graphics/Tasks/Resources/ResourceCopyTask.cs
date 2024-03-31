@@ -1,26 +1,23 @@
 ﻿namespace Molten.Graphics;
 
-public class ResourceCopyTask : GpuResourceTask<GpuResource>
+public struct ResourceCopyTask : IGpuTask<ResourceCopyTask>
 {
+    public GpuResource Source;
+
     public GpuResource Destination;
 
-    public override void ClearForPool()
-    {
-        Destination = null;
-    }
+    public event GpuTaskHandler OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref ResourceCopyTask t)
     {
+        t.Source.Apply(cmd);
+        cmd.CopyResource(t.Source, t.Destination);
+
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        if (Resource is GpuBuffer buffer && buffer.BufferType == GpuBufferType.Staging)
-            Resource.Apply(cmd);
-
-        cmd.CopyResource(Resource, Destination);
-
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

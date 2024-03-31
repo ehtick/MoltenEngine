@@ -1,23 +1,15 @@
 ﻿namespace Molten.Graphics;
 
-/// <summary>A <see cref="RenderSceneChange"/> for adding a <see cref="SceneObject"/> to the root of a scene.</summary>
-internal class RenderAddScene : GpuTask
+/// <summary>A task for adding <see cref="SceneRenderData"/> to the renderer.</summary>
+internal struct RenderAddScene : IGpuTask<RenderAddScene>
 {
     public SceneRenderData Data;
 
-    public override void ClearForPool()
+    public static bool Process(GpuCommandList cmd, ref RenderAddScene t)
     {
-        Data = null;
-    }
-
-    public override bool Validate()
-    {
+        cmd.Device.Renderer.Scenes.Add(t.Data);
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        renderer.Scenes.Add(Data);
-        return true;
-    }
+    public void Complete(bool success) { }
 }

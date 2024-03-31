@@ -9,7 +9,7 @@ public interface ITexture : IGpuResource
     /// </summary>
     /// <param name="priority">The priority of the operation.</param>
     /// <param name="completeCallback">A callback to invoke once the GPU has completed the data transfer.</param>
-    void GetData(GpuPriority priority, Action<TextureData> completeCallback);
+    void GetData(GpuPriority priority, GpuCommandList cmd, Action<TextureData> completeCallback);
 
     /// <summary>
     /// Transfers thte provided <see cref="TextureData"/> to the current <see cref="ITexture"/> and invokes the provided completion callback once the operation is complete.
@@ -23,24 +23,23 @@ public interface ITexture : IGpuResource
     /// <param name="arrayCount">The number of array slices to be copied.</param>
     /// <param name="destLevelIndex">The destination mip-map level to start copying to.</param>
     /// <param name="destArrayIndex">The destination array slice index to start copying to.</param>
-    /// <param name="discard">If true, the destination memory will be reallocated and the existing data discarded for reuse at a later time.</param>
     /// <param name="completeCallback">A callback to invoke once the GPU has completed the data transfer.</param>
     void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
         GpuTaskHandler completeCallback = null);
 
-    void SetSubResourceData(GpuPriority priority, TextureSlice data, uint mipIndex, uint arraySlice, GpuTask.EventHandler completeCallback = null);
+    void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskHandler completeCallback = null);
 
-    void SetSubResourceData<T>(GpuPriority priority, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null) where T : unmanaged;
+    void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
+        GpuTaskHandler completeCallback = null) where T : unmanaged;
 
-    void SetSubResourceData<T>(GpuPriority priority, ResourceRegion area, T[] data, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null) where T : unmanaged;
+    void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion area, T[] data, uint bytesPerPixel, uint level, uint arrayIndex = 0,
+        GpuTaskHandler completeCallback = null) where T : unmanaged;
 
-    unsafe void SetSubResourceData<T>(GpuPriority priority, ResourceRegion region, T* data,
+    unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion region, T* data,
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null) where T : unmanaged;
+        GpuTaskHandler completeCallback = null) where T : unmanaged;
 
     /// <summary>
     /// Occurs after the <see cref="ITexture"/> is done resizing. Executed by the renderer thread it is bound to.

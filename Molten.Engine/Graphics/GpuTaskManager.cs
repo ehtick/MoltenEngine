@@ -90,7 +90,7 @@ public class GpuTaskManager : IDisposable
     /// <param name="priority">The priority of the task.</param>
     /// <param name="task"></param>
     /// <param name="cmd"></param>
-    public void Push<T>(GpuPriority priority, ref T task, GpuCommandList cmd = null)
+    public void Push<T>(GpuPriority priority, ref T task, GpuCommandList cmd)
         where T : struct, IGpuTask<T>
     {
         if (priority == GpuPriority.Immediate)

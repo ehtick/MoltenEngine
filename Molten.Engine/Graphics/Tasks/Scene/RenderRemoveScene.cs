@@ -1,23 +1,15 @@
 ﻿namespace Molten.Graphics;
 
 /// <summary>A <see cref="RenderRemoveScene"/> for adding a <see cref="SceneObject"/> to the root of a scene.</summary>
-internal class RenderRemoveScene : GpuTask
+internal struct RenderRemoveScene : IGpuTask<RenderRemoveScene>
 {
     public SceneRenderData Data;
 
-    public override void ClearForPool()
+    public static bool Process(GpuCommandList cmd, ref RenderRemoveScene t)
     {
-        Data = null;
-    }
-
-    public override bool Validate()
-    {
+        cmd.Device.Renderer.Scenes.Remove(t.Data);
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        cmd.Device.Renderer.Scenes.Remove(Data);
-        return true;
-    }
+    public void Complete(bool success) { }
 }

@@ -1,5 +1,4 @@
 ﻿using Molten.Graphics.Textures;
-using System.Reflection.Emit;
 
 namespace Molten.Graphics;
 
@@ -259,7 +258,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     }
 
     public unsafe void SetSubResourceData<T>(GpuPriority priority, uint level, T* data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null)
+        GpuTaskHandler completeCallback = null)
         where T : unmanaged
     {
         TextureSetSubResourceTask<T> task = new();

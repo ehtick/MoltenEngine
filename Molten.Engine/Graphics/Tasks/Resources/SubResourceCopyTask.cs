@@ -1,7 +1,9 @@
 ﻿namespace Molten.Graphics;
 
-public class SubResourceCopyTask : GpuResourceTask<GpuResource>
+public struct SubResourceCopyTask : IGpuTask<SubResourceCopyTask>
 {
+    public GpuResource Source;
+
     public ResourceRegion? SrcRegion;
 
     public uint SrcSubResource;
@@ -11,35 +13,28 @@ public class SubResourceCopyTask : GpuResourceTask<GpuResource>
     /// <para>For textures, this will vary depending on the number of texture dimensions.</para></summary>
     public Vector3UI DestStart;
 
-    public GpuResource DestResource;
+    public GpuResource Destination;
 
     public uint DestSubResource;
 
-    public override void ClearForPool()
+    public event GpuTaskHandler OnCompleted;
+
+    public static bool Process(GpuCommandList cmd, ref SubResourceCopyTask t)
     {
-        SrcRegion = null;
-        SrcSubResource = 0;
-        DestResource = null;
-        DestSubResource = 0;
-        DestStart = Vector3UI.Zero;
-    }
+        if (!t.Destination.Flags.IsGpuWritable())
+            throw new ResourceCopyException(t.Source, t.Destination, "The destination resource must have GPU write access for writing the copied data.");
 
-    public override bool Validate()
-    {
-        return true;
-    }
+        if (t.Source is GpuBuffer buffer && buffer.BufferType == GpuBufferType.Staging)
+            t.Source.Apply(cmd);
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        if (!DestResource.Flags.IsGpuWritable())
-            throw new ResourceCopyException(Resource, DestResource, "The destination resource must have GPU write access for writing the copied data.");
-
-        if (Resource is GpuBuffer buffer && buffer.BufferType == GpuBufferType.Staging)
-            Resource.Apply(cmd);
-
-        cmd.CopyResourceRegion(Resource, SrcSubResource, SrcRegion, DestResource, DestSubResource, DestStart);
+        cmd.CopyResourceRegion(t.Source, t.SrcSubResource, t.SrcRegion, t.Destination, t.DestSubResource, t.DestStart);
         cmd.Profiler.SubResourceCopyCalls++;
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }
