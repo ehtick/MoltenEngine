@@ -80,10 +80,10 @@ public abstract class GpuResource : GpuObject, IGpuResource
     public void CopyTo(GpuPriority priority, GpuCommandList cmd,  uint sourceLevel, uint sourceSlice,
         GpuResource destination, uint destLevel, uint destSlice, GpuTaskCallback completeCallback = null)
     {
-        if (!Flags.Has(GpuResourceFlags.UploadMemory))
+        if (!Flags.IsGpuReadable())
             throw new ResourceCopyException(this, destination, "The current texture cannot be copied from because the GpuResourceFlags.UploadMemory flag was not set.");
 
-        if (!destination.Flags.Has(GpuResourceFlags.DownloadMemory))
+        if (!destination.Flags.IsGpuWritable())
             throw new ResourceCopyException(this, destination, "The destination texture cannot be copied to because the GpuResourceFlags.DownloadMemory flag was not set.");
 
         // Validate dimensions.

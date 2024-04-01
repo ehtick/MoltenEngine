@@ -274,20 +274,19 @@ public abstract class RenderService : EngineService
 
     internal SceneRenderData CreateRenderData()
     {
-        SceneRenderData rd = new SceneRenderData(Device.Tasks);
-        RenderAddScene task = Device.Tasks.Get<RenderAddScene>();
-        task.Data = rd;
+        RenderAddScene task = new RenderAddScene();
+        task.Data = new SceneRenderData(Device.Tasks);
 
-        Device.Tasks.Push(GpuPriority.StartOfFrame, task);
-        return rd;
+        Device.Tasks.Push(GpuPriority.StartOfFrame, ref task, null);
+        return task.Data;
     }
 
     public void DestroyRenderData(SceneRenderData data)
     {
-        RenderRemoveScene task = Device.Tasks.Get<RenderRemoveScene>();
+        RenderRemoveScene task = new RenderRemoveScene();
         task.Data = data;
 
-        Device.Tasks.Push(GpuPriority.StartOfFrame, task);
+        Device.Tasks.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     /// <summary>

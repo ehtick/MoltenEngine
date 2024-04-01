@@ -21,11 +21,7 @@ public struct SubResourceCopyTask : IGpuTask<SubResourceCopyTask>
 
     public static bool Process(GpuCommandList cmd, ref SubResourceCopyTask t)
     {
-        if (!t.Destination.Flags.IsGpuWritable())
-            throw new ResourceCopyException(t.Source, t.Destination, "The destination resource must have GPU write access for writing the copied data.");
-
-        if (t.Source is GpuBuffer buffer && buffer.BufferType == GpuBufferType.Staging)
-            t.Source.Apply(cmd);
+        t.Source.Apply(cmd);
 
         cmd.CopyResourceRegion(t.Source, t.SrcSubResource, t.SrcRegion, t.Destination, t.DestSubResource, t.DestStart);
         cmd.Profiler.SubResourceCopyCalls++;

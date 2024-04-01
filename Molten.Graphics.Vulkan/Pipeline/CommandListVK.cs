@@ -114,7 +114,7 @@ internal unsafe class CommandListVK : GpuCommandList
         Device.Frame.BranchCount++;
 
         Device.Frame.Track(_cmd);
-        _vk.BeginCommandBuffer(_cmd, &beginInfo);
+        _vk.BeginCommandBuffer(_handle, &beginInfo);
     }
 
     public override void End()
