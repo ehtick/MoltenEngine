@@ -151,7 +151,7 @@ internal unsafe class CommandListVK : GpuCommandList
         _vk.UnmapMemory(_device, (((ResourceHandleVK)resource.Handle).Memory));
     }
 
-    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, uint rowPitch, uint slicePitch)
+    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
     {
         ResourceHandleVK handle = (ResourceHandleVK)resource.Handle;
 

@@ -29,7 +29,7 @@ public class ResourceManagerVK :GraphicsResourceManager<DeviceVK>
         BufferVK buffer = new BufferVK(Device, type, flags, (uint)sizeof(T), numElements, 1);
 
         if (initialData != null)
-            buffer.SetData(GpuPriority.Apply, initialData, false);
+            buffer.SetData(GpuPriority.StartOfFrame, null, initialData);
 
         return buffer;
     }

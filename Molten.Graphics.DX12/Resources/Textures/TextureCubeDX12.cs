@@ -46,20 +46,20 @@ public unsafe class TextureCubeDX12 : Texture2DDX12, ITextureCube
         };
     }
 
-    public void Resize(GpuPriority priority, uint newWidth, uint newHeight, uint newMipMapCount)
-    {
-        TextureResizeTask task = Device.Tasks.Get<TextureResizeTask>();
-        task.NewFormat = ResourceFormat;
-        task.NewDimensions = new TextureDimensions()
-        {
-            Width = newWidth,
-            Height = newHeight,
-            MipMapCount = newMipMapCount,
-            ArraySize = ArraySize,
-            Depth = Depth,
-        };
-        Device.Tasks.Push<GpuTexture, TextureResizeTask>(priority, this, task);
-    }
+    //public void Resize(GpuPriority priority, uint newWidth, uint newHeight, uint newMipMapCount)
+    //{
+    //    TextureResizeTask task = Device.Tasks.Get<TextureResizeTask>();
+    //    task.NewFormat = ResourceFormat;
+    //    task.NewDimensions = new TextureDimensions()
+    //    {
+    //        Width = newWidth,
+    //        Height = newHeight,
+    //        MipMapCount = newMipMapCount,
+    //        ArraySize = ArraySize,
+    //        Depth = Depth,
+    //    };
+    //    Device.Tasks.Push<GpuTexture, TextureResizeTask>(priority, this, task);
+    //}
 
     /// <summary>Gets the number of cube maps stored in the texture. This is greater than 1 if the texture is a cube-map array.</summary>
     public uint CubeCount { get; private set; }

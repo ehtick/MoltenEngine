@@ -8,21 +8,23 @@ public interface IGpuResource : IDisposable
     /// Copies the current texture to the destination texture. Both textures must be of the same format and dimensions.
     /// </summary>
     /// <param name="priority">The priority of the copy operation.</param>
+    /// <param name="cmd">The command list that should execute the operation.</param>
     /// <param name="destination">The destination texture.</param>
     /// <param name="completeCallback">A callback to run once the operation has completed.</param>
-    void CopyTo(GpuPriority priority, GpuResource destination, GpuTaskCallback completeCallback = null);
+    void CopyTo(GpuPriority priority, GpuCommandList cmd, GpuResource destination, GpuTaskCallback completeCallback = null);
 
     /// <summary>
     /// Copies the current texture to the destination texture. Both texture levels must be of the same format and dimensions.
     /// </summary>
     /// <param name="priority">The priority of the copy operation.</param>
+    /// <param name="cmd">The command list that should execute the operation.</param>
     /// <param name="sourceLevel">The source mip-map level.</param>
     /// <param name="sourceSlice">The source array slice.</param>
     /// <param name="destination">The destination resource.</param>
     /// <param name="destLevel">The destination mip-map level.</param>
     /// <param name="destSlice">The destination array slice.</param>
     /// <param name="completeCallback">A callback to run once the operation has completed.</param>
-    void CopyTo(GpuPriority priority,
+    void CopyTo(GpuPriority priority, GpuCommandList cmd,
         uint sourceLevel, uint sourceSlice,
         GpuResource destination, uint destLevel, uint destSlice,
         GpuTaskCallback completeCallback = null);

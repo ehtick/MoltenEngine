@@ -332,7 +332,7 @@ public class ExampleBrowser<R, I, A> : Foundation
         UpdateGamepadUI();
     }
 
-    private void Window_OnResize(GpuTexture texture)
+    private void Window_OnResize(ISwapChainSurface surface)
     {
         if (_baseContentLoaded)
             UpdateUIlayout(UI);

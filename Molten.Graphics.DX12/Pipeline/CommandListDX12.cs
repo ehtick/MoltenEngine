@@ -49,10 +49,6 @@ public unsafe class CommandListDX12 : GpuCommandList
             if (!flags.Has(GpuResourceFlags.UploadMemory))
                 throw new InvalidOperationException($"Resource '{resource.Name}' does not allow write access.");
         }
-        else if (mapType == GpuMapType.Discard)
-        {
-            // TODO Validate this.
-        }
 
         resource.Apply(this);
         if (resource.Handle is ResourceHandleDX12 handle)
@@ -265,7 +261,7 @@ public unsafe class CommandListDX12 : GpuCommandList
             _handle->ClearDepthStencilView(cpuHandle, flags, depthValue, stencilValue, 0, null);
     }
 
-    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, uint rowPitch, uint slicePitch)
+    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
     {
         Box* destBox = null;
 
@@ -279,7 +275,7 @@ public unsafe class CommandListDX12 : GpuCommandList
 
         using (GpuStream stream = MapResource(resource, subresource, 0, GpuMapType.Write))
         {
-            stream.Write(ptrData, slicePitch);
+            stream.Write(ptrData, (long)slicePitch);
             Profiler.SubResourceUpdateCalls++;
         }
     }
