@@ -1,7 +1,9 @@
 ﻿namespace Molten.Graphics;
 
-internal class TextureGetSliceTask : GpuResourceTask<GpuTexture>
+internal struct TextureGetSliceTask : IGpuTask<TextureGetSliceTask>
 {
+    public GpuTexture Texture;
+
     public Action<TextureSlice> OnGetData;
 
     public uint MipMapLevel;
@@ -10,25 +12,14 @@ internal class TextureGetSliceTask : GpuResourceTask<GpuTexture>
 
     public GpuMapType MapType;
 
-    public override void ClearForPool()
+    public static bool Process(GpuCommandList cmd, ref TextureGetSliceTask t)
     {
-        OnGetData = null;
-        MipMapLevel = 0;
-        ArrayIndex = 0;
-        MapType = GpuMapType.Read;
-    }
-
-    public override bool Validate()
-    {
-        return true;
-    }
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        TextureSlice slice = TextureSlice.FromTextureSlice(cmd, Resource, MipMapLevel, ArrayIndex, MapType);
+        TextureSlice slice = TextureSlice.FromTextureSlice(cmd, t.Texture, t.MipMapLevel, t.ArrayIndex, t.MapType);
 
         // Return resulting data
-        OnGetData?.Invoke(slice);
+        t.OnGetData?.Invoke(slice);
         return true;
     }
+
+    public void Complete(bool success) { }
 }

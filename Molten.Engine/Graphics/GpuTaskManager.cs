@@ -139,7 +139,7 @@ public class GpuTaskManager : IDisposable
     /// <param name="groupsY">The number of Y compute thread groups.</param>
     /// <param name="groupsZ">The number of Z compute thread groups.</param>
     /// <param name="callback">A callback to run once the task is completed.</param>
-    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskHandler callback = null)
+    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskCallback callback = null)
     {
         Push(priority, cmd, shader, new Vector3UI(groupsX, groupsY, groupsZ), callback);
     }
@@ -153,12 +153,12 @@ public class GpuTaskManager : IDisposable
     /// <param name="shader"></param>
     /// <param name="groups"></param>
     /// <param name="callback"></param>
-    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, Vector3UI groups, GpuTaskHandler callback = null)
+    public void Push(GpuPriority priority, GpuCommandList cmd, Shader shader, Vector3UI groups, GpuTaskCallback callback = null)
     {
         ComputeTask task = new();
         task.Shader = shader;
         task.Groups = groups;
-        task.OnCompleted += callback;
+        task.OnCompleted = callback;
         Push(priority, ref task, cmd);
     }
 

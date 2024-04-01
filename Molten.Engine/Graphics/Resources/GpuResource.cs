@@ -25,7 +25,7 @@ public abstract class GpuResource : GpuObject, IGpuResource
 
     protected abstract void OnApply(GpuCommandList cmd);
 
-    public void CopyTo(GpuPriority priority, GpuCommandList cmd, GpuResource destination, GpuTaskHandler completeCallback = null)
+    public void CopyTo(GpuPriority priority, GpuCommandList cmd, GpuResource destination, GpuTaskCallback completeCallback = null)
     {
         if (!Flags.IsGpuReadable())
             throw new ResourceCopyException(this, destination, "Source resource must be GPU-readable.");
@@ -78,7 +78,7 @@ public abstract class GpuResource : GpuObject, IGpuResource
     /// <param name="completeCallback"></param>
     /// <exception cref="ResourceCopyException"></exception>
     public void CopyTo(GpuPriority priority, GpuCommandList cmd,  uint sourceLevel, uint sourceSlice,
-        GpuResource destination, uint destLevel, uint destSlice, GpuTaskHandler completeCallback = null)
+        GpuResource destination, uint destLevel, uint destSlice, GpuTaskCallback completeCallback = null)
     {
         if (!Flags.Has(GpuResourceFlags.UploadMemory))
             throw new ResourceCopyException(this, destination, "The current texture cannot be copied from because the GpuResourceFlags.UploadMemory flag was not set.");

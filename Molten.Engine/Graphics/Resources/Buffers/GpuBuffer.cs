@@ -136,7 +136,7 @@ public abstract class GpuBuffer : GpuResource
     /// <param name="cmd"></param>
     /// <param name="data"></param>
     /// <param name="completeCallback"></param>
-    public void SetData<T>(GpuPriority priority, GpuCommandList cmd, T[] data, GpuTaskHandler completeCallback = null)
+    public void SetData<T>(GpuPriority priority, GpuCommandList cmd, T[] data, GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
         SetData(priority, cmd, data, 0, (uint)data.Length, 0, completeCallback);
@@ -154,7 +154,7 @@ public abstract class GpuBuffer : GpuResource
     /// <param name="byteOffset">The start location within the buffer to start copying from, in bytes.</param>
     /// <param name="completeCallback"></param>
     public void SetData<T>(GpuPriority priority, GpuCommandList cmd, T[] data, ulong startIndex, ulong elementCount, uint byteOffset = 0, 
-        GpuTaskHandler completeCallback = null)
+        GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
         if (!Flags.Has(GpuResourceFlags.UploadMemory))
@@ -185,6 +185,7 @@ public abstract class GpuBuffer : GpuResource
 
     /// <summary>Retrieves data from a <see cref="GpuBuffer"/>.</summary>
     /// <param name="priority">The priority of the operation</param>
+    /// <param name="cmd"></param>
     /// <param name="destination">The destination array. Must be big enough to contain the retrieved data.</param>
     /// <param name="startIndex">The start index within the destination array at which to place the retrieved data.</param>
     /// <param name="count">The number of elements to retrieve</param>

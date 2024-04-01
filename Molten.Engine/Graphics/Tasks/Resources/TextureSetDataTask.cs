@@ -10,14 +10,14 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
     internal uint ArrayStartIndex;
     internal uint LevelStartIndex;
 
-    public event GpuTaskHandler OnCompleted;
+    public event GpuTaskCallback OnCompleted;
 
     public unsafe static bool Process(GpuCommandList cmd, ref TextureSetDataTask t)
     {
         TextureSlice level;
 
         TextureSetSubResourceTask<byte> subTask = new();
-        subTask.Resource = t.Resource;
+        subTask.Texture = t.Resource;
         subTask.StartIndex = 0;
 
         for (uint a = 0; a < t.ArrayCount; a++)

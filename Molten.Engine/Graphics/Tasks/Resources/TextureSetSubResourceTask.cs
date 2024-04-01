@@ -5,7 +5,7 @@ namespace Molten.Graphics;
 public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<T>>
     where T: unmanaged
 {
-    public GpuTexture Resource;
+    public GpuTexture Texture;
 
     public uint MipLevel;
 
@@ -23,33 +23,37 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
 
     public uint Stride { get; private set; }
 
+    bool _immediate;
+
     public ResourceRegion? Region;
 
-    public event GpuTaskHandler OnCompleted;
+    public GpuTaskCallback OnCompleted;
 
-    internal unsafe void Initialize(void* data, uint stride, uint startIndex, uint numElements)
+    internal unsafe TextureSetSubResourceTask(void* data, uint stride, uint startIndex, uint numElements, bool immediate)
     {
         Stride = stride;
         NumElements = numElements;
         NumBytes = Stride * NumElements;
-        Data = (byte*)EngineUtil.Alloc(NumBytes);
+        _immediate= immediate;
 
-        void* ptrStart = (byte*)data + (startIndex * stride);
-        Buffer.MemoryCopy(ptrStart, Data, NumBytes, NumBytes);
-    }
-
-    internal unsafe void InitializeImmediate(void* data, uint stride, uint startIndex, uint numElements)
-    {
-        Stride = stride;
-        NumElements = numElements;
-        NumBytes = Stride * NumElements;
-        Data = (byte*)data + (startIndex * stride);
+        if (immediate)
+        {
+            Data = (byte*)EngineUtil.Alloc(NumBytes);
+            void* ptrStart = (byte*)data + (startIndex * stride);
+            Buffer.MemoryCopy(ptrStart, Data, NumBytes, NumBytes);
+        }
+        else
+        {
+            Data = (byte*)data + (startIndex * stride);
+        }
     }
 
     public unsafe void Complete(bool success)
     {
         OnCompleted?.Invoke(success);
-        EngineUtil.Free(ref Data);
+
+        if (!_immediate)
+            EngineUtil.Free(ref Data);
     }
 
     public unsafe static bool Process(GpuCommandList cmd, ref TextureSetSubResourceTask<T> t)
@@ -57,7 +61,7 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
         // Calculate size of a single array slice
         uint arraySliceBytes = 0;
         uint blockSize = 8; // default block size
-        GpuTexture tex = t.Resource;
+        GpuTexture tex = t.Texture;
         uint levelWidth = tex.Width;
         uint levelHeight = tex.Height;
         uint levelDepth = tex.Depth;

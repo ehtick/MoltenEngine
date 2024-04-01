@@ -196,8 +196,7 @@ public unsafe class TextureSlice : IDisposable
 
     public void Dispose()
     {
-        if (Data != null)
-            EngineUtil.Free(ref _data);
+        EngineUtil.Free(ref _data);
     }
 
     public TextureSlice Clone()

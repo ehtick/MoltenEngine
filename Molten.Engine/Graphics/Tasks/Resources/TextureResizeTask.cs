@@ -1,25 +1,22 @@
 ﻿namespace Molten.Graphics;
 
-public class TextureResizeTask : GpuResourceTask<GpuTexture>
+public struct TextureResizeTask : IGpuTask<TextureResizeTask>
 {
+    public GpuTexture Texture;
+
     public TextureDimensions NewDimensions;
 
     public GpuResourceFormat NewFormat;
 
-    public override void ClearForPool()
-    {
-        NewDimensions = new TextureDimensions();
-        NewFormat = GpuResourceFormat.Unknown;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref TextureResizeTask t)
     {
+        t.Texture.ResizeTextureImmediate(cmd, t.NewDimensions, t.NewFormat);
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        Resource.ResizeTextureImmediate(cmd, NewDimensions, NewFormat);
-        return true;
-    }
-}
+        OnCompleted?.Invoke(success);
+    }}

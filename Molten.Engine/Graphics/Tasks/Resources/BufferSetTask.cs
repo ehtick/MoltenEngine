@@ -7,7 +7,7 @@ internal struct BufferSetTask<T> : IGpuTask<BufferSetTask<T>>
 {
     public GpuBuffer Buffer;
 
-    /// <summary>The number of bytes to offset the change, from the start of the provided <see cref="Segment"/>.</summary>
+    /// <summary>The number of bytes to offset the change.</summary>
     internal ulong ByteOffset;
 
     /// <summary>The number of elements to be copied.</summary>
@@ -18,7 +18,7 @@ internal struct BufferSetTask<T> : IGpuTask<BufferSetTask<T>>
     /// <summary>The data to be set.</summary>
     internal T[] Data;
 
-    public event GpuTaskHandler OnCompleted;
+    public GpuTaskCallback OnCompleted;
 
     public static bool Process(GpuCommandList cmd, ref BufferSetTask<T> t)
     {

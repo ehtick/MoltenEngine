@@ -1,6 +1,6 @@
 ﻿namespace Molten.Graphics;
 
-public delegate void GpuTaskHandler(bool success);
+public delegate void GpuTaskCallback(bool success);
 
 public delegate void GpuTaskHandler<T>(ref readonly T task, bool success)
     where T : struct, IGpuTask<T>;

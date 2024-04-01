@@ -88,20 +88,22 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// Resizes the current <see cref="GpuTexture"/>.
     /// </summary>
     /// <param name="priority">The priority of the resize operation.</param>
+    /// <param name="cmd"></param>
     /// <param name="newWidth">The new width.</param>      
     /// <param name="newMipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="MipMapCount"/> will be used.</param>
     /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
     /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, uint newWidth, GpuResourceFormat newFormat = GpuResourceFormat.Unknown, uint newMipMapCount = 0,
-        GpuTask.EventHandler completeCallback = null)
+    public void Resize(GpuPriority priority, GpuCommandList cmd, uint newWidth, GpuResourceFormat newFormat = GpuResourceFormat.Unknown, uint newMipMapCount = 0,
+        GpuTaskCallback completeCallback = null)
     {
-        Resize(priority, newWidth, Height, newFormat, ArraySize, newMipMapCount, Depth, completeCallback);
+        Resize(priority, cmd, newWidth, Height, newFormat, ArraySize, newMipMapCount, Depth, completeCallback);
     }
 
     /// <summary>
     /// Resizes the current <see cref="GpuTexture"/>.
     /// </summary>
     /// <param name="priority">The priority of the resize operation.</param>
+    /// <param name="cmd">The command list that will execute the operation.</param>
     /// <param name="width">The new width.</param>
     /// <param name="height">The new height. If the texture is 1D, height will be defaulted to 1.</param>
     /// <param name="arraySize">For 3D textures, this is the new depth dimension. 
@@ -111,9 +113,9 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="mipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="GpuTexture.MipMapCount"/> will be used.</param>
     /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
     /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, uint width, uint height, GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+    public void Resize(GpuPriority priority, GpuCommandList cmd, uint width, uint height, GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
         uint arraySize = 0, uint mipMapCount = 0, uint depth = 0, 
-        GpuTaskHandler completeCallback = null)
+        GpuTaskCallback completeCallback = null)
     {
         if (this is ITexture1D)
             height = 1;
@@ -121,10 +123,10 @@ public abstract class GpuTexture : GpuResource, ITexture
         if (this is not ITexture3D)
             depth = 1;
 
-        TextureResizeTask task = Device.Tasks.Get<TextureResizeTask>();
+        TextureResizeTask task = new();
         task.NewFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
-        task.Resource = this;
-        task.OnCompleted += completeCallback;
+        task.Texture = this;
+        task.OnCompleted = completeCallback;
         task.NewDimensions = new TextureDimensions()
         {
             Width = width,
@@ -134,7 +136,7 @@ public abstract class GpuTexture : GpuResource, ITexture
             MipMapCount = mipMapCount > 0 ? mipMapCount : MipMapCount
         };
 
-        Device.Tasks.Push(priority, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>
@@ -151,7 +153,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     public unsafe void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
-        GpuTaskHandler completeCallback = null)
+        GpuTaskCallback completeCallback = null)
     {
         TextureSetDataTask task = new();
         task.Data = data;
@@ -176,42 +178,46 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="mipIndex"></param>
     /// <param name="arraySlice"></param>
     /// <param name="completeCallback">A callback to invoke once the data has been transferred to the GPU.</param>
-    public unsafe void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskHandler completeCallback = null)
+    public unsafe void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskCallback completeCallback = null)
     {
-        TextureSetSubResourceTask<byte> task = new();
-        task.Initialize(data.Data, 1, 0, data.TotalBytes);
+        bool immediate = priority == GpuPriority.Immediate;
+        TextureSetSubResourceTask<byte> task = new(data.Data, 1, 0, data.TotalBytes, immediate);
         task.Pitch = data.Pitch;
-        task.Resource = this;
+        task.Texture = this;
         task.ArrayIndex = arraySlice;
         task.MipLevel = mipIndex;
-        task.OnCompleted += completeCallback;
+        task.OnCompleted = completeCallback;
 
         Device.Tasks.Push(priority, ref task, cmd);
     }
 
-    public unsafe void SetSubResourceData<T>(GpuPriority priority, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex,
-        GpuTask.EventHandler completeCallback = null)
+    public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex,
+        GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
+        bool immediate = priority == GpuPriority.Immediate;
+
         fixed (T* ptrData = data)
         {
-            TextureSetSubResourceTask task = Device.Tasks.Get<TextureSetSubResourceTask>();
-            task.Initialize(ptrData, (uint)sizeof(T), startIndex, count);
-            task.Pitch = pitch;
-            task.ArrayIndex = arrayIndex;
-            task.MipLevel = level;
-            task.Resource = this;
-            task.OnCompleted += completeCallback;
-            Device.Tasks.Push(priority, task);
+            TextureSetSubResourceTask<T> task = new(ptrData, (uint)sizeof(T), startIndex, count, immediate)
+            {
+                Pitch = pitch,
+                ArrayIndex = arrayIndex,
+                MipLevel = level,
+                Texture = this,
+                OnCompleted = completeCallback,
+            };
+
+            Device.Tasks.Push(priority, ref task, cmd);
         }
     }
 
-    public unsafe void SetSubResourceData<T>(GpuPriority priority, ResourceRegion area, T[] data, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTask.EventHandler completeCallback = null)
+    public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion area, T[] data, uint bytesPerPixel, uint level, uint arrayIndex = 0,
+        GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
         fixed (T* ptrData = data)
-            SetSubResourceData(priority, area, ptrData, (uint)data.Length, bytesPerPixel, level, arrayIndex, completeCallback);
+            SetSubResourceData(priority, cmd, area, ptrData, (uint)data.Length, bytesPerPixel, level, arrayIndex, completeCallback);
     }
 
     /// <summary>
@@ -219,6 +225,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// </summary>
     /// <typeparam name="T">The type of data to be sent to the GPU texture.</typeparam>
     /// <param name="priority">The priority of the operation.</param>
+    /// <param name="cmd"></param>
     /// <param name="region"></param>
     /// <param name="data"></param>
     /// <param name="numElements"></param>
@@ -227,9 +234,9 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <param name="arrayIndex"></param>
     /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
     /// <exception cref="Exception"></exception>
-    public unsafe void SetSubResourceData<T>(GpuPriority priority, ResourceRegion region, T* data,
+    public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion region, T* data,
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTaskHandler completeCallback = null)
+        GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
         uint texturePitch = region.Width * bytesPerPixel;
@@ -245,48 +252,48 @@ public abstract class GpuTexture : GpuResource, ITexture
         if (!texBounds.Contains(region))
             throw new Exception("The provided area would go outside of the current texture's bounds.");
 
-        TextureSetSubResourceTask task = Device.Tasks.Get<TextureSetSubResourceTask>();
-        task.Initialize(data, (uint)sizeof(T), 0, numElements);
-        task.Resource = this;
+        bool immediate = priority == GpuPriority.Immediate;
+        TextureSetSubResourceTask<T> task = new(data, (uint)sizeof(T), 0, numElements, immediate);
+        task.Texture = this;
         task.Pitch = texturePitch;
         task.StartIndex = 0;
         task.ArrayIndex = arrayIndex;
         task.MipLevel = level;
         task.Region = region;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push(priority, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
-    public unsafe void SetSubResourceData<T>(GpuPriority priority, uint level, T* data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
-        GpuTaskHandler completeCallback = null)
+    public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T* data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
+        GpuTaskCallback completeCallback = null)
         where T : unmanaged
     {
-        TextureSetSubResourceTask<T> task = new();
-        task.Initialize(data, (uint)sizeof(T), startIndex, count);
+        bool immediate = priority == GpuPriority.Immediate;
+        TextureSetSubResourceTask<T> task = new(data, (uint)sizeof(T), startIndex, count, immediate);
         task.Pitch = pitch;
-        task.Resource = this;
+        task.Texture = this;
         task.ArrayIndex = arrayIndex;
         task.MipLevel = level;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push(priority, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <inheritdoc/>
-    public void GetData(GpuPriority priority, Action<TextureData> callback)
+    public void GetData(GpuPriority priority, GpuCommandList cmd, Action<TextureData> callback)
     {
-        TextureGetDataTask task = Device.Tasks.Get<TextureGetDataTask>();
+        TextureGetDataTask task = new();
         task.OnGetData = callback;
-        Device.Tasks.Push( priority, task);
+        Device.Tasks.Push( priority, ref task, cmd);
     }
 
-    public void GetSubResourceData(GpuPriority priority, uint mipLevel, uint arrayIndex, Action<TextureSlice> callback)
+    public void GetSubResourceData(GpuPriority priority, GpuCommandList cmd, uint mipLevel, uint arrayIndex, Action<TextureSlice> callback)
     {
-        TextureGetSliceTask task = Device.Tasks.Get<TextureGetSliceTask>();
+        TextureGetSliceTask task = new();
         task.OnGetData = callback;
-        task.Resource = this;
+        task.Texture = this;
         task.MipMapLevel = mipLevel;
         task.ArrayIndex = arrayIndex;
-        Device.Tasks.Push(priority, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     protected abstract void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format);

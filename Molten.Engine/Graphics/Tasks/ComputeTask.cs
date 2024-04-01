@@ -6,7 +6,7 @@ internal struct ComputeTask : IGpuTask<ComputeTask>
 
     internal Vector3UI Groups;
 
-    public event GpuTaskHandler OnCompleted;
+    public GpuTaskCallback OnCompleted;
 
     public static bool Process(GpuCommandList cmd, ref ComputeTask t)
     {

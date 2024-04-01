@@ -2,51 +2,44 @@
 
 namespace Molten.Graphics;
 
-internal class TextureGetDataTask : GpuResourceTask<GpuTexture>
+internal struct TextureGetDataTask : IGpuTask<TextureGetDataTask>
 {
+    public GpuTexture Texture;
+
     public Action<TextureData> OnGetData;
 
     public GpuMapType MapType;
 
-    public override void ClearForPool()
+    public static bool Process(GpuCommandList cmd, ref TextureGetDataTask t)
     {
-        OnGetData = null;
-        MapType = GpuMapType.Read;
-    }
-
-    public override bool Validate()
-    {
-        return true;
-    }
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
-    {
-        TextureData data = new TextureData(Resource.Width, Resource.Height, Resource.Depth, Resource.MipMapCount, Resource.ArraySize)
+        GpuTexture tex = t.Texture;
+        TextureData data = new TextureData(tex.Width, tex.Height, tex.Depth, tex.MipMapCount, tex.ArraySize)
         {
-            Flags = Resource.Flags,
-            Format = Resource.ResourceFormat,
+            Flags = tex.Flags,
+            Format = tex.ResourceFormat,
             HighestMipMap = 0,
-            IsCompressed = Resource.IsBlockCompressed,
+            IsCompressed = tex.IsBlockCompressed,
         };
 
-        uint blockSize = BCHelper.GetBlockSize(Resource.ResourceFormat);
-        uint expectedRowPitch = 4 * Resource.Width; // 4-bytes per pixel * Width.
-        uint expectedSlicePitch = expectedRowPitch * Resource.Height;
+        uint blockSize = BCHelper.GetBlockSize(tex.ResourceFormat);
+        uint expectedRowPitch = 4 * tex.Width; // 4-bytes per pixel * Width.
+        uint expectedSlicePitch = expectedRowPitch * tex.Height;
 
         // Iterate over each array slice.
-        for (uint a = 0; a < Resource.ArraySize; a++)
+        for (uint a = 0; a < tex.ArraySize; a++)
         {
             // Iterate over all mip-map levels of the array slice.
-            for (uint i = 0; i < Resource.MipMapCount; i++)
+            for (uint i = 0; i < tex.MipMapCount; i++)
             {
-                uint subID = (a * Resource.MipMapCount) + i;
-                data.Levels[subID] = TextureSlice.FromTextureSlice(cmd, Resource, i, a, MapType);
+                uint subID = (a * tex.MipMapCount) + i;
+                data.Levels[subID] = TextureSlice.FromTextureSlice(cmd, tex, i, a, t.MapType);
             }
         }
 
         // TODO Perform CPU sync here.
-
-        OnGetData?.Invoke(data);
+        t.OnGetData?.Invoke(data);
         return true;
     }
+
+    public void Complete(bool success) { }
 }

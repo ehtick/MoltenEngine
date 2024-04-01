@@ -6,7 +6,7 @@ public struct ResourceCopyTask : IGpuTask<ResourceCopyTask>
 
     public GpuResource Destination;
 
-    public event GpuTaskHandler OnCompleted;
+    public event GpuTaskCallback OnCompleted;
 
     public static bool Process(GpuCommandList cmd, ref ResourceCopyTask t)
     {

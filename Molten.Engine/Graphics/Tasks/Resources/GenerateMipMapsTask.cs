@@ -1,18 +1,20 @@
 ﻿namespace Molten.Graphics;
 
-internal class GenerateMipMapsTask : GpuResourceTask<GpuTexture>
+internal struct GenerateMipMapsTask : IGpuTask<GenerateMipMapsTask>
 {
-    public override void ClearForPool() { }
+    public GpuTexture Texture;
 
-    public override bool Validate()
+    public GpuTaskCallback OnCompleted;
+
+    public static bool Process(GpuCommandList cmd, ref GenerateMipMapsTask t)
     {
+        cmd.OnGenerateMipmaps(t.Texture);
+        t.Texture.Version++;
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        cmd.OnGenerateMipmaps(Resource);
-        Resource.Version++;
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

@@ -17,7 +17,7 @@ public struct SubResourceCopyTask : IGpuTask<SubResourceCopyTask>
 
     public uint DestSubResource;
 
-    public event GpuTaskHandler OnCompleted;
+    public event GpuTaskCallback OnCompleted;
 
     public static bool Process(GpuCommandList cmd, ref SubResourceCopyTask t)
     {

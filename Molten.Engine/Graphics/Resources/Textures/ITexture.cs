@@ -27,19 +27,19 @@ public interface ITexture : IGpuResource
     void SetData(GpuPriority priority, GpuCommandList cmd, TextureData data, uint levelStartIndex = 0, uint arrayStartIndex = 0,
         uint levelCount = 0, uint arrayCount = 0,
         uint destLevelIndex = 0, uint destArrayIndex = 0,
-        GpuTaskHandler completeCallback = null);
+        GpuTaskCallback completeCallback = null);
 
-    void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskHandler completeCallback = null);
+    void SetSubResourceData(GpuPriority priority, GpuCommandList cmd, TextureSlice data, uint mipIndex, uint arraySlice, GpuTaskCallback completeCallback = null);
 
     void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
-        GpuTaskHandler completeCallback = null) where T : unmanaged;
+        GpuTaskCallback completeCallback = null) where T : unmanaged;
 
     void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion area, T[] data, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTaskHandler completeCallback = null) where T : unmanaged;
+        GpuTaskCallback completeCallback = null) where T : unmanaged;
 
     unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, ResourceRegion region, T* data,
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
-        GpuTaskHandler completeCallback = null) where T : unmanaged;
+        GpuTaskCallback completeCallback = null) where T : unmanaged;
 
     /// <summary>
     /// Occurs after the <see cref="ITexture"/> is done resizing. Executed by the renderer thread it is bound to.
