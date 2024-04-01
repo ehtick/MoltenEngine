@@ -1,7 +1,7 @@
 ﻿namespace Molten.Graphics;
 
-/// <summary>A <see cref="GpuTask"/> for removing a <see cref="Renderable"/> from the root of a scene.</summary>
-internal class RenderableRemove : GpuTask
+/// <summary>A task for removing a <see cref="Renderable"/> from the root of a scene.</summary>
+internal struct RenderableRemove : IGpuTask<RenderableRemove>
 {
     public Renderable Renderable;
 
@@ -9,23 +9,21 @@ internal class RenderableRemove : GpuTask
 
     public LayerRenderData LayerData;
 
-    public override void ClearForPool()
-    {
-        Renderable = default;
-        Data = null;
-        LayerData = null;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public static bool Process(GpuCommandList cmd, ref RenderableRemove t)
     {
         RenderDataBatch batch;
-        if (LayerData.Renderables.TryGetValue(Renderable, out batch))
-            batch.Remove(Data);
+        if (t.LayerData.Renderables.TryGetValue(t.Renderable, out batch))
+            batch.Remove(t.Data);
         else
             return false;
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }

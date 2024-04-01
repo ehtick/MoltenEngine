@@ -1,22 +1,21 @@
 ﻿namespace Molten.Graphics;
 
-/// <summary>A <see cref="GpuTask"/> for removing a <see cref="RenderCamera"/> from a scene.</summary>
-internal class RemoveCamera : GpuTask
+/// <summary>A task for removing a <see cref="RenderCamera"/> from a scene.</summary>
+internal struct RemoveCamera : IGpuTask<RemoveCamera>
 {
     public RenderCamera Camera;
     public SceneRenderData Data;
 
-    public override void ClearForPool()
+    public GpuTaskCallback OnCompleted;
+
+    public static bool Process(GpuCommandList cmd, ref RemoveCamera t)
     {
-        Camera = null;
-        Data = null;
+        t.Data.Cameras.Remove(t.Camera);
+        return true;
     }
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        Data.Cameras.Remove(Camera);
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

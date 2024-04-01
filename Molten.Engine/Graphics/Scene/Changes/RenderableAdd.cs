@@ -1,7 +1,7 @@
 ﻿namespace Molten.Graphics;
 
-/// <summary>A <see cref="GpuTask"/> for adding a <see cref="Renderable"/> to the root of a scene.</summary>
-internal class RenderableAdd : GpuTask
+/// <summary>A task for adding a <see cref="Renderable"/> to the root of a scene.</summary>
+internal struct RenderableAdd : IGpuTask<RenderableAdd>
 {
     public Renderable Renderable;
 
@@ -9,25 +9,23 @@ internal class RenderableAdd : GpuTask
 
     public LayerRenderData LayerData;
 
-    public override void ClearForPool()
-    {
-        Renderable = default;
-        Data = null;
-        LayerData = null;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public static bool Process(GpuCommandList cmd, ref RenderableAdd t)
     {
         RenderDataBatch batch;
-        if (!LayerData.Renderables.TryGetValue(Renderable, out batch))
+        if (!t.LayerData.Renderables.TryGetValue(t.Renderable, out batch))
         {
             batch = new RenderDataBatch();
-            LayerData.Renderables.Add(Renderable, batch);
+            t.LayerData.Renderables.Add(t.Renderable, batch);
         }
 
-        batch.Add(Data);
+        batch.Add(t.Data);
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }

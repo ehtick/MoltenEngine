@@ -1,22 +1,21 @@
 ﻿namespace Molten.Graphics;
 
-/// <summary>A <see cref="GpuTask"/> for adding a <see cref="RenderCamera"/> to a scene.</summary>
-internal class AddCamera : GpuTask
+/// <summary>A task for adding a <see cref="RenderCamera"/> to a scene.</summary>
+internal struct AddCamera : IGpuTask<AddCamera>
 {
     public RenderCamera Camera;
     public SceneRenderData Data;
 
-    public override void ClearForPool()
+    public GpuTaskCallback OnCompleted;
+
+    public static bool Process(GpuCommandList cmd, ref AddCamera t)
     {
-        Camera = null;
-        Data = null;
+        t.Data.Cameras.Add(t.Camera);
+        return true;
     }
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        Data.Cameras.Add(Camera);
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

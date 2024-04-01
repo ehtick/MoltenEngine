@@ -1,23 +1,22 @@
 ﻿namespace Molten.Graphics;
 
 /// <summary>A <see cref="RenderLayerAdd"/> for adding <see cref="LayerRenderData"/> to the a<see cref="SceneRenderData"/> instance.</summary>
-internal class RenderLayerAdd : GpuTask
+internal struct RenderLayerAdd : IGpuTask<RenderLayerAdd>
 {
     public SceneRenderData SceneData;
 
     public LayerRenderData LayerData;
 
-    public override void ClearForPool()
+    public GpuTaskCallback OnCompleted;
+
+    public static bool Process(GpuCommandList cmd, ref RenderLayerAdd t)
     {
-        SceneData = null;
-        LayerData = null;
+        t.SceneData.Layers.Add(t.LayerData);
+        return true;
     }
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public void Complete(bool success)
     {
-        SceneData.Layers.Add(LayerData);
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

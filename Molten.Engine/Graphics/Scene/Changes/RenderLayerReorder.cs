@@ -1,50 +1,49 @@
 ﻿namespace Molten.Graphics;
 
 /// <summary>A <see cref="RenderLayerReorder"/> for changing the draw order of a <see cref="LayerRenderData"/> instance.</summary>
-internal class RenderLayerReorder : GpuTask
+internal struct RenderLayerReorder : IGpuTask<RenderLayerReorder>
 {
     public LayerRenderData LayerData;
     public SceneRenderData SceneData;
     public ReorderMode Mode;
 
-    public override void ClearForPool()
-    {
-        LayerData = null;
-        SceneData = null;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate() => true;
-
-    protected override bool OnProcess(RenderService renderer, GpuCommandList cmd)
+    public static bool Process(GpuCommandList cmd, ref RenderLayerReorder t)
     {
-        int indexOf = SceneData.Layers.IndexOf(LayerData);
+        int indexOf = t.SceneData.Layers.IndexOf(t.LayerData);
         if (indexOf > -1)
         {
-            SceneData.Layers.RemoveAt(indexOf);
+            t.SceneData.Layers.RemoveAt(indexOf);
 
-            switch (Mode)
+            switch (t.Mode)
             {
                 case ReorderMode.PushBackward:
-                    SceneData.Layers.Insert(Math.Max(0, indexOf - 1), LayerData);
+                    t.SceneData.Layers.Insert(Math.Max(0, indexOf - 1), t.LayerData);
                     break;
 
                 case ReorderMode.BringToFront:
-                    SceneData.Layers.Add(LayerData);
+                    t.SceneData.Layers.Add(t.LayerData);
                     break;
 
                 case ReorderMode.PushForward:
-                    if (indexOf + 1 < SceneData.Layers.Count)
-                        SceneData.Layers.Insert(indexOf + 1, LayerData);
+                    if (indexOf + 1 < t.SceneData.Layers.Count)
+                        t.SceneData.Layers.Insert(indexOf + 1, t.LayerData);
                     else
-                        SceneData.Layers.Add(LayerData);
+                        t.SceneData.Layers.Add(t.LayerData);
                     break;
 
                 case ReorderMode.SendToBack:
-                    SceneData.Layers.Insert(0, LayerData);
+                    t.SceneData.Layers.Insert(0, t.LayerData);
                     break;
             }
         }
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }
