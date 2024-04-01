@@ -2,7 +2,7 @@
 
 public delegate void RenderCameraProjectionFunc(IRenderSurface2D surface, float nearClip, float farClip, float fov, ref Matrix4F projection);
 public delegate void RendercameraSurfaceHandler(RenderCamera camera, IRenderSurface2D oldSurface, IRenderSurface2D newSurface);
-public delegate void RenderCameraResizedHandler(RenderCamera camera, IRenderSurface2D surface);
+public delegate void RenderCameraResizedHandler(RenderCamera camera, ISwapChainSurface surface);
 
 public class RenderCamera : EngineObject
 {
@@ -27,7 +27,7 @@ public class RenderCamera : EngineObject
     public event RendercameraSurfaceHandler OnOutputSurfaceChanged;
 
     /// <summary>
-    /// Invoked when the bound <see cref="IRenderSurface2D"/> is resized.
+    /// Invoked when the bound <see cref="ISwapChainSurface"/> is resized. This event does not fire for non-swapchain surfaces, as they cannot be implicitly resized.
     /// </summary>
     public event RenderCameraResizedHandler OnSurfaceResized;
 
@@ -114,10 +114,10 @@ public class RenderCamera : EngineObject
         _invViewProjection = Matrix4F.Invert(_viewProjection);
     }
 
-    private void _surface_OnResize(GpuTexture texture)
+    private void _surface_OnResize(ISwapChainSurface texture)
     {
         CalculateProjection();
-        OnSurfaceResized?.Invoke(this, texture as IRenderSurface2D);
+        OnSurfaceResized?.Invoke(this, texture);
     }
 
     /// <summary>Gets or sets the camera's view matrix.</summary>
