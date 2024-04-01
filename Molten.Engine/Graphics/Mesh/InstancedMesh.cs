@@ -54,7 +54,7 @@ public class InstancedMesh<V, I> : Mesh<V>
     public void SetInstanceData(I[] data, uint startIndex, uint count)
     {
         _instanceCount = count;
-        _instanceBuffer.SetData(GpuPriority.StartOfFrame, data, startIndex, count, true, 0);
+        _instanceBuffer.SetData(GpuPriority.StartOfFrame, null, data, startIndex, count, 0);
     }
 
     protected override void OnApply(GpuCommandList cmd)

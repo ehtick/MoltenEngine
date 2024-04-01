@@ -58,61 +58,6 @@ public abstract class GpuTexture : GpuResource, ITexture
         }
     }
 
-    /// <summary>
-    /// Resizes the current <see cref="GpuTexture"/>.
-    /// </summary>
-    /// <param name="priority">The priority of the resize operation.</param>
-    /// <param name="cmd"></param>
-    /// <param name="newWidth">The new width.</param>      
-    /// <param name="newMipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="MipMapCount"/> will be used.</param>
-    /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
-    /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, GpuCommandList cmd, uint newWidth, GpuResourceFormat newFormat = GpuResourceFormat.Unknown, uint newMipMapCount = 0,
-        GpuTaskCallback completeCallback = null)
-    {
-        Resize(priority, cmd, newWidth, Height, newFormat, ArraySize, newMipMapCount, Depth, completeCallback);
-    }
-
-    /// <summary>
-    /// Resizes the current <see cref="GpuTexture"/>.
-    /// </summary>
-    /// <param name="priority">The priority of the resize operation.</param>
-    /// <param name="cmd">The command list that will execute the operation.</param>
-    /// <param name="width">The new width.</param>
-    /// <param name="height">The new height. If the texture is 1D, height will be defaulted to 1.</param>
-    /// <param name="arraySize">For 3D textures, this is the new depth dimension. 
-    /// For every other texture type, this is the number of array slices/layers, or the array size.
-    /// <para>If set to 0, the existing <see cref="GpuTexture.Depth"/> or <see cref="GpuTexture.ArraySize"/> will be used.</para></param>
-    /// <param name="depth">The new depth. Only applicable for 3D textures.</param>
-    /// <param name="mipMapCount">The number of mip-map levels per array slice/layer. If set to 0, the current <see cref="GpuTexture.MipMapCount"/> will be used.</param>
-    /// <param name="newFormat">The new format. If set to <see cref="GpuResourceFormat.Unknown"/>, the existing format will be used.</param>
-    /// <param name="completeCallback">A callback to invoke once the resize operation has been completed.</param>
-    public void Resize(GpuPriority priority, GpuCommandList cmd, uint width, uint height, GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
-        uint arraySize = 0, uint mipMapCount = 0, uint depth = 0, 
-        GpuTaskCallback completeCallback = null)
-    {
-        if (this is ITexture1D)
-            height = 1;
-
-        if (this is not ITexture3D)
-            depth = 1;
-
-        TextureResizeTask task = new();
-        task.NewFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
-        task.Texture = this;
-        task.OnCompleted = completeCallback;
-        task.NewDimensions = new TextureDimensions()
-        {
-            Width = width,
-            Height = height,
-            ArraySize = arraySize > 0 ? arraySize : ArraySize,
-            Depth = depth > 0 ? depth : Depth,
-            MipMapCount = mipMapCount > 0 ? mipMapCount : MipMapCount
-        };
-
-        Device.Tasks.Push(priority, ref task, cmd);
-    }
-
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>
     /// <param name="priority">The priority of the operation.</param>
     /// <param name="cmd">The command list used when executing the operation immediately. Can be null if not using <see cref="GpuPriority.Immediate"/>.</param>
@@ -273,14 +218,14 @@ public abstract class GpuTexture : GpuResource, ITexture
     /// <summary>Generates mip maps for the texture via the current <see cref="GpuTexture"/>, if allowed.</summary>
     /// <param name="priority">The priority of the copy operation.</param>
     /// <param name="cmd">The command list that will execute the operation.</param>
-    /// <param name="texture">The texture for which to generate mip-maps.</param>
     /// <param name="callback">A callback to run once the operation has completed.</param>
-    public void GenerateMipMaps(GpuPriority priority, GpuCommandList cmd, GpuTexture texture, GpuTaskCallback callback = null)
+    public void GenerateMipMaps(GpuPriority priority, GpuCommandList cmd, GpuTaskCallback callback = null)
     {
-        if (!texture.Flags.Has(GpuResourceFlags.MipMapGeneration))
+        if (!Flags.Has(GpuResourceFlags.MipMapGeneration))
             throw new Exception("Cannot generate mip-maps for texture. Must have flag: TextureFlags.AllowMipMapGeneration.");
 
         GenerateMipMapsTask task = new();
+        task.Texture = this;
         task.OnCompleted += callback;
         Device.Tasks.Push(priority, ref task, cmd);
     }

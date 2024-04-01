@@ -122,7 +122,7 @@ public class SpriteFontManager : EngineObject
 
     private void _renderData_OnPostRender(RenderService renderer, SceneRenderData data)
     {
-        _camera.Surface.GenerateMipMaps(GpuPriority.StartOfFrame);
+        _camera.Surface.GenerateMipMaps(GpuPriority.StartOfFrame, null);
     }
 
     internal SpriteFont LoadFont(Stream stream, string path, float size = 16)

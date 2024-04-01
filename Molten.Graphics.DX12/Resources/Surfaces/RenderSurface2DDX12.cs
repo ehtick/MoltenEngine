@@ -58,7 +58,7 @@ public unsafe class RenderSurface2DDX12 : Texture2DDX12, IRenderSurface2D
         }
         else
         {
-            Surface2DClearTaskDX12 task = Device.Tasks.Get<Surface2DClearTaskDX12>();
+            SurfaceClearTaskDX12 task = Device.Tasks.Get<SurfaceClearTaskDX12>();
             task.Color = color;
             Device.Tasks.Push(priority, this, task);
         }

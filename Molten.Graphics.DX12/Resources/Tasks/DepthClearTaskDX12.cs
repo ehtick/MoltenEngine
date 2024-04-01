@@ -1,29 +1,26 @@
 ﻿namespace Molten.Graphics.DX12;
 
-internal class DepthClearTaskDX12 : GpuResourceTask<DepthSurfaceDX12>
+internal struct DepthClearTaskDX12 : IGpuTask<DepthClearTaskDX12>
 {
+    public DepthSurfaceDX12 Surface;
+
     public float DepthValue;
 
     public byte StencilValue;
 
     public DepthClearFlags ClearFlags;
 
-    public override void ClearForPool()
-    {
-        DepthValue = 1.0f;
-        StencilValue = 0;
-        ClearFlags = DepthClearFlags.None;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate()
+    public static bool Process(GpuCommandList cmd, ref DepthClearTaskDX12 t)
     {
+        t.Surface.Apply(cmd);
+        (cmd as CommandListDX12).Clear(t.Surface, t.DepthValue, t.StencilValue, t.ClearFlags);
         return true;
     }
 
-    protected override bool OnProcess(RenderService renderer, GpuCommandQueue queue)
+    public void Complete(bool success)
     {
-        Resource.Apply(queue);
-        (queue as CommandQueueDX12).Clear(Resource, DepthValue, StencilValue, ClearFlags);
-        return true;
+        OnCompleted?.Invoke(success);
     }
 }

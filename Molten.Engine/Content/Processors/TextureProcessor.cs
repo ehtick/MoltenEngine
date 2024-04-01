@@ -150,7 +150,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
                     tex.MipMapCount != data.MipMapLevels)
                     texCube.Resize(GpuPriority.StartOfFrame, data.Width, data.Height, data.MipMapLevels);
 
-                texCube.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, Math.Min(data.ArraySize, 6), 0, 0);
+                texCube.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, Math.Min(data.ArraySize, 6), 0, 0);
                 break;
 
             case ITexture2D tex2d:
@@ -163,7 +163,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
                     tex2d.Resize(GpuPriority.StartOfFrame, data.Width, data.Height, data.MipMapLevels, data.ArraySize, data.Format);
                 }
 
-                tex2d.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
+                tex2d.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
                 break;
 
             case ITexture1D tex1d:
@@ -171,7 +171,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
                 if (tex1d.Width != data.Width || tex.MipMapCount != data.MipMapLevels)
                     tex1d.Resize(GpuPriority.StartOfFrame, data.Width, data.MipMapLevels, data.Format);
 
-                tex.SetData(GpuPriority.StartOfFrame, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
+                tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
                 break;
         }
     }
@@ -226,7 +226,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
             if (staging != null)
             {
                 TextureData tData = null;
-                tex.GetData(GpuPriority.EndOfFrame, (data) =>
+                tex.GetData(GpuPriority.EndOfFrame, null, (data) =>
                 {
                     tData = data;
                 });

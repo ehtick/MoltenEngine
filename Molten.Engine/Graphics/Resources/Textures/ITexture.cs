@@ -41,6 +41,12 @@ public interface ITexture : IGpuResource
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
         GpuTaskCallback completeCallback = null) where T : unmanaged;
 
+    /// <summary>Generates mip maps for the texture via the current <see cref="GpuTexture"/>, if allowed.</summary>
+    /// <param name="priority">The priority of the copy operation.</param>
+    /// <param name="cmd">The command list that will execute the operation.</param>
+    /// <param name="callback">A callback to run once the operation has completed.</param>
+    void GenerateMipMaps(GpuPriority priority, GpuCommandList cmd, GpuTaskCallback callback = null);
+
     /// <summary>Gets the width of the texture.</summary>
     uint Width { get; }
 
