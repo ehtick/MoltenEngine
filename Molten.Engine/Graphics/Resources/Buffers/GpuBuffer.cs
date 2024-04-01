@@ -273,4 +273,10 @@ public abstract class GpuBuffer : GpuResource
     /// Gets a list of all sub-allocated <see cref="GpuBuffer"/> that were allocated by the current <see cref="GpuBuffer"/>.
     /// </summary>
     internal IReadOnlyList<GpuBuffer> Allocations => _allocations;
+
+    /// <summary>
+    /// Gets the constant/uninform bindings for the current <see cref="GpuBuffer"/>. 
+    /// If the <see cref="BufferType"/> is not <see cref="GpuBufferType.Constant"/>, this value will be null.
+    /// </summary>
+    public GpuConstantData ConstantData { get; init; }
 }

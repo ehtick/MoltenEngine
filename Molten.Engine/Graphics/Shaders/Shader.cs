@@ -96,7 +96,7 @@ public class Shader : GpuObject
     /// <param name="bindSpace"></param>
     /// <param name="type">The bind type.</param>
     /// <returns></returns>
-    public IGpuResource this[ShaderBindType type, uint bindSlot, uint bindSpace = 0]
+    public GpuResource this[ShaderBindType type, uint bindSlot, uint bindSpace = 0]
     {
         get
         {

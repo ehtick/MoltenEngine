@@ -8,9 +8,9 @@ public unsafe abstract class GraphicsConstantVariable : ShaderVariable, IDisposa
     /// <summary>The size of the variable's data in bytes.</summary>
     public uint SizeOf;
 
-    protected GraphicsConstantVariable(IConstantBuffer parent, string name)
+    protected GraphicsConstantVariable(GpuConstantData parent, string name)
     {
-        ParentBuffer = parent;
+        ParentData = parent;
         Name = name;
     }
 
@@ -51,13 +51,13 @@ public unsafe abstract class GraphicsConstantVariable : ShaderVariable, IDisposa
     /// <summary>Marks the parent buffer as dirty.</summary>
     protected void DirtyParent()
     {
-        ParentBuffer.IsDirty = true;
+        ParentData.IsDirty = true;
     }
 
     /// <summary>Called when the variable's value needs to be written to a buffer.</summary>
-    /// <param name="pDest">A pointer within the parent <see cref="IConstantBuffer"/> to write the value of the current <see cref="GraphicsConstantVariable"/>.</param>
+    /// <param name="pDest">A pointer within the parent <see cref="GpuBuffer"/> to write the value of the current <see cref="GraphicsConstantVariable"/>.</param>
     public abstract void Write(byte* pDest);
 
-    /// <summary>Gets the <see cref="IConstantBuffer"/> which owns the variable.</summary>
-    internal IConstantBuffer ParentBuffer { get; private set; }
+    /// <summary>Gets the <see cref="GpuBuffer"/> which owns the variable.</summary>
+    internal GpuConstantData ParentData { get; private set; }
 }

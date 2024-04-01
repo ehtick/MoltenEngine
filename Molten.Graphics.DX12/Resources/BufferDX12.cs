@@ -9,6 +9,13 @@ public class BufferDX12 : GpuBuffer
     ResourceHandleDX12 _handle;
     ResourceBarrier _barrier;
     ResourceStates _barrierState;
+    internal D3DCBufferType _cbufferType;
+
+    internal BufferDX12(DeviceDX12 device, ConstantBufferInfo info)
+    : this(device, 1, info.Size + (256 - (info.Size % 256)), GpuResourceFlags.DenyShaderAccess | GpuResourceFlags.UploadMemory, GpuBufferType.Constant, 1)
+    {
+        ConstantData = new GpuConstantData(info);
+    }
 
     internal BufferDX12(DeviceDX12 device, uint stride, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment) :
         base(device, stride, numElements, flags, type, alignment)
@@ -30,69 +37,72 @@ public class BufferDX12 : GpuBuffer
 
     protected unsafe override void OnApply(GpuCommandList cmd)
     {
-        if (_handle != null)
-            return;
-
-        _handle?.Dispose();
-
-        HeapFlags heapFlags = HeapFlags.None;
-        ResourceFlags flags = Flags.ToResourceFlags();
-        HeapType heapType = Flags.ToHeapType();
-        ResourceStates stateFlags = Flags.ToResourceState();
-        ID3D12Resource1* resource = null;
-
-        if (ParentBuffer == null)
+        if (_handle == null)
         {
-            HeapProperties heapProp = new HeapProperties()
-            {
-                Type = heapType,
-                CPUPageProperty = CpuPageProperty.Unknown,
-                CreationNodeMask = 1,
-                MemoryPoolPreference = MemoryPool.Unknown,
-                VisibleNodeMask = 1,
-            };
 
-            // TODO Adjust for GPU memory architecture based on UMA support.
-            // See for differences: https://microsoft.github.io/DirectX-Specs/d3d/D3D12GPUUploadHeaps.html
-            if (heapType == HeapType.Custom)
+            _handle?.Dispose();
+
+            HeapFlags heapFlags = HeapFlags.None;
+            ResourceFlags flags = Flags.ToResourceFlags();
+            HeapType heapType = Flags.ToHeapType();
+            ResourceStates stateFlags = Flags.ToResourceState();
+            ID3D12Resource1* resource = null;
+
+            if (ParentBuffer == null)
             {
-                // TODO Set CPUPageProperty and MemoryPoolPreference based on UMA support.
+                HeapProperties heapProp = new HeapProperties()
+                {
+                    Type = heapType,
+                    CPUPageProperty = CpuPageProperty.Unknown,
+                    CreationNodeMask = 1,
+                    MemoryPoolPreference = MemoryPool.Unknown,
+                    VisibleNodeMask = 1,
+                };
+
+                // TODO Adjust for GPU memory architecture based on UMA support.
+                // See for differences: https://microsoft.github.io/DirectX-Specs/d3d/D3D12GPUUploadHeaps.html
+                if (heapType == HeapType.Custom)
+                {
+                    // TODO Set CPUPageProperty and MemoryPoolPreference based on UMA support.
+                }
+
+                if (Flags.Has(GpuResourceFlags.DenyShaderAccess))
+                    flags |= ResourceFlags.DenyShaderResource;
+
+                if (Flags.Has(GpuResourceFlags.UnorderedAccess))
+                    flags |= ResourceFlags.AllowUnorderedAccess;
+
+                ResourceDesc1 desc = new()
+                {
+                    Dimension = ResourceDimension.Buffer,
+                    Alignment = 0,
+                    Width = SizeInBytes,
+                    Height = 1,
+                    DepthOrArraySize = 1,
+                    Layout = TextureLayout.LayoutRowMajor,
+                    Format = ResourceFormat.ToApi(),
+                    Flags = flags,
+                    MipLevels = 1,
+                    SampleDesc = new SampleDesc(1, 0),
+                };
+
+                Guid guid = ID3D12Resource1.Guid;
+                void* ptr = null;
+                HResult hr = Device.Handle->CreateCommittedResource2(heapProp, heapFlags, desc, stateFlags, null, null, &guid, &ptr);
+                if (!Device.Log.CheckResult(hr, () => $"Failed to create {desc.Dimension} resource"))
+                    return;
+
+                resource = (ID3D12Resource1*)ptr;
+            }
+            else
+            {
+                resource = (ID3D12Resource1*)RootBuffer.Handle.Ptr;
             }
 
-            if (Flags.Has(GpuResourceFlags.DenyShaderAccess))
-                flags |= ResourceFlags.DenyShaderResource;
-
-            if (Flags.Has(GpuResourceFlags.UnorderedAccess))
-                flags |= ResourceFlags.AllowUnorderedAccess;
-
-            ResourceDesc1 desc = new()
-            {
-                Dimension = ResourceDimension.Buffer,
-                Alignment = 0,
-                Width = SizeInBytes,
-                Height = 1,
-                DepthOrArraySize = 1,
-                Layout = TextureLayout.LayoutRowMajor,
-                Format = ResourceFormat.ToApi(),
-                Flags = flags,
-                MipLevels = 1,
-                SampleDesc = new SampleDesc(1, 0),
-            };
-
-            Guid guid = ID3D12Resource1.Guid;
-            void* ptr = null;
-            HResult hr = Device.Handle->CreateCommittedResource2(heapProp, heapFlags, desc, stateFlags, null, null, &guid, &ptr);
-            if (!Device.Log.CheckResult(hr, () => $"Failed to create {desc.Dimension} resource"))
-                return;
-
-            resource = (ID3D12Resource1*)ptr;
-        }
-        else
-        {
-            resource = (ID3D12Resource1*)RootBuffer.Handle.Ptr;
+            _handle = OnCreateHandle(resource);
         }
 
-        _handle = OnCreateHandle(resource);
+        base.OnApply(cmd);
     }
 
     private unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)

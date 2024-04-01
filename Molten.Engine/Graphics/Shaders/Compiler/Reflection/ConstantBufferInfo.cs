@@ -15,7 +15,7 @@ public class ConstantBufferInfo
 
     public List<ConstantBufferVariableInfo> Variables { get; } = new List<ConstantBufferVariableInfo>();
 
-    public static GraphicsConstantVariable[] BuildBufferVariables(IConstantBuffer parent, ConstantBufferInfo info)
+    public static GraphicsConstantVariable[] BuildBufferVariables(GpuConstantData parent, ConstantBufferInfo info)
     {
         uint variableCount = (uint)info.Variables.Count;
         GraphicsConstantVariable[]  result = new GraphicsConstantVariable[variableCount];
@@ -50,7 +50,7 @@ public class ConstantBufferInfo
     /// <param name="vInfo"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    private static unsafe GraphicsConstantVariable CreateConstantVariable(IConstantBuffer parent, ConstantBufferVariableInfo vInfo, string name)
+    private static unsafe GraphicsConstantVariable CreateConstantVariable(GpuConstantData parent, ConstantBufferVariableInfo vInfo, string name)
     {
         uint columns = vInfo.Type.ColumnCount;
         uint rows = vInfo.Type.RowCount;
@@ -125,7 +125,7 @@ public class ConstantBufferInfo
         return null;
     }
 
-    public bool hasFlags(ConstantBufferFlags flags)
+    public bool HasFlags(ConstantBufferFlags flags)
     {
         return (Flags & flags) == flags;
     }

@@ -5,7 +5,7 @@ public unsafe class ScalarFloat3x2Variable : GraphicsConstantVariable
 {
     Matrix3x2F _value;
 
-    internal ScalarFloat3x2Variable(IConstantBuffer parent, string name)
+    internal ScalarFloat3x2Variable(GpuConstantData parent, string name)
         : base(parent, name)
     {
         SizeOf = sizeof(float) * (3 * 2);

@@ -63,7 +63,7 @@ public abstract class GpuResourceManager : GpuObject
 
     #region Buffers
 
-    public abstract IConstantBuffer CreateConstantBuffer(ConstantBufferInfo info);
+    public abstract GpuBuffer CreateConstantBuffer(ConstantBufferInfo info);
 
     public GpuDiscardBuffer<T> CreateDiscardBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong initialCapacity)
         where T : unmanaged

@@ -9,6 +9,12 @@ public unsafe class BufferVK : GpuBuffer
     ResourceHandleVK<Buffer, BufferHandleVK> _handle;
     MemoryAllocationVK _memory;
 
+    internal BufferVK(GpuDevice device, ConstantBufferInfo info) :
+       this(device, GpuBufferType.Constant, GpuResourceFlags.DenyShaderAccess | GpuResourceFlags.UploadMemory, 1, info.Size, 1)
+    {
+        ConstantData = new GpuConstantData(info);
+    }
+
     internal BufferVK(GpuDevice device,
         GpuBufferType type,
         GpuResourceFlags flags,
@@ -109,7 +115,7 @@ public unsafe class BufferVK : GpuBuffer
             device.VK.DestroyBuffer(device, *_handle.NativePtr, null);
     }
 
-    public unsafe ResourceHandleVK<Buffer, BufferHandleVK> Handle => _handle;
+    public override unsafe ResourceHandleVK<Buffer, BufferHandleVK> Handle => _handle;
 
     public override GpuResourceFormat ResourceFormat { get; protected set; }
 }

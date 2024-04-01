@@ -10,7 +10,7 @@ public unsafe class ScalarFloat4x4ArrayVariable : GraphicsConstantVariable
     uint _expectedElements;
     bool _isDirty;
 
-    internal ScalarFloat4x4ArrayVariable(IConstantBuffer parent, uint expectedElements, string name)
+    internal ScalarFloat4x4ArrayVariable(GpuConstantData parent, uint expectedElements, string name)
         : base(parent, name)
     {
         _expectedElements = expectedElements;

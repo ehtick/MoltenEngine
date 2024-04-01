@@ -8,7 +8,7 @@ public unsafe class ScalarArray<T> : GraphicsConstantVariable where T : unmanage
 
     Array _value;
 
-    internal ScalarArray(IConstantBuffer parent, uint expectedElements, string name)
+    internal ScalarArray(GpuConstantData parent, uint expectedElements, string name)
         : base(parent, name)
     {
         SizeOf = expectedElements * _stride;

@@ -5,7 +5,7 @@ public unsafe class ScalarFloat4x4Variable : GraphicsConstantVariable
 {
     Matrix4F _value;
 
-    internal ScalarFloat4x4Variable(IConstantBuffer parent, string name)
+    internal ScalarFloat4x4Variable(GpuConstantData parent, string name)
         : base(parent, name)
     {
         SizeOf = (uint)sizeof(Matrix4F);

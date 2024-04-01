@@ -1,8 +1,4 @@
-﻿using Molten.Graphics.Textures;
-using Newtonsoft.Json.Linq;
-using System;
-
-namespace Molten.Graphics;
+﻿namespace Molten.Graphics;
 
 /// <summary>A base interface for mesh implementations.</summary>
 public abstract class Mesh : Renderable
@@ -10,7 +6,6 @@ public abstract class Mesh : Renderable
     GpuBuffer _iBuffer;
     Shader _shader;
     ShaderBind<GpuResource>[][] _resources;
-    bool _applied;
 
     /// <summary>
     /// Creates a new instance of <see cref="Mesh"/>, but can only be called by derived mesh classes.

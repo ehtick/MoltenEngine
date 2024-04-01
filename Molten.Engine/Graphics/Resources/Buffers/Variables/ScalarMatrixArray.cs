@@ -10,7 +10,7 @@ public unsafe class ScalarMatrixArray<T> : GraphicsConstantVariable where T : un
     uint _expectedElements;
     Array _value;
 
-    internal ScalarMatrixArray(IConstantBuffer parent, uint rows, uint columns, uint expectedElements, string name) : 
+    internal ScalarMatrixArray(GpuConstantData parent, uint rows, uint columns, uint expectedElements, string name) : 
         base(parent, name)
     {
         _components = columns * rows;

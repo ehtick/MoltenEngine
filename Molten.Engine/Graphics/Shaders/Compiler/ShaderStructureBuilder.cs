@@ -22,8 +22,8 @@ internal class ShaderStructureBuilder
                     // Skip binding info buffers
                     if (bufferInfo.Type != ConstantBufferType.ResourceBindInfo)
                     {
-                        IConstantBuffer cb = GetConstantBuffer(context, shader, bufferInfo);
-                        ShaderResourceVariable<IConstantBuffer> bufferVar = stage.Bindings.Create<ShaderResourceVariable<IConstantBuffer>>(bufferInfo.Name, 
+                        GpuBuffer cb = GetConstantBuffer(context, shader, bufferInfo);
+                        ShaderResourceVariable<GpuBuffer> bufferVar = stage.Bindings.Create<ShaderResourceVariable<GpuBuffer>>(bufferInfo.Name, 
                             bindPoint, 0, ShaderBindType.ConstantBuffer);
 
                         stage.Bindings.Add(ShaderBindType.ConstantBuffer, bufferVar, bindPoint);
@@ -69,17 +69,17 @@ internal class ShaderStructureBuilder
         return true;
     }
 
-    private unsafe IConstantBuffer GetConstantBuffer(ShaderCompilerContext context, Shader shader, ConstantBufferInfo info)
+    private unsafe GpuBuffer GetConstantBuffer(ShaderCompilerContext context, Shader shader, ConstantBufferInfo info)
     {
         string localName = info.Name;
 
         if (localName == "$Globals")
             localName += $"_{shader.Name}";
 
-        IConstantBuffer cBuffer = context.Compiler.Device.Resources.CreateConstantBuffer(info);
+        GpuBuffer cBuffer = context.Compiler.Device.Resources.CreateConstantBuffer(info);
 
         // Duplication checks.
-        if (context.TryGetResource(localName, out IConstantBuffer existing))
+        if (context.TryGetResource(localName, out GpuBuffer existing))
         {
             // Check for duplicates
             if (existing != null)
@@ -104,7 +104,7 @@ internal class ShaderStructureBuilder
         else
         {
             // Register all of the new buffer's variables
-            foreach (GraphicsConstantVariable v in cBuffer.Variables)
+            foreach (GraphicsConstantVariable v in cBuffer.ConstantData.Variables)
             {
                 // Check for duplicate variables
                 if (shader.Variables.ContainsKey(v.Name))

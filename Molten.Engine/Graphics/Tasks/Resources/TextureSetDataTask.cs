@@ -16,9 +16,7 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
     {
         TextureSlice level;
 
-        TextureSetSubResourceTask<byte> subTask = new();
-        subTask.Texture = t.Resource;
-        subTask.StartIndex = 0;
+        
 
         for (uint a = 0; a < t.ArrayCount; a++)
         {
@@ -34,10 +32,12 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
                 uint destArray = t.DestArrayIndex + a;
                 uint destLevel = t.DestLevelIndex + m;
-                
+
+                TextureSetSubResourceTask<byte> subTask = new(level.Data, 1, 0, level.TotalBytes, true);
+                subTask.Texture = t.Resource;
+                subTask.StartIndex = 0;
                 subTask.ArrayIndex = destArray;
                 subTask.MipLevel = destLevel;
-                subTask.InitializeImmediate(level.Data, 1, 0, level.TotalBytes);
                 subTask.Pitch = level.Pitch;
                 TextureSetSubResourceTask<byte>.Process(cmd, ref subTask);
             }

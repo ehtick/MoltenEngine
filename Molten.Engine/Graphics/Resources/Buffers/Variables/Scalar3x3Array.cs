@@ -10,7 +10,7 @@ public unsafe class ScalarFloat3x3ArrayVariable : GraphicsConstantVariable
     uint _expectedElements;
     bool _isDirty = false;
 
-    internal ScalarFloat3x3ArrayVariable(IConstantBuffer parent, uint expectedElements, string name)
+    internal ScalarFloat3x3ArrayVariable(GpuConstantData parent, uint expectedElements, string name)
         : base(parent, name)
     {
         _expectedElements = expectedElements;

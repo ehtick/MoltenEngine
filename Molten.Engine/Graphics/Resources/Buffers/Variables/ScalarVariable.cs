@@ -8,7 +8,7 @@ public unsafe class ScalarVariable<T> : GraphicsConstantVariable where T : unman
     uint _expectedElements;
     T* _value;
 
-    internal ScalarVariable(IConstantBuffer parent, uint rows, uint columns, string name) : 
+    internal ScalarVariable(GpuConstantData parent, uint rows, uint columns, string name) : 
         base(parent, name)
     {
         _expectedElements = columns * rows;

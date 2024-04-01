@@ -62,7 +62,8 @@ internal class LightingStep : RenderStep
             scene.PointLights.Data[i] = ld;
         }
 
-        _lightBuffer.SetDataImmediate(cmd, scene.PointLights.Data, true);
+        // TODO Use discard buffer.
+        _lightBuffer.SetData(GpuPriority.Immediate, cmd, scene.PointLights.Data);
 
         // Set data buffer on domain and pixel shaders
         _matPoint.Light.Data.Value = _lightBuffer; // TODO Need to implement a dynamic structured buffer we can reuse here.
