@@ -203,7 +203,7 @@ public class BufferDX12 : GpuBuffer
     }
 
     /// <inheritdoc/>
-    internal ResourceHandleDX12 Handle => _handle;
+    public override ResourceHandleDX12 Handle => _handle;
 
     /// <inheritdoc/>
     public override GpuResourceFormat ResourceFormat { get; protected set; }

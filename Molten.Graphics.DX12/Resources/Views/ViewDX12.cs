@@ -46,7 +46,7 @@ public abstract class ViewDX12<DESC> : IDisposable
 
     public void Dispose()
     {
-        _heapHandle.Heap?.Free(ref _heapHandle);
+        _heapHandle.Free();
     }
 
     /// <summary>

@@ -185,7 +185,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     public new DeviceDX12 Device { get; }
 
-    public ResourceHandleDX12 Handle => _handle;
+    public override ResourceHandleDX12 Handle => _handle;
 
     /// <summary>
     /// Gets the internal resource barrier state of the current <see cref="BufferDX12"/>.

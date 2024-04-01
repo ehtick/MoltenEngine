@@ -12,12 +12,12 @@ internal struct HeapHandleDX12
 
     public DescriptorHeapDX12 Heap;
 
-    public void Free()
+    internal void Free()
     {
         Heap?.Free(ref this);
     }
 
-    public CpuDescriptorHandle GetCpuHandle(uint index)
+    internal CpuDescriptorHandle GetCpuHandle(uint index)
     {
         return new CpuDescriptorHandle(CpuHandle.Ptr + (index * Heap.IncrementSize));
     }

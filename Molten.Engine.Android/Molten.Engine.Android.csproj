@@ -21,6 +21,7 @@
     <Version>0.8.0</Version>
     <Company>James Yarwood</Company>
     <SupportedOSPlatformVersion>31.0</SupportedOSPlatformVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 	
   <ItemGroup>

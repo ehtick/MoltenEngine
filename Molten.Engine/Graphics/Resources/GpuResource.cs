@@ -141,6 +141,11 @@ public abstract class GpuResource : GpuObject, IGpuResource
     public GpuResourceFlags Flags { get; protected set; }
 
     /// <summary>
+    /// Gets the handle of the underlying native GPU resource.
+    /// </summary>
+    public abstract GpuResourceHandle Handle { get; }
+
+    /// <summary>
     /// Gets or [protected] sets the <see cref="GpuResourceFormat"/> of the resource.
     /// </summary>
     public abstract GpuResourceFormat ResourceFormat { get; protected set; }

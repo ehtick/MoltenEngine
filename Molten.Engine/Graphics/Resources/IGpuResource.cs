@@ -49,6 +49,11 @@ public interface IGpuResource : IDisposable
     GpuDevice Device { get; }
 
     /// <summary>
+    /// Gets the handle of the underlying native GPU resource.
+    /// </summary>
+    GpuResourceHandle Handle { get; }
+
+    /// <summary>
     /// Gets the instance-specific version of the current <see cref="GpuObject"/>. Any change which will require a device
     /// update should increase this value. E.g. Resizing a texture, recompiling a shader/material, etc.
     /// </summary>
