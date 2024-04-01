@@ -38,61 +38,61 @@ public class SceneRenderData
 
     public void AddLayer(LayerRenderData data)
     {
-        RenderLayerAdd task = _taskManager.Get<RenderLayerAdd>();
+        RenderLayerAdd task = new();
         task.LayerData = data;
         task.SceneData = this;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void RemoveLayer(LayerRenderData data)
     {
-        RenderLayerRemove task = _taskManager.Get<RenderLayerRemove>();
+        RenderLayerRemove task = new();
         task.LayerData = data;
         task.SceneData = this;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void ReorderLayer(LayerRenderData data, ReorderMode mode)
     {
-        RenderLayerReorder task = _taskManager.Get<RenderLayerReorder>();
+        RenderLayerReorder task = new();
         task.LayerData = data;
         task.SceneData = this;
         task.Mode = mode;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void AddObject(RenderCamera obj)
     {
-        AddCamera task = _taskManager.Get<AddCamera>();
+        AddCamera task = new();
         task.Camera = obj;
         task.Data = this;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void RemoveObject(RenderCamera obj)
     {
-        RemoveCamera task = _taskManager.Get<RemoveCamera>();
+        RemoveCamera task = new();
         task.Camera = obj;
         task.Data = this;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void AddObject(Renderable obj, ObjectRenderData renderData, LayerRenderData layer)
     {
-        RenderableAdd task = _taskManager.Get<RenderableAdd>();
+        RenderableAdd task = new();
         task.Renderable = obj;
         task.Data = renderData;
         task.LayerData = layer;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     public void RemoveObject(Renderable obj, ObjectRenderData renderData, LayerRenderData layer)
     {
-        RenderableRemove task = _taskManager.Get<RenderableRemove>();
+        RenderableRemove task = new();
         task.Renderable = obj;
         task.Data = renderData;
         task.LayerData = layer;
-        _taskManager.Push(GpuPriority.StartOfFrame, task);
+        _taskManager.Push(GpuPriority.StartOfFrame, ref task, null);
     }
 
     /// <summary>
