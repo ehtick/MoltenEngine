@@ -35,6 +35,8 @@ public interface INativeSurface : ISwapChainSurface, IWindow
     /// <summary>Invoked when the current <see cref="INativeSurface"/> loses focus.</summary>
     event WindowSurfaceHandler OnFocusLost;
 
+    event WindowSurfaceHandler OnResize;
+
     /// <summary>
     /// Gets whether or not the current <see cref="INativeSurface"/> is focused.
     /// </summary>

@@ -159,26 +159,26 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     protected abstract void SetSRVDescription(ref ShaderResourceViewDesc desc);
 
-    protected override void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format)
-    {
-        _desc.Width = dimensions.Width;
-        _desc.MipLevels = (ushort)dimensions.MipMapCount;
-        _desc.Format = format.ToApi();
+    //protected override void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format)
+    //{
+    //    _desc.Width = dimensions.Width;
+    //    _desc.MipLevels = (ushort)dimensions.MipMapCount;
+    //    _desc.Format = format.ToApi();
 
-        if (Desc.Dimension != ResourceDimension.Texture1D)
-            _desc.Height = dimensions.Height;
-        else
-            _desc.Height = 1;
+    //    if (Desc.Dimension != ResourceDimension.Texture1D)
+    //        _desc.Height = dimensions.Height;
+    //    else
+    //        _desc.Height = 1;
 
-        if (Desc.Dimension == ResourceDimension.Texture3D)
-            _desc.DepthOrArraySize = (ushort)dimensions.Depth;
-        else
-            _desc.DepthOrArraySize = (ushort)Math.Max(1, dimensions.ArraySize);
+    //    if (Desc.Dimension == ResourceDimension.Texture3D)
+    //        _desc.DepthOrArraySize = (ushort)dimensions.Depth;
+    //    else
+    //        _desc.DepthOrArraySize = (ushort)Math.Max(1, dimensions.ArraySize);
 
-        Dimensions = dimensions;
+    //    Dimensions = dimensions;
 
-        OnCreateResource();
-    }
+    //    OnCreateResource();
+    //}
 
     /// <summary>Gets the DXGI format of the texture.</summary>
     public Format DxgiFormat => ResourceFormat.ToApi();

@@ -31,14 +31,14 @@ public unsafe abstract class TextureVK : GpuTexture
     {
         // In Vulkan, the CPU either has read AND write access, or none at all.
         // If either of the CPU access flags were provided, we need to add both.
-        if (Flags.Has(GpuResourceFlags.CpuRead) || Flags.Has(GpuResourceFlags.CpuWrite))
-            Flags |= GpuResourceFlags.CpuRead | GpuResourceFlags.CpuWrite;
+        if (Flags.Has(GpuResourceFlags.UploadMemory) || Flags.Has(GpuResourceFlags.DownloadMemory))
+            Flags |= GpuResourceFlags.UploadMemory | GpuResourceFlags.DownloadMemory;
 
         ImageUsageFlags flags = ImageUsageFlags.None;
-        if (Flags.Has(GpuResourceFlags.GpuRead))
+        if (Flags.Has(GpuResourceFlags.UploadMemory))
             flags |= ImageUsageFlags.TransferSrcBit;
 
-        if (Flags.Has(GpuResourceFlags.GpuWrite))
+        if (Flags.Has(GpuResourceFlags.DownloadMemory))
             flags |= ImageUsageFlags.TransferDstBit;
 
         if (Flags.Has(GpuResourceFlags.UnorderedAccess))
@@ -104,7 +104,7 @@ public unsafe abstract class TextureVK : GpuTexture
 
         // Does the memory need to be host-visible?
         MemoryPropertyFlags memFlags = MemoryPropertyFlags.None;
-        if (Flags.Has(GpuResourceFlags.CpuRead) || Flags.Has(GpuResourceFlags.CpuWrite))
+        if (Flags.Has(GpuResourceFlags.UploadMemory) || Flags.Has(GpuResourceFlags.DownloadMemory))
             memFlags |= MemoryPropertyFlags.HostCoherentBit | MemoryPropertyFlags.HostVisibleBit;
         else
             memFlags |= MemoryPropertyFlags.DeviceLocalBit;
@@ -145,11 +145,6 @@ public unsafe abstract class TextureVK : GpuTexture
         r = device.VK.CreateImageView(device, _viewInfo, null, subHandle.ViewPtr);
         if (!r.Check(device, () => "Failed to create image view"))
             return;
-    }
-
-    protected override void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format)
-    {
-        throw new NotImplementedException();
     }
 
     internal void Transition(CommandListVK cmd, ImageLayout oldLayout, ImageLayout newLayout)

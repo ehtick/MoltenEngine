@@ -10,11 +10,6 @@ public delegate void TextureHandler(GpuTexture texture);
 
 public abstract class GpuTexture : GpuResource, ITexture
 {
-    /// <summary>
-    /// Invoked after resizing of the texture has completed.
-    /// </summary>
-    public event TextureHandler OnResize;
-
     TextureDimensions _dimensions;
     GpuResourceFormat _format;
 
@@ -46,11 +41,6 @@ public abstract class GpuTexture : GpuResource, ITexture
         ResourceFormat = format;
     }
 
-    protected void InvokeOnResize()
-    {
-        OnResize?.Invoke(this);
-    }
-
     private void ValidateFlags()
     {
         // Validate RT mip-maps
@@ -66,22 +56,6 @@ public abstract class GpuTexture : GpuResource, ITexture
             if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
                 throw new GpuResourceException(this, "Staging textures cannot allow shader access. Add GraphicsResourceFlags.NoShaderAccess flag.");
         }
-    }
-
-    internal void ResizeTextureImmediate(GpuCommandList cmd, in TextureDimensions newDimensions, GpuResourceFormat newFormat)
-    {
-        // Avoid resizing/recreation if nothing has actually changed.
-        if (_dimensions == newDimensions && ResourceFormat == newFormat)
-            return;
-
-        _dimensions = newDimensions;
-        ResourceFormat = newFormat;
-
-        OnResizeTextureImmediate(cmd, in newDimensions, newFormat);
-        LastFrameResizedID = Device.Renderer.FrameID;
-        Version++;
-
-        OnResize?.Invoke(this);
     }
 
     /// <summary>
@@ -296,7 +270,20 @@ public abstract class GpuTexture : GpuResource, ITexture
         Device.Tasks.Push(priority, ref task, cmd);
     }
 
-    protected abstract void OnResizeTextureImmediate(GpuCommandList cmd, ref readonly TextureDimensions dimensions, GpuResourceFormat format);
+    /// <summary>Generates mip maps for the texture via the current <see cref="GpuTexture"/>, if allowed.</summary>
+    /// <param name="priority">The priority of the copy operation.</param>
+    /// <param name="cmd">The command list that will execute the operation.</param>
+    /// <param name="texture">The texture for which to generate mip-maps.</param>
+    /// <param name="callback">A callback to run once the operation has completed.</param>
+    public void GenerateMipMaps(GpuPriority priority, GpuCommandList cmd, GpuTexture texture, GpuTaskCallback callback = null)
+    {
+        if (!texture.Flags.Has(GpuResourceFlags.MipMapGeneration))
+            throw new Exception("Cannot generate mip-maps for texture. Must have flag: TextureFlags.AllowMipMapGeneration.");
+
+        GenerateMipMapsTask task = new();
+        task.OnCompleted += callback;
+        Device.Tasks.Push(priority, ref task, cmd);
+    }
 
     /// <summary>Gets whether or not the texture is using a supported block-compressed format.</summary>
     public bool IsBlockCompressed { get; protected set; }
