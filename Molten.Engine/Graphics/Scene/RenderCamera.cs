@@ -164,15 +164,16 @@ public class RenderCamera : EngineObject
         {
             if (_surface != value)
             {
-                if (_surface != null)
-                    _surface.OnResize -= _surface_OnResize;
+                if (_surface != null && _surface is INativeSurface oldNativeSurface)
+                    oldNativeSurface.OnResize -= _surface_OnResize;
 
                 if (value != null)
                 {
                     if (value.IsMultisampled)
                         throw new InvalidOperationException("A RenderCamera's output surface cannot have anti-aliasing enabled.");
 
-                    value.OnResize += _surface_OnResize;
+                    if(value is INativeSurface newNativeSurface)
+                        newNativeSurface.OnResize += _surface_OnResize;
                 }
 
                 IRenderSurface2D oldSurface = _surface;

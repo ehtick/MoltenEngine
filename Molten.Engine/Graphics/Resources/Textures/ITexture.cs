@@ -41,11 +41,6 @@ public interface ITexture : IGpuResource
         uint numElements, uint bytesPerPixel, uint level, uint arrayIndex = 0,
         GpuTaskCallback completeCallback = null) where T : unmanaged;
 
-    /// <summary>
-    /// Occurs after the <see cref="ITexture"/> is done resizing. Executed by the renderer thread it is bound to.
-    /// </summary>
-    event TextureHandler OnResize;
-
     /// <summary>Gets the width of the texture.</summary>
     uint Width { get; }
 
