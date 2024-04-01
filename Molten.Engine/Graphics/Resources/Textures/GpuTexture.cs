@@ -6,7 +6,7 @@ namespace Molten.Graphics;
 /// A delegate for texture event handlers.
 /// </summary>
 /// <param name="texture">The texture instance that triggered the event.</param>
-public delegate void TextureHandler(GpuTexture texture);
+public delegate void TextureHandler<T>(T texture) where T : ITexture;
 
 public abstract class GpuTexture : GpuResource, ITexture
 {

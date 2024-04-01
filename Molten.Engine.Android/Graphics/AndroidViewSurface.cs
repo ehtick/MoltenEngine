@@ -6,24 +6,23 @@ namespace Molten.Graphics;
 // TODO inherit from an OpenGL-based texture
 public class AndroidViewSurface : INativeSurface
 {
-    public event WindowSurfaceHandler OnHandleChanged;
+    public event TextureHandler<INativeSurface> OnHandleChanged;
 
-    public event WindowSurfaceHandler OnParentChanged;
+    public event TextureHandler<INativeSurface> OnParentChanged;
 
-    public event WindowSurfaceHandler OnClose;
+    public event TextureHandler<INativeSurface> OnClose;
 
-    public event WindowSurfaceHandler OnMinimize;
+    public event TextureHandler<INativeSurface> OnMinimize;
 
-    public event WindowSurfaceHandler OnRestore;
+    public event TextureHandler<INativeSurface> OnRestore;
 
-    public event WindowSurfaceHandler OnFocusGained;
+    public event TextureHandler<INativeSurface> OnFocusGained;
 
-    public event WindowSurfaceHandler OnFocusLost;
+    public event TextureHandler<INativeSurface> OnFocusLost;
 
-    public event TextureHandler OnPreResize;
+    public event TextureHandler<INativeSurface> OnMaximize;
 
-    public event TextureHandler OnResize;
-    public event WindowSurfaceHandler OnMaximize;
+    public event TextureHandler<INativeSurface> OnResize;
 
     public View TargetView { get; private set; }
 
