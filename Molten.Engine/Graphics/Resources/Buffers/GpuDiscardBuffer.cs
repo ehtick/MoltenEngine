@@ -69,7 +69,12 @@ public class GpuDiscardBuffer<T> : GpuObject
         _curFrame.Pairs.Add(pair);
     }
 
-    public GpuBuffer Get(uint numElements, uint alignment)
+    public GpuBuffer Get(int numElements, uint alignment = 1)
+    {
+        return Get((uint)numElements, alignment);
+    }
+
+    public GpuBuffer Get(uint numElements, uint alignment = 1)
     {
         ulong neededBytes = numElements * _stride;
         if (neededBytes > _maxAllocationSize)

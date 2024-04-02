@@ -4,7 +4,7 @@ using Silk.NET.DXGI;
 
 namespace Molten.Graphics.DX12;
 
-public class BufferDX12 : GpuBuffer
+public sealed class BufferDX12 : GpuBuffer
 {
     ResourceHandleDX12 _handle;
     ResourceBarrier _barrier;
@@ -108,37 +108,15 @@ public class BufferDX12 : GpuBuffer
         switch (BufferType)
         {
             case GpuBufferType.Vertex:
-                VBHandleDX12 vbHandle = new(this, ptr);
-                vbHandle.View = new VertexBufferView()
-                {
-                    BufferLocation = ptr->GetGPUVirtualAddress() + Offset,
-                    SizeInBytes = (uint)SizeInBytes,
-                    StrideInBytes = Stride,
-                };
-                _handle = vbHandle;
+                _handle = new VBHandleDX12(this, ptr);
                 break;
 
             case GpuBufferType.Index:
-                IBHandleDX12 ibHandle = new(this, ptr);
-                ibHandle.View = new IndexBufferView()
-                {
-                    BufferLocation = ptr->GetGPUVirtualAddress() + Offset,
-                    Format = ResourceFormat.ToApi(),
-                    SizeInBytes = (uint)SizeInBytes,
-                };
-                _handle = ibHandle;
+                _handle = new IBHandleDX12(this, ptr);
                 break;
 
             case GpuBufferType.Constant:
-                CBHandleDX12 cbHandle = new(this, ptr);
-                ConstantBufferViewDesc cbDesc = new()
-                {
-                    BufferLocation = ptr->GetGPUVirtualAddress() + Offset,
-                    SizeInBytes = (uint)SizeInBytes,
-                };
-
-                cbHandle.CBV.Initialize(ref cbDesc);
-                _handle = cbHandle;
+                _handle = new CBHandleDX12(this, ptr);
                 break;
 
             default:
@@ -146,11 +124,47 @@ public class BufferDX12 : GpuBuffer
                 break;
         }
 
-        // TODO Constant buffers must be 256-bit aligned, which means the data sent to SetData() must be too.
-        //      We can validate this by checking if the stride is a multiple of 256: sizeof(T) % 256 == 0
-        //      This value is also provided via D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT.
-        //      
-        //      If not, we throw an exception stating this.
+        InitializeViews();
+        return _handle;
+    }
+
+    private unsafe void InitializeViews()
+    {
+        switch (_handle)
+        {
+            case VBHandleDX12 vbHandle:
+                vbHandle.View = new VertexBufferView()
+                {
+                    BufferLocation = _handle.Ptr1->GetGPUVirtualAddress() + Offset,
+                    SizeInBytes = (uint)SizeInBytes,
+                    StrideInBytes = Stride,
+                };
+                break;
+
+            case IBHandleDX12 ibHandle:
+                ibHandle.View = new IndexBufferView()
+                {
+                    BufferLocation = _handle.Ptr1->GetGPUVirtualAddress() + Offset,
+                    Format = ResourceFormat.ToApi(),
+                    SizeInBytes = (uint)SizeInBytes,
+                };
+                break;
+
+            case CBHandleDX12 cbHandle:
+                // TODO Constant buffers must be 256-bit aligned, which means the data sent to SetData() must be too.
+                //      We can validate this by checking if the stride is a multiple of 256: sizeof(T) % 256 == 0
+                //      This value is also provided via D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT.
+                //      
+                //      If not, we throw an exception stating this.
+
+                ConstantBufferViewDesc cbDesc = new()
+                {
+                    BufferLocation = _handle.Ptr1->GetGPUVirtualAddress() + Offset,
+                    SizeInBytes = (uint)SizeInBytes,
+                };
+                cbHandle.CBV.Initialize(ref cbDesc);
+                break;
+        }
 
         if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
         {
@@ -189,8 +203,6 @@ public class BufferDX12 : GpuBuffer
 
             _handle.UAV.Initialize(ref desc);
         }
-
-        return _handle;
     }
 
     protected override GpuBuffer OnAllocateSubBuffer(
@@ -203,6 +215,26 @@ public class BufferDX12 : GpuBuffer
     {
         // TODO check through existing allocations to see if we can re-use one.
         return new BufferDX12(this, offset, stride, numElements, Flags, BufferType, alignment);
+    }
+
+    public override bool SetLocation(ulong offset, ulong numBytes)
+    {
+        if (ParentBuffer == null)
+            throw new InvalidOperationException("Cannot set the location of a root GPU buffer. Must be a sub-allocated buffer");
+
+        ulong parentMaxOffset = ParentBuffer.Offset + ParentBuffer.SizeInBytes;
+
+        if (offset >= parentMaxOffset)
+            throw new InvalidOperationException("The offset of the sub-allocated buffer exceeds the size of the parent buffer.");
+
+        if(offset + numBytes >= parentMaxOffset)
+            throw new InvalidOperationException("The offset + size of the sub-allocated buffer exceeds the size of the parent buffer.");
+
+        Offset = offset;
+        SizeInBytes = numBytes;
+        InitializeViews();
+
+        return true;
     }
 
     protected override void OnGraphicsRelease()

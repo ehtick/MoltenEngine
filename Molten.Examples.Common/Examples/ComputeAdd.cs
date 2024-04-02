@@ -69,7 +69,7 @@ public class ComputeAdd : MoltenExample
             GpuBuffer numBuffer1 = Engine.Renderer.Device.Resources.CreateStructuredBuffer(_values1);
 
             // Setup one output buffer for results
-            GpuBuffer outBuffer = Engine.Renderer.Device.Resources.CreateStructuredBuffer<ComputeData>(GpuResourceFlags.GpuWrite | GpuResourceFlags.UnorderedAccess, NUM_SUMS);
+            GpuBuffer outBuffer = Engine.Renderer.Device.Resources.CreateStructuredBuffer<ComputeData>(GpuResourceFlags.DownloadMemory | GpuResourceFlags.UnorderedAccess, NUM_SUMS);
 
             // Staging buffer for transferring our compute result off the GPU
             GpuBuffer stagingBuffer = Engine.Renderer.Device.Resources.CreateStagingBuffer(true, false, numBytes);
