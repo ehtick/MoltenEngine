@@ -69,7 +69,7 @@ public partial class SpriteBatcher : IDisposable
     uint _dataCount;
     uint _flushIndex;
 
-    GpuFrameBuffer<GpuBuffer> _buffer;
+    GpuDiscardBuffer<GpuData> _buffer;
 
     CheckerCallback[] _checkers;
     Shader _matDefault;
@@ -100,8 +100,7 @@ public partial class SpriteBatcher : IDisposable
         Reset();
 
         //throw new NotImplementedException("Implement per-frame buffer");
-        _buffer = new GpuFrameBuffer<GpuBuffer>(device, (device) =>
-            device.Resources.CreateStructuredBuffer<GpuData>(GpuResourceFlags.UploadMemory, FlushCapacity));
+        _buffer = device.Resources.CreateDiscardBuffer<GpuData>(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, FlushCapacity * 10);
 
         ShaderCompileResult result = device.Resources.LoadEmbeddedShader("Molten.Assets", "sprite.json");
         _matDefaultNoTexture = result["sprite-no-texture"];
@@ -499,7 +498,6 @@ public partial class SpriteBatcher : IDisposable
             while (dataID < _dataCount && rangeID <= _curRange)
             {
                 uint flushCount = 0; // Number of data elements to flush.
-
                 uint firstRangeID = rangeID;
                 uint firstDataID = dataID;
 
@@ -529,13 +527,14 @@ public partial class SpriteBatcher : IDisposable
 
     private unsafe void FlushBuffer(GpuCommandList cmd, RenderCamera camera, ObjectRenderData data, uint rangeID, uint rangeCount, uint vertexStartIndex, uint vertexCount)
     {
-        GpuMapType map = GpuMapType.Discard;
         uint flushByteOffset = 0;
 
-        GpuBuffer dataBuffer = _buffer.Prepare();
+        _buffer.Prepare();
+        GpuBuffer dataBuffer = _buffer.Get(vertexCount, 1);
+        dataBuffer.SetData(GpuPriority.Immediate, cmd, Data);
 
         // TODO Improve this. Wasting a discard at the start of each frame!
-        if (dataBuffer.LastUsedFrameID != cmd.Device.Renderer.FrameID)
+        /*if (dataBuffer.LastUsedFrameID != cmd.Device.Renderer.FrameID)
         {
             _flushIndex = 0;
         }
@@ -553,11 +552,11 @@ public partial class SpriteBatcher : IDisposable
             }
         }
 
-        using (GpuStream stream = cmd.MapResource(dataBuffer, 0, flushByteOffset, map))
-            stream.WriteRange(Data, vertexStartIndex, vertexCount);
+        using (GpuStream stream = cmd.MapResource(dataBuffer, 0, flushByteOffset, GpuMapType.Write))
+            stream.WriteRange(Data, vertexStartIndex, vertexCount);*/
 
-        uint bufferOffset = _flushIndex;
-        _flushIndex += vertexCount;
+        uint bufferOffset = 0; //_flushIndex;
+        //_flushIndex += vertexCount;
 
         // Draw calls
         for (uint i = 0; i < rangeCount; i++)

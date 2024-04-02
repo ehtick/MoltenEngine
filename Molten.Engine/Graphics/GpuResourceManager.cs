@@ -65,14 +65,15 @@ public abstract class GpuResourceManager : GpuObject
 
     public abstract GpuBuffer CreateConstantBuffer(ConstantBufferInfo info);
 
-    public GpuDiscardBuffer<T> CreateDiscardBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong initialCapacity)
+    public GpuDiscardBuffer<T> CreateDiscardBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong blockCapacity)
         where T : unmanaged
     {
-        return new GpuDiscardBuffer<T>(Device, type, flags, format, initialCapacity);
+        return new GpuDiscardBuffer<T>(Device, type, flags, format, blockCapacity);
     }
 
-    public GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, 
+    public GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, 
         ulong numElements,
+        GpuResourceFormat format = GpuResourceFormat.Unknown,
         uint alignment = 1,
         T[] initialData = null)
         where T : unmanaged

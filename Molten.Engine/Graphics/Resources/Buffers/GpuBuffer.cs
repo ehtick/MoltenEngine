@@ -3,7 +3,6 @@
 public abstract class GpuBuffer : GpuResource
 {
     List<GpuBuffer> _allocations;
-    List<GpuBuffer> _freeAllocations;
 
     /// <summary>
     /// Creates a new instance of <see cref="GpuBuffer"/>.
@@ -18,7 +17,6 @@ public abstract class GpuBuffer : GpuResource
         base(device, flags)
     {
         _allocations = new List<GpuBuffer>();
-        _freeAllocations = new List<GpuBuffer>();
         ResourceFormat = GpuResourceFormat.Unknown;
         BufferType = type;
         Stride = stride;
@@ -30,102 +28,40 @@ public abstract class GpuBuffer : GpuResource
     /// <summary>
     /// Allocates a <see cref="GpuBuffer"/> as a sub-buffer within the current <see cref="GpuBuffer"/>.
     /// </summary>
-    /// <param name="stride"></param>
-    /// <param name="numElements"></param>
-    /// <param name="alignment"></param>
-    /// <param name="flags"></param>
-    /// <param name="type"></param>
+    /// <param name="offsetBytes">The number of bytes from the start of the buffer to start the sub-buffer.</param>
+    /// <param name="stride">The stride of the data to be contained within the sub-buffer</param>
+    /// <param name="numElements">The number of elements to be contained within the sub-buffer</param>
+    /// <param name="alignment">The alignment of the sub-buffer data.</param>
+    /// <param name="flags">The resource flags of the sub-buffer.</param>
+    /// <param name="type">The type of the sub-buffer.</param>
     /// <returns></returns>
-    public GpuBuffer Allocate(uint stride, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment = 1)
+    public GpuBuffer Allocate(ulong offsetBytes, uint stride, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment = 1)
     {
-        ulong required = stride * numElements;
-        ulong alignedOffset = EngineUtil.Align(Offset + AllocatedBytes, alignment);
-        ulong remaining = SizeInBytes - alignedOffset;
-
-        // Check for any free allocations we can re-use. 
-        // Choose the smallest-fitting allocation, which may also include a new allocation using the remaining space.
-        ulong smallest = remaining; 
-        int freeIndex = -1;
-        GpuBuffer subBuffer = null;
-        for (int i = 0; i < _freeAllocations.Count; i++)
-        {
-            GpuBuffer alloc = _freeAllocations[i];
-            if (alloc.SizeInBytes >= required && alloc.SizeInBytes < smallest)
-            {
-                smallest = alloc.SizeInBytes;
-                freeIndex = i;
-                subBuffer = alloc;
-            }
-        }
-
-        if (subBuffer != null)
-        {
-            _freeAllocations.RemoveAt(freeIndex);
-            return subBuffer;
-        }
-
-        // Not enough available space for a new allocation?
-        if (remaining < required)
-            return null;
-
-        AllocatedBytes = alignedOffset + required;
-
-        subBuffer = OnAllocateSubBuffer(alignedOffset, stride, numElements, flags, type, alignment);
+        GpuBuffer subBuffer = OnAllocateSubBuffer(offsetBytes, stride, numElements, flags, type, alignment);
         _allocations.Add(subBuffer);
-
         return subBuffer;
     }
 
-    /// <summary>
-    /// Allocates a <see cref="GpuBuffer"/> as a sub-buffer within the current <see cref="GpuBuffer"/>.
-    /// </summary>
-    /// <param name="numBytes"></param>
-    /// <param name="alignment"></param>
-    /// <param name="flags"></param>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public GpuBuffer Allocate(ulong numBytes, GpuResourceFlags flags, GpuBufferType type, uint alignment = 1)
+    public unsafe GpuBuffer Allocate<T>(ulong offsetBytes, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment = 1)
+        where T : unmanaged
     {
-        return Allocate(1, numBytes, flags, type, alignment);
+        return Allocate(offsetBytes, (uint)sizeof(T), numElements, flags, type, alignment);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="stride"></param>
-    /// <param name="numElements"></param>
-    /// <param name="alignment"></param>
-    /// <returns></returns>
-    public GpuBuffer Allocate(uint stride, ulong numElements, uint alignment = 1)
+    /// <summary>Re-locates the current <see cref="GpuBuffer"/> to another location within it's parent buffer by offsetting it by the provided number of bytes.</summary>
+    /// <param name="deltaBytes">The number of bytes to offset the current <see cref="GpuBuffer"/>.</param>
+    public bool Seek(long deltaBytes)
     {
-        return Allocate(stride * numElements, Flags, BufferType, alignment);
+        if(ParentBuffer == null)
+            throw new InvalidOperationException("Cannot seek a buffer that has no parent buffer.");
+
+        return SetLocation((ulong)((long)Offset + deltaBytes), SizeInBytes);
     }
 
-    /// <summary>
-    /// Frees a sub-allocated buffer on the current <see cref="GpuBuffer"/>. If the buffer was not allocated by this buffer, an exception is thrown.
-    /// <para>Freeing a sub-allocated buffer will allow it to be reallocated during a future allocate request.</para>
-    /// </summary>
-    public void Free(GpuBuffer buffer)
+    public unsafe bool Seek<T>(uint numElements)
+        where T : unmanaged
     {
-        // TODO Implement pooling of sub buffer instances
-
-        if (ParentBuffer == this)
-            _freeAllocations.Add(buffer);
-        else
-            throw new InvalidOperationException("The graphics buffer was not allocated by this buffer.");
-    }
-
-    /// <summary>
-    /// Frees the current buffer from its <see cref="ParentBuffer"/>. If <see cref="ParentBuffer"/> is null, an exception is thrown.
-    /// <para>Freeing a sub-allocated buffer will allow it to be reallocated during a future allocate request.</para>
-    /// </summary>
-    /// <exception cref="InvalidOperationException"></exception>
-    public void Free()
-    {
-        if(ParentBuffer != null)
-            ParentBuffer.Free(this);
-        else
-            throw new InvalidOperationException("The graphics buffer was not allocated by another buffer.");
+       return Seek(numElements * sizeof(T));
     }
 
     /// <summary>
@@ -223,6 +159,22 @@ public abstract class GpuBuffer : GpuResource
     protected abstract GpuBuffer OnAllocateSubBuffer(ulong offset, uint stride, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment);
 
     /// <summary>
+    /// Re-points the current <see cref="GpuBuffer"/> to another location within its underlying GPU buffer resource.
+    /// </summary>
+    /// <param name="offset">The number of bytes from the start of the underlying GPU buffer.</param>
+    /// <param name="numBytes">The number of bytes required.</param>
+    /// <returns>True if the update succeeded or false if the location or capacity could not be updated. e.g. Due to reaching or exceeding the end of the buffer.</returns>
+    public abstract bool SetLocation(ulong offset, ulong numBytes);
+
+    protected override void OnGraphicsRelease()
+    {
+        for (int i = _allocations.Count - 1; i >= 0; i--)
+            _allocations[i].Dispose(true);
+
+        ParentBuffer?._allocations.Remove(this);
+    }
+
+    /// <summary>
     /// Gets the stride (byte size) of each element within the current <see cref="GpuBuffer"/>.
     /// </summary>
     public uint Stride { get; }
@@ -247,11 +199,6 @@ public abstract class GpuBuffer : GpuResource
     /// <para>This property is only set if the current <see cref="BufferType"/> is <see cref="GpuBufferType.Vertex"/>.</para>
     /// </summary>
     public ShaderIOLayout VertexLayout { get; internal set; }
-
-    /// <summary>
-    /// Gets the total number of bytes that have been sub-allocated by the current <see cref="GpuBuffer"/>.
-    /// </summary>
-    public ulong AllocatedBytes { get; private set; }
 
     /// <summary>
     /// Gets the offset of the current <see cref="GpuBuffer"/> within its parent <see cref="GpuBuffer"/>.

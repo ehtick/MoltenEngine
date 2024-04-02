@@ -113,6 +113,8 @@ public unsafe class BufferVK : GpuBuffer
 
         if (_handle.NativePtr != null)
             device.VK.DestroyBuffer(device, *_handle.NativePtr, null);
+
+        base.OnGraphicsRelease();
     }
 
     public override unsafe ResourceHandleVK<Buffer, BufferHandleVK> Handle => _handle;

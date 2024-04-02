@@ -27,7 +27,7 @@ public abstract class Mesh : Renderable
 
         if (IndexFormat != GpuResourceFormat.Unknown)
         {
-            _iBuffer = Renderer.Device.Resources.CreateBuffer(GpuBufferType.Index, flags, IndexFormat, maxIndices, 1, initialIndices);
+            _iBuffer = Renderer.Device.Resources.CreateBuffer(GpuBufferType.Index, flags, maxIndices, IndexFormat, 1, initialIndices);
 
             if (initialIndices != null)
                 IndexCount = (uint)initialIndices.Length;
@@ -55,7 +55,7 @@ public abstract class Mesh : Renderable
 
         if (IndexFormat != GpuResourceFormat.Unknown)
         {
-            _iBuffer = Renderer.Device.Resources.CreateBuffer(GpuBufferType.Index, flags, IndexFormat, maxIndices, 1, initialIndices);
+            _iBuffer = Renderer.Device.Resources.CreateBuffer(GpuBufferType.Index, flags, maxIndices, IndexFormat, 1, initialIndices);
 
             if (initialIndices != null)
                 IndexCount = (uint)initialIndices.Length;
@@ -73,7 +73,6 @@ public abstract class Mesh : Renderable
                 variables[r].Object.Value = resources[r].Object;
         }
     }
-
 
     public void SetIndices<I>(I[] data) where I : unmanaged
     {
@@ -233,7 +232,7 @@ public class Mesh<T> : Mesh
         T[] initialVertices = null, ushort[] initialIndices = null) :
         base(renderer, flags, maxVertices, maxIndices, initialIndices)
     {
-        _vb = renderer.Device.Resources.CreateBuffer(GpuBufferType.Vertex, flags, GpuResourceFormat.Unknown, maxVertices, 1, initialVertices);
+        _vb = renderer.Device.Resources.CreateBuffer(GpuBufferType.Vertex, flags, maxVertices, GpuResourceFormat.Unknown, 1, initialVertices);
         _vb.VertexLayout = _vb.Device.LayoutCache.GetVertexLayout<T>();
 
         if (initialVertices != null)
@@ -245,7 +244,7 @@ public class Mesh<T> : Mesh
          T[] initialVertices = null, uint[] initialIndices = null) :
          base(renderer, flags, maxVertices, maxIndices, initialIndices)
     {
-        _vb = renderer.Device.Resources.CreateBuffer(GpuBufferType.Vertex, flags, GpuResourceFormat.Unknown, maxVertices, 1, initialVertices);
+        _vb = renderer.Device.Resources.CreateBuffer(GpuBufferType.Vertex, flags, maxVertices, GpuResourceFormat.Unknown, 1, initialVertices);
         _vb.VertexLayout = _vb.Device.LayoutCache.GetVertexLayout<T>();
 
         if (initialVertices != null)

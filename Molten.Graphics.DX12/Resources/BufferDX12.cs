@@ -101,8 +101,6 @@ public class BufferDX12 : GpuBuffer
 
             _handle = OnCreateHandle(resource);
         }
-
-        base.OnApply(cmd);
     }
 
     private unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)
@@ -210,6 +208,7 @@ public class BufferDX12 : GpuBuffer
     protected override void OnGraphicsRelease()
     {
         _handle?.Dispose();
+        base.OnGraphicsRelease();
     }
 
     /// <inheritdoc/>
