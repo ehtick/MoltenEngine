@@ -163,8 +163,9 @@ public abstract class GpuBuffer : GpuResource
     /// </summary>
     /// <param name="offset">The number of bytes from the start of the underlying GPU buffer.</param>
     /// <param name="numBytes">The number of bytes required.</param>
+    /// <param name="log">An optional <see cref="Logger"/> for logging any offset/capacity errors.</param>
     /// <returns>True if the update succeeded or false if the location or capacity could not be updated. e.g. Due to reaching or exceeding the end of the buffer.</returns>
-    public abstract bool SetLocation(ulong offset, ulong numBytes);
+    public abstract bool SetLocation(ulong offset, ulong numBytes, Logger log = null);
 
     protected override void OnGraphicsRelease()
     {

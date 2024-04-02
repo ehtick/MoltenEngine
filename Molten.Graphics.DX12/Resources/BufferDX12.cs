@@ -217,7 +217,7 @@ public sealed class BufferDX12 : GpuBuffer
         return new BufferDX12(this, offset, stride, numElements, Flags, BufferType, alignment);
     }
 
-    public override bool SetLocation(ulong offset, ulong numBytes)
+    public override bool SetLocation(ulong offset, ulong numBytes, Logger log = null)
     {
         if (ParentBuffer == null)
             throw new InvalidOperationException("Cannot set the location of a root GPU buffer. Must be a sub-allocated buffer");
@@ -225,10 +225,16 @@ public sealed class BufferDX12 : GpuBuffer
         ulong parentMaxOffset = ParentBuffer.Offset + ParentBuffer.SizeInBytes;
 
         if (offset >= parentMaxOffset)
-            throw new InvalidOperationException("The offset of the sub-allocated buffer exceeds the size of the parent buffer.");
+        {
+            log?.Error("The offset of the sub-allocated buffer exceeds the size of the parent buffer.");
+            return false;
+        }
 
-        if(offset + numBytes >= parentMaxOffset)
-            throw new InvalidOperationException("The offset + size of the sub-allocated buffer exceeds the size of the parent buffer.");
+        if (offset + numBytes >= parentMaxOffset)
+        {
+            log?.Error("The offset + size of the sub-allocated buffer exceeds the size of the parent buffer.");
+            return false;
+        }
 
         Offset = offset;
         SizeInBytes = numBytes;
