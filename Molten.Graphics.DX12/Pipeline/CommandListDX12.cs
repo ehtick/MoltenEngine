@@ -242,25 +242,6 @@ public unsafe class CommandListDX12 : GpuCommandList
         }
     }
 
-    internal void Clear(DepthSurfaceDX12 surface, float depthValue, byte stencilValue, DepthClearFlags clearFlags)
-    {
-        Transition(surface, ResourceStates.DepthWrite);
-
-        DSHandleDX12 dsHandle = (DSHandleDX12)surface.Handle;
-        ref CpuDescriptorHandle cpuHandle = ref dsHandle.DSV.CpuHandle;
-        ClearFlags flags = 0;
-
-        if (clearFlags.Has(DepthClearFlags.Depth))
-            flags = ClearFlags.Depth;
-
-        if (surface.DepthFormat.HasStencil() && clearFlags.HasFlag(DepthClearFlags.Stencil))
-            flags |= ClearFlags.Stencil;
-
-        // TODO Add support for clearing areas using Box2D structs.
-        if (flags > 0)
-            _handle->ClearDepthStencilView(cpuHandle, flags, depthValue, stencilValue, 0, null);
-    }
-
     protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
     {
         Box* destBox = null;

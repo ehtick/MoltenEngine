@@ -35,7 +35,7 @@ public class SaveTexture : MoltenExample
         mat[ShaderBindType.Resource, 0] = tex;
         TestMesh.Shader = mat;
 
-        GpuTexture texStaging = Engine.Renderer.Device.Resources.CreateStagingTexture(tex);
+        GpuTexture texDownload = Engine.Renderer.Device.Resources.CreateDownloadTexture(tex);
         TextureData loadedData = _hTexData.Get<TextureData>();
         loadedData.Decompress(Log);
 
@@ -45,12 +45,14 @@ public class SaveTexture : MoltenExample
         };
 
         Engine.Content.SaveToFile("assets/saved_recompressed_texture_raw.dds", loadedData, parameters: texParams);
-        tex.CopyTo(GpuPriority.EndOfFrame, null, texStaging, (successful) =>
+        tex.CopyTo(GpuPriority.EndOfFrame, null, texDownload, (successful) =>
         {
-            texStaging.GetData(GpuPriority.EndOfFrame, null, (data) =>
+            texDownload.GetData(GpuPriority.EndOfFrame, null, (data) =>
             {
                 ContentSaveHandle saveHandle = Engine.Content.SaveToFile("assets/saved_texture.dds", data, parameters: texParams);
             });
+
+            texDownload.Dispose();
         });
     }
 

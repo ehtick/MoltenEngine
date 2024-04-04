@@ -51,9 +51,9 @@ internal class ResourceManagerDX12 : GraphicsResourceManager<DeviceDX12>
         return buffer;
     }
 
-    public override IConstantBuffer CreateConstantBuffer(ConstantBufferInfo info)
+    public override GpuBuffer CreateConstantBuffer(ConstantBufferInfo info)
     {
-        return new ConstantBufferDX12(Device, info);
+        return new BufferDX12(Device, info);
     }
 
     protected override INativeSurface OnCreateFormSurface(string formTitle, string formName, uint width, uint height,

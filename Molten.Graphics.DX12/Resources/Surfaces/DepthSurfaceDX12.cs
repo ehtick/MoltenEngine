@@ -22,7 +22,7 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
     internal DepthSurfaceDX12(DeviceDX12 device,
         uint width,
         uint height,
-        GpuResourceFlags flags = GpuResourceFlags.GpuWrite,
+        GpuResourceFlags flags = GpuResourceFlags.DefaultMemory,
         DepthFormat format = DepthFormat.R24G8,
         uint mipCount = 1,
         uint arraySize = 1,
@@ -73,21 +73,14 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
         Viewport = new ViewportF(0, 0, Desc.Width, Desc.Height);
     }
 
-    public void Clear(GpuPriority priority, DepthClearFlags flags, float depthValue = 1, byte stencilValue = 0)
+    public void Clear(GpuPriority priority, GpuCommandList cmd, DepthClearFlags clearFlags, float depthValue = 1, byte stencilValue = 0)
     {
-        if (priority == GpuPriority.Immediate)
-        {
-            Apply(Device.Queue);
-            Device.Queue.Clear(this, depthValue, stencilValue, flags);
-        }
-        else
-        {
-            DepthClearTaskDX12 task = Device.Tasks.Get<DepthClearTaskDX12>();
-            task.DepthValue = depthValue;
-            task.StencilValue = stencilValue;
-            task.ClearFlags = flags;
-            Device.Tasks.Push(priority, this, task);
-        }
+        DepthClearTaskDX12 task = new();
+        task.Surface = this;
+        task.DepthValue = depthValue;
+        task.StencilValue = stencilValue;
+        task.Flags = clearFlags;
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     protected override unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)

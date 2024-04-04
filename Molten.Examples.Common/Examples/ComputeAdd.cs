@@ -65,21 +65,21 @@ public class ComputeAdd : MoltenExample
             }
 
             // Setup two input buffers for our numbers. By default these are immutable - cannot be changed after creation.
-            GpuBuffer numBuffer0 = Engine.Renderer.Device.Resources.CreateStructuredBuffer(_values0);
-            GpuBuffer numBuffer1 = Engine.Renderer.Device.Resources.CreateStructuredBuffer(_values1);
+            GpuBuffer numBuffer0 = Engine.Renderer.Device.Resources.CreateBuffer(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, _values0);
+            GpuBuffer numBuffer1 = Engine.Renderer.Device.Resources.CreateBuffer(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, _values1);
 
             // Setup one output buffer for results
-            GpuBuffer outBuffer = Engine.Renderer.Device.Resources.CreateStructuredBuffer<ComputeData>(GpuResourceFlags.DownloadMemory | GpuResourceFlags.UnorderedAccess, NUM_SUMS);
+            GpuBuffer outBuffer = Engine.Renderer.Device.Resources.CreateBuffer<ComputeData>(GpuBufferType.Structured, GpuResourceFlags.DownloadMemory | GpuResourceFlags.UnorderedAccess, NUM_SUMS);
 
             // Staging buffer for transferring our compute result off the GPU
-            GpuBuffer stagingBuffer = Engine.Renderer.Device.Resources.CreateStagingBuffer(true, false, numBytes);
+            //GpuBuffer stagingBuffer = Engine.Renderer.Device.Resources.CreateStagingBuffer(true, false, numBytes);
 
             // Send our compute shader off to the renderer to be worked on.
-            Engine.Renderer.Device.Tasks.Push(GraphicsTaskPriority.StartOfFrame, compute, NUM_SUMS, 1, 1, (task, successful) =>
+            Engine.Renderer.Device.Tasks.Push(GpuPriority.StartOfFrame, null, compute, NUM_SUMS, 1, 1, (successful) =>
             {
                 // We can get our data immediately, since the render thread is calling the completionCallback.
-                outBuffer.CopyTo(GpuPriority.Immediate, stagingBuffer);
-                stagingBuffer.GetData(GpuPriority.Immediate, _result, 0, NUM_SUMS, 0);
+                //outBuffer.CopyTo(GpuPriority.Immediate, stagingBuffer);
+                outBuffer.GetData(GpuPriority.EndOfFrame, null, _result, 0, NUM_SUMS, 0);
                 _computeFinished = true;
             });
 
