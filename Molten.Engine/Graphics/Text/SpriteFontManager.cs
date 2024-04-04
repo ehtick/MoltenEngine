@@ -67,7 +67,7 @@ public class SpriteFontManager : EngineObject
             flags: GpuResourceFlags.DefaultMemory | GpuResourceFlags.MipMapGeneration, 
             arraySize: arraySize, 
             name: "Sprite Font Sheet");
-        _camera.Surface.Clear(GpuPriority.StartOfFrame, Color.Transparent);
+        _camera.Surface.Clear(GpuPriority.StartOfFrame, null, Color.Transparent);
     }
 
     private void OnDraw(SpriteBatcher sb)

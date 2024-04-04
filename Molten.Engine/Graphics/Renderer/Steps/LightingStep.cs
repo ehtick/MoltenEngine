@@ -32,7 +32,7 @@ internal class LightingStep : RenderStep
         IRenderSurface2D _surfaceLighting = Renderer.Surfaces[MainSurfaceType.Lighting];
         IDepthStencilSurface sDepth = Renderer.Surfaces.GetDepth();
 
-        _surfaceLighting.ClearImmediate(cmd, context.Scene.AmbientLightColor);
+        _surfaceLighting.Clear(GpuPriority.Immediate, cmd, context.Scene.AmbientLightColor);
         cmd.State.Surfaces.Reset();
         cmd.State.Surfaces[0] = _surfaceLighting;
         cmd.State.DepthSurface.Value = sDepth;

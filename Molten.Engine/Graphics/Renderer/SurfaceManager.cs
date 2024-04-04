@@ -52,7 +52,7 @@ public class SurfaceManager : IDisposable
 
         if(!_firstCleared.Contains(surface))
         {
-            surface.ClearImmediate(cmd, color);
+            surface.Clear(GpuPriority.Immediate, cmd, color);
             _firstCleared.Add(surface);
         }
     }

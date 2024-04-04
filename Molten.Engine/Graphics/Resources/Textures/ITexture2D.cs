@@ -15,10 +15,12 @@ public interface ITexture2D : ITexture
     /// <param name="newMipMapCount">The new mip-map level count.</param>
     /// <param name="newArraySize">The new array size.</param>
     /// <param name="newFormat">The new graphics format.</param>
+    /// <param name="completeCallback"></param>
     void Resize(GpuPriority priority, GpuCommandList cmd,
         uint newWidth, 
         uint newHeight,
         uint newMipMapCount = 0, 
         uint newArraySize = 0, 
-        GpuResourceFormat newFormat = GpuResourceFormat.Unknown);
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+        GpuTaskCallback completeCallback = null);
 }

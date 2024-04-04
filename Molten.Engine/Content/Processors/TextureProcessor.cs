@@ -148,7 +148,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
                 if (texCube.Width != data.Width ||
                     texCube.Height != data.Height ||
                     tex.MipMapCount != data.MipMapLevels)
-                    texCube.Resize(GpuPriority.StartOfFrame, data.Width, data.Height, data.MipMapLevels);
+                    texCube.Resize(GpuPriority.StartOfFrame, null, data.Width, data.Height, data.MipMapLevels);
 
                 texCube.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, Math.Min(data.ArraySize, 6), 0, 0);
                 break;
@@ -160,7 +160,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
                     tex2d.ArraySize != data.ArraySize ||
                     tex.MipMapCount != data.MipMapLevels)
                 {
-                    tex2d.Resize(GpuPriority.StartOfFrame, data.Width, data.Height, data.MipMapLevels, data.ArraySize, data.Format);
+                    tex2d.Resize(GpuPriority.StartOfFrame, null, data.Width, data.Height, data.MipMapLevels, data.ArraySize, data.Format);
                 }
 
                 tex2d.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
@@ -169,7 +169,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
             case ITexture1D tex1d:
                 // TODO include mip-map count in resize
                 if (tex1d.Width != data.Width || tex.MipMapCount != data.MipMapLevels)
-                    tex1d.Resize(GpuPriority.StartOfFrame, data.Width, data.MipMapLevels, data.Format);
+                    tex1d.Resize(GpuPriority.StartOfFrame, null, data.Width, data.MipMapLevels, data.ArraySize, data.Format);
 
                 tex.SetData(GpuPriority.StartOfFrame, null, data, 0, 0, data.MipMapLevels, data.ArraySize, 0, 0);
                 break;

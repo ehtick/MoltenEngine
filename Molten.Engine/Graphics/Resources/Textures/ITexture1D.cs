@@ -13,5 +13,8 @@ public interface ITexture1D : ITexture
     /// <param name="newMipMapCount">The new mip-map count.</param>
     /// <param name="newArraySize">The new array size.</param>
     /// <param name="newFormat">The new format.</param>
-    void Resize(GpuPriority priority, GpuCommandList cmd, uint newWidth, uint newMipMapCount = 0, uint newArraySize = 0, GpuResourceFormat newFormat = GpuResourceFormat.Unknown);
+    /// <param name="completeCallback"></param>
+    void Resize(GpuPriority priority, GpuCommandList cmd, uint newWidth, uint newMipMapCount = 0, uint newArraySize = 0, 
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+        GpuTaskCallback completeCallback = null);
 }

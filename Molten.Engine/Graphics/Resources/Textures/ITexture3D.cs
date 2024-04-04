@@ -14,9 +14,11 @@ public interface ITexture3D : ITexture
     /// <param name="newMipMapCount">The new mip-map level count.</param>
     /// <param name="newDepth">The new depth of the current <see cref="ITexture3D"/>.</param>
     /// <param name="newFormat">The new graphics format.</param>
-    void Resize(GpuPriority priority, uint newWidth, 
+    void Resize(GpuPriority priority, GpuCommandList cmd, 
+        uint newWidth, 
         uint newHeight, 
         uint newDepth, 
         uint newMipMapCount = 0, 
-        GpuResourceFormat newFormat = GpuResourceFormat.Unknown);
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+        GpuTaskCallback completeCallback = null);
 }
