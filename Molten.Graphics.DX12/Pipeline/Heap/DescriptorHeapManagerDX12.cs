@@ -170,7 +170,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
         }
     }
 
-    protected unsafe override void OnGraphicsRelease()
+    protected unsafe override void OnGpuRelease()
     {
         _resourceHeap.Dispose(true);
         _samplerHeap.Dispose(true);

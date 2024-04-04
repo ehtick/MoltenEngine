@@ -125,7 +125,7 @@ internal unsafe class DescriptorSetLayoutVK : GpuObject<DeviceVK>, IEquatable<De
         }
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         if (_handle.Handle != 0)
         {

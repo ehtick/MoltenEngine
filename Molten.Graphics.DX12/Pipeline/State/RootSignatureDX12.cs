@@ -14,7 +14,7 @@ internal unsafe class RootSignatureDX12 : GpuObject<DeviceDX12>
 
     public static implicit operator ID3D12RootSignature*(RootSignatureDX12 sig) => sig._handle;
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _handle);
     }

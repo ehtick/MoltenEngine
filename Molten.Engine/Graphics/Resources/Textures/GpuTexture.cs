@@ -58,6 +58,25 @@ public abstract class GpuTexture : GpuResource, ITexture
         }
     }
 
+    public void Resize(GpuPriority priority, GpuCommandList cmd, 
+        uint newWidth, 
+        uint newMipMapCount = 0, 
+        uint newArraySize = 0, 
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown)
+    {
+
+    }
+
+    public void Resize(GpuPriority priority, GpuCommandList cmd,
+        uint newWidth,
+        uint newHeight,
+        uint newMipMapCount = 0,
+        uint newArraySize = 0,
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown)
+    {
+
+    }
+
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>
     /// <param name="priority">The priority of the operation.</param>
     /// <param name="cmd">The command list used when executing the operation immediately. Can be null if not using <see cref="GpuPriority.Immediate"/>.</param>

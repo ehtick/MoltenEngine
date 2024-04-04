@@ -80,7 +80,7 @@ public unsafe class DepthStateVK : GpuObject<DeviceVK>, IEquatable<DepthStateVK>
             && FaceEqual(ref _desc->Back, ref other.Back);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _desc);
     }

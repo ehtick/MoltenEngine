@@ -115,7 +115,7 @@ internal class ResourceManagerDX12 : GraphicsResourceManager<DeviceDX12>
         return new TextureCubeDX12(Device, width, height, flags, format, mipCount, cubeCount, arraySize, name);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _shaderCompiler?.Dispose(true);
     }

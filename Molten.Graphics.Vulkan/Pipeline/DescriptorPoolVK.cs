@@ -100,7 +100,7 @@ internal class DescriptorPoolVK : GpuObject<DeviceVK>
         r.Throw(Device, () => "Failed to free descriptor set");
     }
 
-    protected override unsafe void OnGraphicsRelease()
+    protected override unsafe void OnGpuRelease()
     {
         if(_handle.Handle != 0)
             Device.VK.DestroyDescriptorPool(Device, _handle, null);

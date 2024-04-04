@@ -78,7 +78,7 @@ internal unsafe class RenderPassVK : GpuObject<DeviceVK>, IEquatable<RenderPassV
         r.Throw(device, () => "failed to create render pass");
     }
 
-    protected unsafe override void OnGraphicsRelease()
+    protected unsafe override void OnGpuRelease()
     {
         if (_handle.Handle != 0)
         {

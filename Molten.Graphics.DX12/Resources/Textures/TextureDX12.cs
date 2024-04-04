@@ -96,7 +96,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     protected virtual ClearValue GetClearValue() => default;
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _handle?.Dispose();
     }

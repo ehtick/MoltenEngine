@@ -31,7 +31,7 @@ public unsafe class ProtectedSessionDX12 : GpuObject<DeviceDX12>
         return _ptr->GetSessionStatus();
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _statusFence);
         NativeUtil.ReleasePtr(ref _ptr);

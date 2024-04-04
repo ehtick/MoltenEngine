@@ -46,7 +46,7 @@ internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
         return handle;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         for(int i = 0; i < _heaps.Count; i++)
             _heaps[i].Dispose(true);

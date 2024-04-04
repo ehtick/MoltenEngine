@@ -450,7 +450,7 @@ public unsafe class CommandListDX12 : GpuCommandList
         throw new NotImplementedException();
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _rtvs);
         EngineUtil.Free(ref _dsv);

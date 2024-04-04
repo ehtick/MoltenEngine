@@ -38,7 +38,7 @@ internal unsafe class HeapDX12 : GpuObject<DeviceDX12>
         _handle = (ID3D12Heap1*)ptr;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _handle);
     }

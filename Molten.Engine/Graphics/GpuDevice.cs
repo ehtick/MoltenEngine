@@ -21,8 +21,6 @@ public abstract partial class GpuDevice : EngineObject
     /// </summary>
     public event FrameBufferSizeChangedHandler OnFrameBufferSizeChanged;
 
-    const int INITIAL_BRANCH_COUNT = 3;
-
     long _allocatedVRAM;
     uint _frameIndex;
     uint _newFrameBufferSize;

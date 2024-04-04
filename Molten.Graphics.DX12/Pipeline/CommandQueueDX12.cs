@@ -62,7 +62,7 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         _lockerExecute.Unlock();
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _handle);
     }

@@ -127,7 +127,7 @@ public abstract class RenderService : EngineService
 
         // Handle any pending graphics-based disposals.
         Timing timing = Thread.Timing;
-        uint framesToWait = (uint)timing.TargetUPS / 4U;
+        uint framesToWait = (uint)timing.TargetUPS / 5U;
         Device.DisposeMarkedObjects(framesToWait, timing.FrameID);
 
         if (_requestedMultiSampleLevel != MsaaLevel)

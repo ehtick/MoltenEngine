@@ -42,7 +42,7 @@ internal unsafe class InputAssemblyStateVK : GpuObject<DeviceVK>, IEquatable<Inp
             && _desc->PrimitiveRestartEnable.Value == other.PrimitiveRestartEnable.Value;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _desc);
     }

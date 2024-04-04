@@ -176,11 +176,11 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         _dispatchQueue.Enqueue(action);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref SwapChainHandle);
         EngineUtil.Free(ref _presentParams);
-        base.OnGraphicsRelease();
+        base.OnGpuRelease();
     }
 
     protected abstract bool OnPresent();

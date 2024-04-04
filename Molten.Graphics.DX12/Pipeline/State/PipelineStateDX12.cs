@@ -31,7 +31,7 @@ internal unsafe class PipelineStateDX12 : GpuObject<DeviceDX12>
         };
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         RootSignature?.Dispose(true);
         NativeUtil.ReleasePtr(ref _handle);

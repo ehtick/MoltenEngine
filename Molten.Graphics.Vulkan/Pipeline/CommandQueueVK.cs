@@ -91,7 +91,7 @@ public unsafe class CommandQueueVK : GpuObject<DeviceVK>
         return (Flags & flags) == flags;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _poolFrame.Dispose(true);
         _poolTransient.Dispose(true);

@@ -23,7 +23,7 @@ public unsafe class ShaderPassStage : GpuObject
     }
 
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     /// <summary>
     /// Gets a pointer to the native shader object or bytecode.

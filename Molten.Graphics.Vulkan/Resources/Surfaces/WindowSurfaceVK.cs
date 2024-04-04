@@ -53,9 +53,9 @@ internal unsafe class WindowSurfaceVK : SwapChainSurfaceVK, IWindow
         _window = null;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
-        base.OnGraphicsRelease();
+        base.OnGpuRelease();
 
         if (_window != null)
             (Device.Renderer as RendererVK).GLFW.DestroyWindow(_window);

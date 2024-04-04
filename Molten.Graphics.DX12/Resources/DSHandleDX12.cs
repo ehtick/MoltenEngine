@@ -17,11 +17,11 @@ internal class DSHandleDX12 : ResourceHandleDX12
         ReadOnlyDSV = new DSViewDX12(this);
     }
 
-    public override void Dispose()
+    protected override void OnGpuRelease()
     {
         DSV.Dispose();
         ReadOnlyDSV.Dispose();
-        base.Dispose();
+        base.OnGpuRelease();
     }
 
     internal DSViewDX12 DSV { get; }

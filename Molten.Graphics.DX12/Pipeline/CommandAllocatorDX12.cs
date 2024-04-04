@@ -47,7 +47,7 @@ public unsafe class CommandAllocatorDX12 : GpuObject<DeviceDX12>
         _allocated.Remove(cmd);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _allocated.ForReverse(1, (index, cmd) => cmd.Dispose(true));
         NativeUtil.ReleasePtr(ref _handle);

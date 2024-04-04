@@ -87,7 +87,7 @@ public unsafe class BlendStateVK : GpuObject<DeviceVK>, IEquatable<BlendStateVK>
         return true;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _desc->PAttachments);
         EngineUtil.Free(ref _desc);

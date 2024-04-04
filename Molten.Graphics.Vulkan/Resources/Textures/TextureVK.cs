@@ -212,7 +212,7 @@ public unsafe abstract class TextureVK : GpuTexture
 
     protected abstract void SetCreateInfo(DeviceVK device, ref ImageCreateInfo imgInfo, ref ImageViewCreateInfo viewInfo);
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _handle?.Dispose();
         _handle = null;

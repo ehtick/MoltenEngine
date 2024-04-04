@@ -9,10 +9,10 @@ internal class CBHandleDX12 : ResourceHandleDX12
         CBV = new CBViewDX12(this);
     }
 
-    public override void Dispose()
+    protected override void OnGpuRelease()
     {
         CBV.Dispose();
-        base.Dispose();
+        base.OnGpuRelease();
     }
 
     internal CBViewDX12 CBV { get; }

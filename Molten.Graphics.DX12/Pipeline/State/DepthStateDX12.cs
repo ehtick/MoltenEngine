@@ -97,7 +97,7 @@ internal unsafe class DepthStateDX12 : GpuObject<DeviceDX12>, IEquatable<DepthSt
         return Equals(other._desc);
     }
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     internal ref readonly CombinedDesc Description => ref _desc;
 

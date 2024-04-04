@@ -181,7 +181,7 @@ internal unsafe class PipelineStateVK : GpuObject<DeviceVK>
         return derivation;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         // Release indirect memory allocations for pipleine shader stages
         for (uint i = 0; i < _info.StageCount; i++)

@@ -234,12 +234,12 @@ public abstract class SwapChainSurfaceVK : RenderSurface2DVK, INativeSurface
             _curChainSize = uint.Max(_cap.MinImageCount, _curChainSize);
     }
 
-    protected unsafe override void OnGraphicsRelease()
+    protected unsafe override void OnGpuRelease()
     {
         Device.FreeFence(FrameFence);
         FrameFence = null;
 
-        base.OnGraphicsRelease();
+        base.OnGpuRelease();
 
         if (_swapChain.Handle != 0)
             _extSwapChain.DestroySwapchain(Device, _swapChain, null);

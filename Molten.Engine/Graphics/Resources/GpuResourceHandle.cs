@@ -1,10 +1,9 @@
 ﻿namespace Molten.Graphics;
 
-public unsafe abstract class GpuResourceHandle : IDisposable
+public unsafe abstract class GpuResourceHandle : GpuObject
 {
-    public abstract void Dispose();
-
-    protected GpuResourceHandle(GpuResource resource)
+    protected GpuResourceHandle(GpuResource resource) : 
+        base(resource.Device)
     {
         Resource = resource;
     }

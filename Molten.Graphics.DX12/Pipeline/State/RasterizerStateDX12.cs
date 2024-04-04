@@ -56,7 +56,7 @@ internal unsafe class RasterizerStateDX12 : GpuObject<DeviceDX12>, IEquatable<Ra
             _desc.FrontCounterClockwise.Value == other.FrontCounterClockwise;
     }
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     internal ref readonly RasterizerDesc Desc => ref _desc;
 }

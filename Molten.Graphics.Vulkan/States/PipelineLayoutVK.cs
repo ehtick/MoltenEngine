@@ -93,7 +93,7 @@ internal class PipelineLayoutVK : GpuObject<DeviceVK>, IEquatable<PipelineLayout
             a.StageFlags == b.StageFlags;
     }
 
-    protected override unsafe void OnGraphicsRelease()
+    protected override unsafe void OnGpuRelease()
     {
         if (_handle.Handle != 0)
         {

@@ -493,7 +493,7 @@ internal unsafe class CommandListVK : GpuCommandList
         throw new NotImplementedException();
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _applyScissors.Dispose();
         _applyViewports.Dispose();

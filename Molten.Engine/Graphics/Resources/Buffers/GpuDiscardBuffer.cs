@@ -21,7 +21,7 @@ public class GpuDiscardBuffer<T> : GpuObject
 
         internal Frame(GpuDevice device) : base(device) { }
 
-        protected override void OnGraphicsRelease()
+        protected override void OnGpuRelease()
         {
             for (int i = Pairs.Count - 1; i >= 0; i--)
                 Pairs[i].Buffer.Dispose(true);
@@ -117,7 +117,7 @@ public class GpuDiscardBuffer<T> : GpuObject
         }
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _frames.Dispose(true);
     }

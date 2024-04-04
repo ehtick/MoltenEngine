@@ -50,7 +50,7 @@ public unsafe class BlendStateDX12 : GpuObject<DeviceDX12>, IEquatable<BlendStat
         }
     }
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     public override bool Equals(object obj) => obj switch
     {

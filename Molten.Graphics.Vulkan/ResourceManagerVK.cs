@@ -116,7 +116,7 @@ public class ResourceManagerVK :GraphicsResourceManager<DeviceVK>
         return new TextureCubeVK(Device, width, height, mipCount, 1, cubeCount, format, flags, name);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _shaderCompiler?.Dispose();
     }

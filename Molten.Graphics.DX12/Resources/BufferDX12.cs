@@ -243,10 +243,10 @@ public sealed class BufferDX12 : GpuBuffer
         return true;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _handle?.Dispose();
-        base.OnGraphicsRelease();
+        base.OnGpuRelease();
     }
 
     /// <inheritdoc/>

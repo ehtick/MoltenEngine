@@ -19,14 +19,14 @@ internal unsafe class ShaderPassVK : ShaderPass
         _descSet = _descPool.Allocate(this, DescriptorLayout);
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         _descSet?.Dispose();    
         _descPool?.Dispose();
         DescriptorLayout?.Dispose();
         State?.Dispose();
 
-        base.OnGraphicsRelease();
+        base.OnGpuRelease();
     }
 
     internal PipelineStateVK State { get; private set; }

@@ -408,7 +408,6 @@ public partial class ThreadedList<T> : IList<T>, IProducerConsumerCollection<T>,
             else if (lastElement > _count)
                 _interlocker.Throw<IndexOutOfRangeException>("Index plus count cannot exceed the number of items stored in the list.");
 
-
             Array.Copy(_items, lastElement, _items, index, _count - lastElement);
             _count -= count;
             Array.Clear(_items, _count, count); // Clear old spaces of re-positioned elements.

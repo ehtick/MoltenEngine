@@ -69,7 +69,7 @@ internal unsafe class FrameBufferVK : GpuObject<DeviceVK>
         return true;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         if(_frameBuffer.Handle != 0)
             Device.VK.DestroyFramebuffer(Device, _frameBuffer, null);

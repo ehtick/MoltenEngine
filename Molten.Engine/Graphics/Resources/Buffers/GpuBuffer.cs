@@ -167,7 +167,7 @@ public abstract class GpuBuffer : GpuResource
     /// <returns>True if the update succeeded or false if the location or capacity could not be updated. e.g. Due to reaching or exceeding the end of the buffer.</returns>
     public abstract bool SetLocation(ulong offset, ulong numBytes, Logger log = null);
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         for (int i = _allocations.Count - 1; i >= 0; i--)
             _allocations[i].Dispose(true);

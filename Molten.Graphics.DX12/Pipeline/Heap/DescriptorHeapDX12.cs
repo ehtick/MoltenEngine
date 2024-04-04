@@ -86,7 +86,7 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
         return _handle->GetGPUDescriptorHandleForHeapStart();
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _handle);
     }

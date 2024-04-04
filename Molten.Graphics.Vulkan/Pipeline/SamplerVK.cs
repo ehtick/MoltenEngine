@@ -120,7 +120,7 @@ public class SamplerVK : ShaderSampler
         }
     }
 
-    protected unsafe override void OnGraphicsRelease()
+    protected unsafe override void OnGpuRelease()
     {
         if (_handle.Handle != 0)
         {

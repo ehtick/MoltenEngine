@@ -15,10 +15,10 @@ internal class RTHandleDX12 : ResourceHandleDX12
         RTV = new RTViewDX12(this);
     }
 
-    public override void Dispose()
+    protected override void OnGpuRelease()
     {
         RTV.Dispose();
-        base.Dispose();
+        base.OnGpuRelease();
     }
 
     internal RTViewDX12 RTV { get; }

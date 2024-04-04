@@ -70,7 +70,7 @@ public class GpuFrameBuffer<T> : GpuObject
         return _resources[Device.FrameBufferIndex];
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         for (int i = 0; i < _resources.Length; i++)
             _resources[i]?.Dispose(true);

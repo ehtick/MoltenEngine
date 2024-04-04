@@ -62,7 +62,7 @@ public class Shader : GpuObject
         _passes[id] = pass;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         for (int i = 0; i < _passes.Length; i++)
             _passes[i].Dispose();

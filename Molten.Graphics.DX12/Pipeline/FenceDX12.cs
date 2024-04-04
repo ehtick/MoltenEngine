@@ -72,7 +72,7 @@ public unsafe class FenceDX12 : GpuFence
         return true;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         NativeUtil.ReleasePtr(ref _handle);
         if(_fenceEvent != null)

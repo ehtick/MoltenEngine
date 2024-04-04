@@ -71,7 +71,7 @@ public class FenceVK : GpuFence
         return r == Result.Success;
     }
 
-    protected unsafe override void OnGraphicsRelease()
+    protected unsafe override void OnGpuRelease()
     {
         _device.VK.DestroyFence(_device, _native, null);
     }

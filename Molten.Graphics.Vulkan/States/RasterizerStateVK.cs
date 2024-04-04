@@ -53,7 +53,7 @@ public unsafe class RasterizerStateVK : GpuObject<DeviceVK>, IEquatable<Rasteriz
             && _desc->Flags == other.Flags;
     }
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     internal PipelineRasterizationStateCreateInfo* Desc => _desc;
 }

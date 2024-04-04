@@ -60,7 +60,7 @@ public unsafe class StaticSamplerDX12 : ShaderSampler
         }
     }
 
-    protected override void OnGraphicsRelease() { }
+    protected override void OnGpuRelease() { }
 
     internal ref StaticSamplerDesc Desc => ref _desc;
 }

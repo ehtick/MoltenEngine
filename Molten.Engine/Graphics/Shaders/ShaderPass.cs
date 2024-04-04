@@ -67,7 +67,7 @@ public abstract class ShaderPass : GpuObject, IEnumerable<ShaderPassStage>, IEnu
         return comp;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         foreach (ShaderPassStage c in _stages.Values)
             c.Dispose();

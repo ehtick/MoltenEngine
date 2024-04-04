@@ -128,7 +128,7 @@ internal unsafe class PipelineInputLayoutDX12 : GpuObject<DeviceDX12>
         return true;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _desc.PInputElementDescs);
     }

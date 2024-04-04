@@ -89,7 +89,7 @@ internal class DescriptorSetVK : GpuObject
         throw new NotImplementedException("Not finished");
     }
 
-    protected override void OnGraphicsRelease() => 
+    protected override void OnGpuRelease() => 
         Pool.Free(this);
 
     public static implicit operator DescriptorSet(DescriptorSetVK set) => 

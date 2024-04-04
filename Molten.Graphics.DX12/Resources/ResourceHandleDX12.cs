@@ -44,7 +44,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
             _ptr[i] = ptr[i];
     }
 
-    public override void Dispose()
+    protected override void OnGpuRelease()
     {
         SRV?.Dispose();
         UAV?.Dispose();

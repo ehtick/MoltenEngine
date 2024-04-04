@@ -48,7 +48,7 @@ public unsafe class DynamicStateVK : GpuObject<DeviceVK>, IEquatable<DynamicStat
             && _desc->PDynamicStates == other.PDynamicStates;
     }
 
-    protected override void OnGraphicsRelease()
+    protected override void OnGpuRelease()
     {
         EngineUtil.Free(ref _desc->PDynamicStates);
         EngineUtil.Free(ref _desc);

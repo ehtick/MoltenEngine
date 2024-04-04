@@ -20,14 +20,14 @@ public abstract class GpuObject : EngineObject
         if (IsReleased)
             throw new GpuObjectException(this, "The current GraphicsObject is already released");
 
-        OnGraphicsRelease();
+        OnGpuRelease();
         IsReleased = true;
     }
 
     /// <summary>
-    /// Invoked when the object should release any graphics resources.
+    /// Invoked when the object should release any GPU resources.
     /// </summary>
-    protected abstract void OnGraphicsRelease();
+    protected abstract void OnGpuRelease();
 
     /// <summary>
     /// Gets the <see cref="GpuDevice"/> that the current <see cref="GpuObject"/> is bound to.
