@@ -49,19 +49,12 @@ public unsafe class RenderSurface2DDX12 : Texture2DDX12, IRenderSurface2D
         return handle;
     }
 
-    public void Clear(GpuPriority priority, Color color)
+    public void Clear(GpuPriority priority, GpuCommandList cmd, Color color)
     {
-        if (priority == GpuPriority.Immediate)
-        {
-            Apply(Device.Queue);
-            Device.Queue.ClearDSV(this, color);
-        }
-        else
-        {
-            SurfaceClearTaskDX12 task = Device.Tasks.Get<SurfaceClearTaskDX12>();
-            task.Color = color;
-            Device.Tasks.Push(priority, this, task);
-        }
+        SurfaceClearTaskDX12 task = new();
+        task.Surface = this;
+        task.Color = color;
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     /// <summary>Gets the viewport that defines the default renderable area of the render target.</summary>
