@@ -2,7 +2,7 @@
 
 public delegate void RenderCameraProjectionFunc(IRenderSurface2D surface, float nearClip, float farClip, float fov, ref Matrix4F projection);
 public delegate void RendercameraSurfaceHandler(RenderCamera camera, IRenderSurface2D oldSurface, IRenderSurface2D newSurface);
-public delegate void RenderCameraResizedHandler(RenderCamera camera, ISwapChainSurface surface);
+public delegate void RenderCameraResizedHandler(RenderCamera camera, IRenderSurface2D surface);
 
 public class RenderCamera : EngineObject
 {
@@ -114,10 +114,10 @@ public class RenderCamera : EngineObject
         _invViewProjection = Matrix4F.Invert(_viewProjection);
     }
 
-    private void _surface_OnResize(ISwapChainSurface texture)
+    private void _surface_OnResize(ITexture texture)
     {
         CalculateProjection();
-        OnSurfaceResized?.Invoke(this, texture);
+        OnSurfaceResized?.Invoke(this, texture as IRenderSurface2D);
     }
 
     /// <summary>Gets or sets the camera's view matrix.</summary>
@@ -164,16 +164,15 @@ public class RenderCamera : EngineObject
         {
             if (_surface != value)
             {
-                if (_surface != null && _surface is INativeSurface oldNativeSurface)
-                    oldNativeSurface.OnResize -= _surface_OnResize;
+                if (_surface != null)
+                    _surface.OnResize -= _surface_OnResize;
 
                 if (value != null)
                 {
                     if (value.IsMultisampled)
                         throw new InvalidOperationException("A RenderCamera's output surface cannot have anti-aliasing enabled.");
 
-                    if(value is INativeSurface newNativeSurface)
-                        newNativeSurface.OnResize += _surface_OnResize;
+                    value.OnResize += _surface_OnResize;
                 }
 
                 IRenderSurface2D oldSurface = _surface;

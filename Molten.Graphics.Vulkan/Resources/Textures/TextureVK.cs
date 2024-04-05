@@ -218,7 +218,7 @@ public unsafe abstract class TextureVK : GpuTexture
         _handle = null;
     }
 
-    public ResourceHandleVK<Image, ImageHandleVK> Handle => _handle;
+    public override ResourceHandleVK<Image, ImageHandleVK> Handle => _handle;
 
     public new DeviceVK Device { get; }
 }

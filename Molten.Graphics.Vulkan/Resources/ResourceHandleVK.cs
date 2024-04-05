@@ -22,7 +22,7 @@ public unsafe abstract class ResourceHandleVK : GpuResourceHandle
     /// <summary>
     /// Disposes of the current Vulkan resource handle and frees <see cref="Memory"/> if assigned.
     /// </summary>
-    public override void Dispose()
+    protected override void OnGpuRelease()
     {
         if(_disposed)
             throw new ObjectDisposedException("The current ResourceHandleVK is already disposed.");

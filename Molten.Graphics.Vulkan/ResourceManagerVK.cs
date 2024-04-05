@@ -34,7 +34,7 @@ public class ResourceManagerVK :GraphicsResourceManager<DeviceVK>
         return buffer;
     }
 
-    public override IConstantBuffer CreateConstantBuffer(ConstantBufferInfo info)
+    public override GpuBuffer CreateConstantBuffer(ConstantBufferInfo info)
     {
         throw new NotImplementedException();
     }

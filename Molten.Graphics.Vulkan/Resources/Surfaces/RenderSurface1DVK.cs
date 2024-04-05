@@ -21,7 +21,7 @@ public class RenderSurface1DVK : Texture1DVK, IRenderSurface1D, IRenderSurfaceVK
     }
 
     /// <inheritdoc/>
-    public void Clear(GpuPriority priority, Color color)
+    public void Clear(GpuPriority priority, GpuCommandList cmd, Color color)
     {
         SurfaceClearTaskVK task = Device.Tasks.Get<SurfaceClearTaskVK>();
         task.Color = color;

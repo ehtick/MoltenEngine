@@ -2,57 +2,55 @@
 
 namespace Molten.Graphics.Vulkan;
 
-internal class DepthClearTaskVK : GpuResourceTask<DepthSurfaceVK>
+internal struct DepthClearTaskVK : IGpuTask<DepthClearTaskVK>
 {
+    public DepthSurfaceVK Surface;
+
     public float DepthValue;
 
     public uint StencilValue;
 
-    public override void ClearForPool()
-    {
-        DepthValue = 0;
-        StencilValue = 0;
-    }
+    internal GpuTaskCallback OnCompleted;
 
-    public override bool Validate()
-    {
-        return true;
-    }
-
-    protected unsafe override bool OnProcess(RenderService renderer, GpuCommandQueue queue)
+    public unsafe static bool Process(GpuCommandList cmd, ref DepthClearTaskVK t)
     {
         // TODO Implement proper handling of barrier transitions.
         //  -- Transition from the current layout to the one we need.
         //  -- Transition back to the original layout once we're done.
 
-        if (Resource.ApplyQueue.Count > 0)
+        if (t.Surface.ApplyQueue.Count > 0)
         {
-            Resource.ClearValue = null;
+            t.Surface.ClearValue = null;
 
             CommandQueueVK vkCmd = queue as CommandQueueVK;
-            Resource.Apply(queue);
+            t.Surface.Apply(queue);
 
             vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
-            Resource.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
+            t.Surface.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
 
             ImageSubresourceRange range = new ImageSubresourceRange
             {
                 AspectMask = ImageAspectFlags.ColorBit,
                 BaseArrayLayer = 0,
-                LayerCount = Resource.ArraySize,
+                LayerCount = t.Surface.ArraySize,
                 BaseMipLevel = 0,
-                LevelCount = Resource.MipMapCount,
+                LevelCount = t.Surface.MipMapCount,
             };
 
-            vkCmd.ClearDepthImage(*Resource.Handle.NativePtr, ImageLayout.TransferDstOptimal, DepthValue, StencilValue, &range, 1);
-            Resource.Transition(vkCmd, ImageLayout.TransferDstOptimal, ImageLayout.DepthAttachmentOptimal);
+            vkCmd.ClearDepthImage(*t.Surface.Handle.NativePtr, ImageLayout.TransferDstOptimal, t.DepthValue, t.StencilValue, &range, 1);
+            t.Surface.Transition(vkCmd, ImageLayout.TransferDstOptimal, ImageLayout.DepthAttachmentOptimal);
             vkCmd.Sync();
         }
         else
         {
-            Resource.ClearValue = new ClearDepthStencilValue(DepthValue, StencilValue);
+            t.Surface.ClearValue = new ClearDepthStencilValue(t.DepthValue, t.StencilValue);
         }
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }

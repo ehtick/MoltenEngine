@@ -11,7 +11,6 @@ namespace Molten.Graphics.DX12;
 /// <summary>A render target that is created from, and outputs to, a device's swap chain.</summary>
 public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapChainSurface
 {
-    public event TextureHandler<ISwapChainSurface> OnResize;
 
     protected internal IDXGISwapChain4* SwapChainHandle;
 
@@ -31,11 +30,6 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         _dispatchQueue = new ThreadedQueue<Action>();
         _presentParams = EngineUtil.Alloc<PresentParameters>();
         _presentParams[0] = new PresentParameters();
-    }
-
-    protected void InvokeOnResize()
-    {
-        OnResize?.Invoke(this);
     }
 
     protected override unsafe ID3D12Resource1* OnCreateTexture()

@@ -14,6 +14,11 @@ public abstract class GpuTexture : GpuResource, ITexture
     GpuResourceFormat _format;
 
     /// <summary>
+    /// Invoked when the current <see cref="GpuTexture"/> is resized.
+    /// </summary>
+    public event TextureHandler<ITexture> OnResize;
+
+    /// <summary>
     /// Creates a new instance of <see cref="GpuTexture"/>.
     /// </summary>
     /// <param name="device">The <see cref="GpuTexture"/> that the buffer is bound to.</param>
@@ -56,6 +61,11 @@ public abstract class GpuTexture : GpuResource, ITexture
             if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
                 throw new GpuResourceException(this, "Staging textures cannot allow shader access. Add GraphicsResourceFlags.NoShaderAccess flag.");
         }
+    }
+
+    protected void InvokeOnResize()
+    {
+        OnResize?.Invoke(this);
     }
 
     /// <summary>Copies data fom the provided <see cref="TextureData"/> instance into the current texture.</summary>

@@ -16,12 +16,13 @@ internal class DepthSurfaceVK : Texture2DVK, IDepthStencilSurface
         Viewport = new ViewportF(0, 0, Width, Height);
     }
 
-    public void Clear(GpuPriority priority, DepthClearFlags flags, float depthValue = 1.0f, byte stencilValue = 0)
+    public void Clear(GpuPriority priority, GpuCommandList cmd, DepthClearFlags flags, float depthValue = 1.0f, byte stencilValue = 0)
     {
-        DepthClearTaskVK task = Device.Tasks.Get<DepthClearTaskVK>();
+        DepthClearTaskVK task = new();
+        task.Surface = this;
         task.DepthValue = depthValue;
         task.StencilValue = stencilValue;
-        Device.Tasks.Push(priority, this, task);
+        Device.Tasks.Push(priority, ref task, cmd);
     }
 
     public DepthFormat DepthFormat { get; }

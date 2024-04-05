@@ -5,6 +5,11 @@
 public interface ITexture : IGpuResource
 {
     /// <summary>
+    /// Invoked when the current <see cref="ITexture"/> is resized.
+    /// </summary>
+    event TextureHandler<ITexture> OnResize;
+
+    /// <summary>
     /// Retrieves the data which makes up the entire texture across all mip-map levels and array slices. The data is returned in a single <see cref="TextureData"/> object.
     /// </summary>
     /// <param name="priority">The priority of the operation.</param>

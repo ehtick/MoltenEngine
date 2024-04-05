@@ -7,14 +7,14 @@ namespace Molten.Graphics.Vulkan;
 
 public abstract class SwapChainSurfaceVK : RenderSurface2DVK, INativeSurface
 {
-    public event WindowSurfaceHandler OnHandleChanged;
-    public event WindowSurfaceHandler OnParentChanged;
-    public event WindowSurfaceHandler OnClose;
-    public event WindowSurfaceHandler OnMaximize;
-    public event WindowSurfaceHandler OnMinimize;
-    public event WindowSurfaceHandler OnRestore;
-    public event WindowSurfaceHandler OnFocusGained;
-    public event WindowSurfaceHandler OnFocusLost;
+    public event TextureHandler<INativeSurface> OnHandleChanged;
+    public event TextureHandler<INativeSurface> OnParentChanged;
+    public event TextureHandler<INativeSurface> OnClose;
+    public event TextureHandler<INativeSurface> OnMaximize;
+    public event TextureHandler<INativeSurface> OnMinimize;
+    public event TextureHandler<INativeSurface> OnRestore;
+    public event TextureHandler<INativeSurface> OnFocusGained;
+    public event TextureHandler<INativeSurface> OnFocusLost;
 
     SwapchainKHR _swapChain;
     SurfaceCapabilitiesKHR _cap;
