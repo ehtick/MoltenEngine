@@ -11,6 +11,11 @@ public class Texture1DVK : TextureVK, ITexture1D
 
     }
 
+    public void Resize(GpuPriority priority, GpuCommandList cmd, uint newWidth, uint newMipMapCount = 0, uint newArraySize = 0, GpuResourceFormat newFormat = GpuResourceFormat.Unknown, GpuTaskCallback completeCallback = null)
+    {
+        Resize(priority, cmd, newWidth, 1, newArraySize, newFormat, completeCallback);
+    }
+
     protected override void SetCreateInfo(DeviceVK device, ref ImageCreateInfo imgInfo, ref ImageViewCreateInfo viewInfo)
     {
         imgInfo.ImageType = ImageType.Type1D;

@@ -1,4 +1,5 @@
-﻿using Silk.NET.Direct3D.Compilers;
+﻿using Molten.Graphics.DX12;
+using Silk.NET.Direct3D.Compilers;
 using Silk.NET.Vulkan;
 
 namespace Molten.Graphics.Vulkan;
@@ -111,6 +112,13 @@ public unsafe abstract class TextureVK : GpuTexture
 
         _handle = CreateImageHandle();
         CreateImage(Device, _handle?.SubHandle, memFlags, ref _info, ref _viewInfo);
+    }
+
+    protected override void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t)
+    {
+        _handle?.Dispose();
+        _handle = null;
+        Apply(cmd);
     }
 
     protected virtual ResourceHandleVK<Image, ImageHandleVK> CreateImageHandle()

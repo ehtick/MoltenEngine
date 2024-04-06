@@ -220,4 +220,6 @@ public unsafe class DeviceDX12 : DeviceDXGI
     internal ThreadedList<PipelineInputLayoutDX12> PipelineLayoutCache => _pipelineLayoutCache;
 
     internal CommandAllocatorDX12 CommandAllocator { get; private set; }
+
+    internal CommandQueueDX12 DirectQueue => _queueDirect;
 }

@@ -1,4 +1,5 @@
-﻿using Molten.Graphics.Textures;
+﻿using Molten.Graphics.DX12;
+using Molten.Graphics.Textures;
 
 namespace Molten.Graphics;
 
@@ -62,6 +63,43 @@ public abstract class GpuTexture : GpuResource, ITexture
                 throw new GpuResourceException(this, "Staging textures cannot allow shader access. Add GraphicsResourceFlags.NoShaderAccess flag.");
         }
     }
+
+    public void Resize(GpuPriority priority, GpuCommandList cmd,
+    uint newWidth,
+    uint newHeight,
+    uint newMipMapCount = 0,
+    uint newArraySizeOrDepth = 0,
+    GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+    GpuTaskCallback completeCallback = null)
+    {
+        TextureDimensions dim = Dimensions;
+        dim.Width = newWidth;
+        dim.Height = newHeight;
+        dim.MipMapCount = newMipMapCount;
+
+        if (this is ITexture3D)
+        {
+            dim.Depth = newArraySizeOrDepth;
+            dim.ArraySize = 1;
+        }
+        else
+        {
+            dim.ArraySize = newArraySizeOrDepth;
+            dim.Depth = 1;
+        }
+
+        ResourceFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
+        ResizeTextureTask task = new ResizeTextureTask()
+        {
+            Texture = this,
+            NewDimensions = dim,
+            NewFormat = newFormat,
+            OnCompleted = completeCallback
+        };
+        Device.Tasks.Push(priority, ref task, cmd);
+    }
+
+    protected internal abstract void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t);
 
     protected void InvokeOnResize()
     {

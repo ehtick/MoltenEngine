@@ -112,7 +112,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
     protected void CreateSwapChain(DisplayModeDXGI mode, IntPtr controlHandle)
     {
         // Swap-chain needs a D3D12 command queue so that it can force a swap-chain flush.
-        IUnknown* cmdQueueHandle = (IUnknown*)Device.Queue.Handle;
+        IUnknown* cmdQueueHandle = (IUnknown*)Device.DirectQueue.Handle;
         GraphicsManagerDXGI dxgiManager = Device.Manager as GraphicsManagerDXGI;
 
         DxgiError result = dxgiManager.CreateSwapChain(mode, SwapEffect.FlipDiscard, Device.FrameBufferSize, Device.Log, cmdQueueHandle, controlHandle, out SwapChainHandle);
@@ -130,9 +130,9 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
     }
 
     DxgiError _lastError;
-    internal void Present()
+    internal void Present(CommandListDX12 cmd)
     {
-        Apply(Device.Queue);
+        Apply(cmd);
 
         if (OnPresent() && SwapChainHandle != null)
         {

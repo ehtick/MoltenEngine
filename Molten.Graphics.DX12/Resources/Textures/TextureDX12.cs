@@ -77,37 +77,6 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         Resize(priority, cmd, newWidth, Dimensions.Height, newMipMapCount, newArraySize, newFormat, completeCallback);
     }
 
-    public void Resize(GpuPriority priority, GpuCommandList cmd,
-        uint newWidth,
-        uint newHeight,
-        uint newMipMapCount = 0,
-        uint newArraySize = 0,
-        GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
-        GpuTaskCallback completeCallback = null)
-    {
-        TextureDimensions dim = Dimensions;
-        dim.Width = newWidth;
-        dim.Height = newHeight;
-        dim.MipMapCount = newMipMapCount;
-        dim.ArraySize = newArraySize;
-        ResourceFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
-        ResizeTextureDX12 task = new ResizeTextureDX12()
-        {
-            Texture = this,
-            NewDimensions = dim,
-            NewFormat = newFormat,
-            OnCompleted = completeCallback
-        };
-        Device.Tasks.Push(priority, ref task, cmd);
-    }
-
-    internal void ProcessResize(GpuCommandList cmd, ref ResizeTextureDX12 t)
-    {
-        _handle?.Dispose();
-        _handle = null;
-        Apply(cmd);
-    }
-
     protected unsafe void OnCreateResource()
     {
         ID3D12Resource1* ptr = OnCreateTexture();
@@ -133,6 +102,13 @@ public abstract class TextureDX12 : GpuTexture, ITexture
             SetUAVDescription(ref srvDesc, ref uavDesc);
             _handle.UAV.Initialize(ref uavDesc);
         }
+    }
+
+    protected override void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t)
+    {
+        _handle?.Dispose();
+        _handle = null;
+        Apply(cmd);
     }
 
     protected virtual ClearValue GetClearValue() => default;

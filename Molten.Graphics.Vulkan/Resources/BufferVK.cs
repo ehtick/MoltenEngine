@@ -31,6 +31,11 @@ public unsafe class BufferVK : GpuBuffer
         throw new NotImplementedException();
     }
 
+    public override bool SetLocation(ulong offset, ulong numBytes, Logger log = null)
+    {
+        throw new NotImplementedException();
+    }
+
     protected override void OnApply(GpuCommandList cmd)
     {
         if (_handle != null)

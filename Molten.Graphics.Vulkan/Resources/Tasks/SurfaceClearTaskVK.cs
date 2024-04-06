@@ -2,45 +2,40 @@
 
 namespace Molten.Graphics.Vulkan;
 
-internal class SurfaceClearTaskVK : GpuResourceTask<TextureVK>
+internal struct SurfaceClearTaskVK : IGpuTask<SurfaceClearTaskVK>
 {
+    public IRenderSurfaceVK Surface;
+
     public Color Color;
 
-    public override void ClearForPool()
-    {
-        Color = Color.Black;
-    }
+    public GpuTaskCallback OnCompleted;
 
-    public override bool Validate()
-    {
-        return true;
-    }
-
-    protected unsafe override bool OnProcess(RenderService renderer, GpuCommandQueue queue)
+    public unsafe static bool Process(GpuCommandList cmd, ref SurfaceClearTaskVK t)
     {
         // TODO Implement proper handling of barrier transitions.
         //  -- Transition from the current layout to the one we need.
         //  -- Transition back to the original layout once we're done.
 
-        if (Resource.ApplyQueue.Count > 0)
+        if (t.Surface.ApplyQueue.Count > 0)
         {
-            CommandQueueVK vkCmd = queue as CommandQueueVK;
-            Resource.Apply(queue);
+            CommandListVK vkCmd = cmd as CommandListVK;
+            t.Surface.Apply(cmd);
 
             vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
-            Resource.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
+            t.Surface.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
 
             ImageSubresourceRange range = new ImageSubresourceRange
             {
                 AspectMask = ImageAspectFlags.ColorBit,
                 BaseArrayLayer = 0,
-                LayerCount = Resource.ArraySize,
+                LayerCount = t.Surface.ArraySize,
                 BaseMipLevel = 0,
-                LevelCount = Resource.MipMapCount,
+                LevelCount = t.Surface.MipMapCount,
             };
 
-            vkCmd.ClearImage(*Resource.Handle.NativePtr, ImageLayout.TransferDstOptimal, Color, &range, 1);
-            Resource.Transition(vkCmd, ImageLayout.TransferDstOptimal, ImageLayout.ColorAttachmentOptimal);
+            TextureVK tex = t.Surface as TextureVK;
+            vkCmd.ClearImage(*tex.Handle.NativePtr, ImageLayout.TransferDstOptimal, t.Color, &range, 1);
+            tex.Transition(vkCmd, ImageLayout.TransferDstOptimal, ImageLayout.ColorAttachmentOptimal);
             vkCmd.Sync();
 
             // Clear Surface via 
@@ -63,18 +58,23 @@ internal class SurfaceClearTaskVK : GpuResourceTask<TextureVK>
         }
         else
         {
-            switch (Resource)
+            switch (t.Surface)
             {
                 case RenderSurface1DVK surface1D:
-                    surface1D.ClearColor = Color;
+                    surface1D.ClearColor = t.Color;
                     break;
 
                 case RenderSurface2DVK surface2D:
-                    surface2D.ClearColor = Color;
+                    surface2D.ClearColor = t.Color;
                     break;
             }
         }
 
         return true;
+    }
+
+    public void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
     }
 }

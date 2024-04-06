@@ -74,10 +74,4 @@ public unsafe class Texture2DDX12 : TextureDX12, ITexture2D
             PlaneSlice = 0
         };
     }
-
-    public void Resize(GpuPriority priority, uint newWidth, uint newHeight, uint newMipMapCount = 0,
-        uint newArraySize = 0, GpuResourceFormat newFormat = GpuResourceFormat.Unknown)
-    {
-        Resize(priority, newWidth, newHeight, newArraySize, newMipMapCount, Depth, newFormat);
-    }
 }

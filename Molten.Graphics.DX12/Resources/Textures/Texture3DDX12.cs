@@ -57,9 +57,4 @@ public unsafe class Texture3DDX12 : TextureDX12, ITexture3D
             WSize = Desc.DepthOrArraySize,
         };
     }
-
-    public void Resize(GpuPriority priority, uint newWidth, uint newHeight, uint newDepth, uint newMipMapCount = 0, GpuResourceFormat newFormat = GpuResourceFormat.Unknown)
-    {
-        Resize(priority, newWidth, newHeight, ArraySize, newMipMapCount, newDepth, newFormat);
-    }
 }

@@ -9,11 +9,6 @@ public class Texture3DVK : TextureVK, ITexture3D
         base(device, dimensions, format, flags, name)
     { }
 
-    public void Resize(GpuPriority priority, uint newWidth, uint newHeight, uint newDepth, uint newMipMapCount = 0, GpuResourceFormat newFormat = GpuResourceFormat.Unknown)
-    {
-        Resize(priority, newWidth, newHeight, ArraySize, newMipMapCount, newDepth, newFormat);
-    }
-
     protected override void SetCreateInfo(DeviceVK device, ref ImageCreateInfo imgInfo, ref ImageViewCreateInfo viewInfo)
     {
         imgInfo.ImageType = ImageType.Type3D;
