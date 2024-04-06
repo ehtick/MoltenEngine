@@ -162,17 +162,17 @@ public unsafe class DeviceDX12 : DeviceDXGI
         base.OnDispose(immediate);
     }
 
-    protected override void OnBeginFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    protected override void OnBeginFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
         CommandAllocator = _cmdAllocators.Prepare();
     }
 
-    protected override void OnEndFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    protected override void OnEndFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
         surfaces.For(0, (index, surface) =>
         {
             if (surface.IsEnabled)
-                (surface as SwapChainSurfaceDX12).Present();
+                (surface as SwapChainSurfaceDX12).Present(cmd as CommandListDX12);
         });
 
         // TODO Only wait if there are no available frames to process.

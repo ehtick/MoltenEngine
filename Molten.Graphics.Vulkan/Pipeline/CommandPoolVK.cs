@@ -27,7 +27,7 @@ internal unsafe class CommandPoolVK : EngineObject
         _allocations = new List<CommandPoolAllocation>();
     }
 
-    internal CommandListVK Allocate(CommandBufferLevel level, uint branchIndex, GpuCommandListFlags flags)
+    internal CommandListVK Allocate(CommandBufferLevel level, GpuCommandListFlags flags)
     {
         CommandListVK result = null;
         foreach(CommandPoolAllocation a in _allocations)
@@ -69,7 +69,6 @@ internal unsafe class CommandPoolVK : EngineObject
         }
 
         result.Flags = flags;
-        result.BranchIndex = branchIndex;
         return result;
     }
 

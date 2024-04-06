@@ -112,13 +112,16 @@ public unsafe class CommandListDX12 : GpuCommandList
         }
     }
 
-    public override void Execute(GpuCommandList cmd)
+    public override void Execute(params GpuCommandList[] cmds)
     {
-        CommandListDX12 dxCmd = (CommandListDX12)cmd;
-        if (dxCmd.Type != CommandListType.Bundle)
-            throw new GpuCommandListException(this, "Cannot execute a non-bundle command list on another command list");
+        for (int i = 0; i < cmds.Length; i++)
+        {
+            CommandListDX12 dxCmd = (CommandListDX12)cmds[i];
+            if (dxCmd.Type != CommandListType.Bundle)
+                throw new GpuCommandListException(this, "Cannot execute a non-bundle command list on another command list");
 
-        _handle->ExecuteBundle(dxCmd.Handle);
+            _handle->ExecuteBundle(dxCmd.Handle);
+        }
     }
 
     public override void BeginEvent(string label)

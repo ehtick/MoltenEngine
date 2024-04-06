@@ -45,11 +45,17 @@ internal unsafe class CommandListVK : GpuCommandList
         _eventLabelStack = new Stack<DebugUtilsLabelEXT>();
     }
 
-    public override void Execute(GpuCommandList cmd)
+    public override void Execute(params GpuCommandList[] cmds)
     {
-        CommandListVK vkCmd = cmd as CommandListVK;
-        if(vkCmd.Level == CommandBufferLevel.Primary)
-            throw new GpuCommandListException(cmd, "Command lists can only execute secondary command lists. Primary command lists should be executed on a command queue.");
+        CommandBuffer* cmdBuffers = stackalloc CommandBuffer[cmds.Length];
+        for (int i = 0; i < cmds.Length; i++)
+        {
+            CommandListVK vkcmd = cmds[i] as CommandListVK;
+            if (vkcmd.Level == CommandBufferLevel.Primary)
+                throw new GpuCommandListException(vkcmd, "Command lists can only execute secondary command lists. Primary command lists should be executed on a command queue.");
+        }
+
+        _vk.CmdExecuteCommands(_handle, (uint)cmds.Length, cmdBuffers);
     }
 
     protected override void OnResetState()
@@ -111,28 +117,24 @@ internal unsafe class CommandListVK : GpuCommandList
     {
         base.Begin();
 
-        Device.Frame.BranchCount++;
+        CommandBufferBeginInfo beginInfo = new CommandBufferBeginInfo(StructureType.CommandBufferBeginInfo);
+        beginInfo.Flags = CommandBufferUsageFlags.None;
 
-        Device.Frame.Track(_cmd);
-        _vk.BeginCommandBuffer(_handle, &beginInfo);
+        if (Flags.Has(GpuCommandListFlags.SingleSubmit))
+            beginInfo.Flags |= CommandBufferUsageFlags.OneTimeSubmitBit;
+
+        Result r = _vk.BeginCommandBuffer(_handle, &beginInfo);
     }
 
     public override void End()
     {
         base.End();
-
-        _vk.EndCommandBuffer(_handle);
-
-        // Submit command list and don't return the command list, as it's not deferred.
-        SubmitCommandList(_cmd, fence);
-        return null;
+        Result r = _vk.EndCommandBuffer(_handle);
     }
 
     protected override unsafe GpuResourceMap GetResourcePtr(GpuResource resource, uint subresource, GpuMapType mapType)
     {
         ResourceHandleVK handle = (ResourceHandleVK)resource.Handle;
-        if (mapType == GpuMapType.Discard)
-            handle.Discard();
 
         GpuResourceMap map = new GpuResourceMap(null, (uint)resource.SizeInBytes, (uint)resource.SizeInBytes); // TODO Calculate correct RowPitch value when mapping textures
         Result r = _vk.MapMemory(_device, handle.Memory, 0, resource.SizeInBytes, 0, &map.Ptr);
@@ -163,14 +165,14 @@ internal unsafe class CommandListVK : GpuCommandList
             using (GpuStream stream = MapResource(resource, subresource, 0, GpuMapType.Write))
                 stream.WriteRange(ptrData, slicePitch);
         }
-        else
-        {
-            // Use a staging buffer to transfer the data to the provided resource instead.
-            using (GpuStream stream = MapResource(Device.Frame.StagingBuffer, 0, 0, GpuMapType.Write))
-                stream.WriteRange(ptrData, slicePitch);
+        //else
+        //{
+        //    // Use a staging buffer to transfer the data to the provided resource instead.
+        //    using (GpuStream stream = MapResource(Device.Frame.StagingBuffer, 0, 0, GpuMapType.Write))
+        //        stream.WriteRange(ptrData, slicePitch);
 
-            CopyResource(Device.Frame.StagingBuffer, resource);
-        }
+        //    CopyResource(Device.Frame.StagingBuffer, resource);
+        //}
     }
 
     protected override unsafe void CopyResource(GpuResource src, GpuResource dest)

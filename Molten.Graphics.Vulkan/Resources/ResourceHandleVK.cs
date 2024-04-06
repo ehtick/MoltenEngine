@@ -14,12 +14,6 @@ public unsafe abstract class ResourceHandleVK : GpuResourceHandle
     internal abstract void UpdateUsage(ulong frameID);
 
     /// <summary>
-    /// Discards the current sub-handle and switches to another one that is not in-use by the GPU. 
-    /// If no existing sub-handles are available, a new one will be created.
-    /// </summary>
-    internal abstract void Discard();
-
-    /// <summary>
     /// Disposes of the current Vulkan resource handle and frees <see cref="Memory"/> if assigned.
     /// </summary>
     protected override void OnGpuRelease()
@@ -33,7 +27,7 @@ public unsafe abstract class ResourceHandleVK : GpuResourceHandle
 
     protected abstract void OnDispose();
 
-    internal DeviceVK Device { get; }
+    internal new DeviceVK Device { get; }
 
     /// <summary>
     /// Gets the current memory allocation. This may automatically update or change if the resource is discarded via <see cref="Discard"/>.

@@ -32,14 +32,7 @@ public unsafe class CommandQueueVK : GpuObject<DeviceVK>
 
     internal CommandListVK Allocate(GpuCommandListFlags flags)
     {
-        CommandBufferBeginInfo beginInfo = new CommandBufferBeginInfo(StructureType.CommandBufferBeginInfo);
-        beginInfo.Flags = CommandBufferUsageFlags.None;
-
-        if (flags.Has(GpuCommandListFlags.SingleSubmit))
-            beginInfo.Flags |= CommandBufferUsageFlags.OneTimeSubmitBit;
-
-        CommandListVK cmd = _poolFrame.Allocate(CommandBufferLevel.Primary, Device.Frame.BranchCount, flags);
-        return cmd;
+        return _poolFrame.Allocate(CommandBufferLevel.Primary, flags);
     }
 
     /// <inheritdoc/>
@@ -49,10 +42,7 @@ public unsafe class CommandQueueVK : GpuObject<DeviceVK>
         if (cmd.Level != CommandBufferLevel.Secondary)
             throw new InvalidOperationException("Cannot submit a secondary command list to a queue");
 
-        /*CommandListVK vkList = list as CommandListVK;
 
-        CommandBuffer* cmdBuffers = stackalloc CommandBuffer[1] { vkList.Ptr };
-        _vk.CmdExecuteCommands(_cmd, 1, cmdBuffers);*/
 
         CommandBuffer* ptrBuffers = stackalloc CommandBuffer[] { cmd.Ptr };
         SubmitInfo submit = new SubmitInfo(StructureType.SubmitInfo);

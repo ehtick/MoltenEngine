@@ -93,6 +93,11 @@ public unsafe class DeviceVK : GpuDevice
         ActiveOutputs = _activeOutputs.AsReadOnly();
     }
 
+    public override GpuCommandList GetCommandList(GpuCommandListFlags flags = GpuCommandListFlags.None)
+    {
+        return _gfxQueue.Allocate(flags);
+    }
+
     public override GpuFormatSupportFlags GetFormatSupport(GpuResourceFormat format)
     {
         throw new NotImplementedException();
@@ -342,11 +347,6 @@ public unsafe class DeviceVK : GpuDevice
         throw new NotImplementedException();
     }
 
-    public override GpuCommandList GetCommandList(GpuCommandListFlags flags = GpuCommandListFlags.None)
-    {
-        throw new NotImplementedException();
-    }
-
     public override bool Wait(GpuFence fence, ulong nsTimeout = ulong.MaxValue)
     {
         FenceVK fenceVK = fence as FenceVK;
@@ -358,7 +358,7 @@ public unsafe class DeviceVK : GpuDevice
         _gfxQueue.Execute(cmd);
     }
 
-    protected override void OnBeginFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    protected override void OnBeginFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
         // Collect all enabled swapchain surfaces.
         _presentSurfaces.Clear();
@@ -417,17 +417,11 @@ public unsafe class DeviceVK : GpuDevice
             return;
     }
 
-    protected override void OnEndFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    protected override void OnEndFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
-        // Get the last semaphore of each command list branch in the current frame.
-        // QueuePresent() will wait for these semaphores to be signaled before presenting.
-        uint semaphoreCount = Frame.BranchCount;
-        Semaphore* semaphores = stackalloc Semaphore[(int)semaphoreCount];
-        for (uint i = 0; i < semaphoreCount; i++)
-        {
-            CommandListVK vkCmd = Frame[i] as CommandListVK;
-            semaphores[i] = vkCmd.Semaphore.Handle;
-        }
+        // Get the last semaphore of the last command list to be executed.
+        CommandListVK vkCmd = cmd as CommandListVK;
+        Semaphore* semaphores = stackalloc Semaphore[] {vkCmd.Semaphore.Handle};
 
         // Prepare presentable surfaces
         for (int i = 0; i < _swapChainCount; i++)
@@ -437,10 +431,11 @@ public unsafe class DeviceVK : GpuDevice
             _pSwapChains[i] = vkSurface.SwapchainHandle;
         }
 
+        // Presentation should wait on the last command list to be executed.
         PresentInfoKHR presentInfoKHR = new PresentInfoKHR()
         {
             SType = StructureType.PresentInfoKhr,
-            WaitSemaphoreCount = semaphoreCount,
+            WaitSemaphoreCount = 1,
             PWaitSemaphores = semaphores,
             SwapchainCount = (uint)_swapChainCount,
             PSwapchains = _pSwapChains,

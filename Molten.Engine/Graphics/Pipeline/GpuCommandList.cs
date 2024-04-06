@@ -188,8 +188,8 @@ public abstract partial class GpuCommandList : GpuObject
     /// <summary>
     /// Appends the commands within the provided <see cref="GpuCommandList"/> into the current <see cref="GpuCommandList"/>.
     /// </summary>
-    /// <param name="cmd"></param>
-    public abstract void Execute(GpuCommandList cmd);
+    /// <param name="cmds"></param>
+    public abstract void Execute(params GpuCommandList[] cmds);
 
     /// <summary>Draw non-indexed, non-instanced primitives. 
     /// All queued compute shader dispatch requests are also processed</summary>
@@ -410,11 +410,7 @@ public abstract partial class GpuCommandList : GpuObject
     /// </summary>
     public abstract void SetMarker(string label);
 
-    public uint BranchIndex { get; set; }
-
     public GpuCommandListFlags Flags { get; set; }
-
-    public GpuCommandList Previous { get; internal set; }
 
     /// <summary>Gets the profiler bound to the current <see cref="GpuCommandList"/>.</summary>
     public GraphicsQueueProfiler Profiler { get; }
