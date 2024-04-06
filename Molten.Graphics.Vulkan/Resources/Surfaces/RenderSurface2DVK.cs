@@ -32,7 +32,7 @@ public class RenderSurface2DVK : Texture2DVK, IRenderSurface2D, IRenderSurfaceVK
     {
         SurfaceClearTaskVK task = Device.Tasks.Get<SurfaceClearTaskVK>();
         task.Color = color;
-        Device.Tasks.Push<TextureVK, SurfaceClearTaskVK>(priority, this, task);
+        Device.PushTask<TextureVK, SurfaceClearTaskVK>(priority, this, task);
     }
 
     /// <inheritdoc/>

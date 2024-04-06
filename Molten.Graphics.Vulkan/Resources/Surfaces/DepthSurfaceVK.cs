@@ -22,7 +22,7 @@ internal class DepthSurfaceVK : Texture2DVK, IDepthStencilSurface
         task.Surface = this;
         task.DepthValue = depthValue;
         task.StencilValue = stencilValue;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     public DepthFormat DepthFormat { get; }

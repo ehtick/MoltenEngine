@@ -96,7 +96,7 @@ public abstract class GpuTexture : GpuResource, ITexture
             NewFormat = newFormat,
             OnCompleted = completeCallback
         };
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     protected internal abstract void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t);
@@ -133,7 +133,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.DestArrayIndex = destArrayIndex;
         task.OnCompleted += completeCallback;
 
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.MipLevel = mipIndex;
         task.OnCompleted = completeCallback;
 
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T[] data, uint startIndex, uint count, uint pitch, uint arrayIndex,
@@ -175,7 +175,7 @@ public abstract class GpuTexture : GpuResource, ITexture
                 OnCompleted = completeCallback,
             };
 
-            Device.Tasks.Push(priority, ref task, cmd);
+            Device.PushTask(priority, ref task, cmd);
         }
     }
 
@@ -228,7 +228,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.MipLevel = level;
         task.Region = region;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     public unsafe void SetSubResourceData<T>(GpuPriority priority, GpuCommandList cmd, uint level, T* data, uint startIndex, uint count, uint pitch, uint arrayIndex = 0,
@@ -242,7 +242,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.ArrayIndex = arrayIndex;
         task.MipLevel = level;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <inheritdoc/>
@@ -250,7 +250,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     {
         TextureGetDataTask task = new();
         task.OnGetData = callback;
-        Device.Tasks.Push( priority, ref task, cmd);
+        Device.PushTask( priority, ref task, cmd);
     }
 
     public void GetSubResourceData(GpuPriority priority, GpuCommandList cmd, uint mipLevel, uint arrayIndex, Action<TextureSlice> callback)
@@ -260,7 +260,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         task.Texture = this;
         task.MipMapLevel = mipLevel;
         task.ArrayIndex = arrayIndex;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>Generates mip maps for the texture via the current <see cref="GpuTexture"/>, if allowed.</summary>
@@ -275,7 +275,7 @@ public abstract class GpuTexture : GpuResource, ITexture
         GenerateMipMapsTask task = new();
         task.Texture = this;
         task.OnCompleted += callback;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>Gets whether or not the texture is using a supported block-compressed format.</summary>

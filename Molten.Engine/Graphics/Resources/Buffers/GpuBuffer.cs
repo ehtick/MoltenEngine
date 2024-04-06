@@ -116,7 +116,7 @@ public abstract class GpuBuffer : GpuResource
             Array.Copy(data, (long)startIndex, task.Data, 0, (long)elementCount);
         }
 
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>Retrieves data from a <see cref="GpuBuffer"/>.</summary>
@@ -143,7 +143,7 @@ public abstract class GpuBuffer : GpuResource
         task.DestIndex = startIndex;
         task.OnGetData += completionCallback;
         task.Buffer = this;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>

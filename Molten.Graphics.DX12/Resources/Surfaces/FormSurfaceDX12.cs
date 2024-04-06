@@ -356,7 +356,7 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         _form?.Dispose();
     }
 
-    protected override bool OnPresent()
+    protected override bool OnPresent(CommandListDX12 cmd)
     {
         if (_disposing)
         {
@@ -387,7 +387,13 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         {
             uint fbMax = Device.FrameBufferSize;
             uint fbIndex = Math.Min(Device.FrameBufferIndex, fbMax - 1);
-            base.OnResizeTextureImmediate(ref _requestedTexDim, ResourceFormat);
+
+            ResizeTextureTask task = new ResizeTextureTask()
+            {
+                NewDimensions = _requestedTexDim,
+                Texture = this,
+            };
+            Device.PushTask(GpuPriority.Immediate, ref task, cmd);
             InvokeOnResize();
         }
 

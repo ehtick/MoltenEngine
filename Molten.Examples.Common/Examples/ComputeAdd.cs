@@ -75,7 +75,7 @@ public class ComputeAdd : MoltenExample
             //GpuBuffer stagingBuffer = Engine.Renderer.Device.Resources.CreateStagingBuffer(true, false, numBytes);
 
             // Send our compute shader off to the renderer to be worked on.
-            Engine.Renderer.Device.Tasks.Push(GpuPriority.StartOfFrame, null, compute, NUM_SUMS, 1, 1, (successful) =>
+            Engine.Renderer.Device.PushTask(GpuPriority.StartOfFrame, null, compute, NUM_SUMS, 1, 1, (successful) =>
             {
                 // We can get our data immediately, since the render thread is calling the completionCallback.
                 //outBuffer.CopyTo(GpuPriority.Immediate, stagingBuffer);

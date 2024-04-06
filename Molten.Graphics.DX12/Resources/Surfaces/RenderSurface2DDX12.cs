@@ -54,7 +54,7 @@ public unsafe class RenderSurface2DDX12 : Texture2DDX12, IRenderSurface2D
         SurfaceClearTaskDX12 task = new();
         task.Surface = this;
         task.Color = color;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>Gets the viewport that defines the default renderable area of the render target.</summary>

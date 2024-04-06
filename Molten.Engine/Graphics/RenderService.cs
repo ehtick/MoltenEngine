@@ -123,13 +123,6 @@ public abstract class RenderService : EngineService
         if (!_shouldPresent)
             return;
 
-        Device.BeginFrame();
-
-        // Handle any pending graphics-based disposals.
-        Timing timing = Thread.Timing;
-        uint framesToWait = (uint)timing.TargetUPS / 5U;
-        Device.DisposeMarkedObjects(framesToWait, timing.FrameID);
-
         if (_requestedMultiSampleLevel != MsaaLevel)
         {
             // TODO re-create all internal surfaces/textures to match the new sample level.
@@ -138,9 +131,12 @@ public abstract class RenderService : EngineService
             _surfaceResizeRequired = true;
         }
 
-        // Process the start-of-frame task queue for each device.
+        // Handle any pending graphics-based disposals.
+        Timing timing = Thread.Timing;
+        uint framesToWait = (uint)timing.TargetUPS / 5U;
+
         for (int i = 0; i < _devices.Count; i++)
-            _devices[i].Tasks.Process(GpuPriority.StartOfFrame);
+            _devices[i].BeginFrame(framesToWait, time.FrameID);
 
         // Perform preliminary checks on active scene data.
         // Also ensure the backbuffer is always big enough for the largest scene render surface.
@@ -225,18 +221,16 @@ public abstract class RenderService : EngineService
         Device.Execute(cmd);
 
         for (int i = 0; i < _devices.Count; i++)
-            _devices[i].Tasks.Process(GpuPriority.EndOfFrame);
-
-        Device.EndFrame(time);
-        Surfaces.ResetFirstCleared();
-
-        // Accumulate profiling information.
-        for(int i = 0; i < _devices.Count; i++)
         {
             device = _devices[i];
+            _devices[i].EndFrame(time);
+
+            // Accumulate profiling information.
             //device.Profiler.Accumulate(device.Queue.Profiler);
             Profiler.Accumulate(device.Profiler);
         }
+
+        Surfaces.ResetFirstCleared();
     }
 
     internal void RenderSceneLayer(GpuCommandList cmd, LayerRenderData layerData, RenderCamera camera)
@@ -275,9 +269,9 @@ public abstract class RenderService : EngineService
     internal SceneRenderData CreateRenderData()
     {
         RenderAddScene task = new RenderAddScene();
-        task.Data = new SceneRenderData(Device.Tasks);
+        task.Data = new SceneRenderData(Device);
 
-        Device.Tasks.Push(GpuPriority.StartOfFrame, ref task, null);
+        Device.PushTask(GpuPriority.StartOfFrame, ref task, null);
         return task.Data;
     }
 
@@ -286,7 +280,7 @@ public abstract class RenderService : EngineService
         RenderRemoveScene task = new RenderRemoveScene();
         task.Data = data;
 
-        Device.Tasks.Push(GpuPriority.StartOfFrame, ref task, null);
+        Device.PushTask(GpuPriority.StartOfFrame, ref task, null);
     }
 
     /// <summary>

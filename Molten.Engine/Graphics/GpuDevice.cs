@@ -8,6 +8,12 @@ namespace Molten.Graphics;
 /// </summary>
 public abstract partial class GpuDevice : EngineObject
 {
+    private class TaskQueue
+    {
+        internal ThreadedQueue<ulong> Tasks = new();
+        internal GpuFrameBuffer<GpuCommandList> Cmd;
+    }
+
     public delegate void FrameBufferSizeChangedHandler(uint oldSize, uint newSize);
 
     /// <summary>Occurs when a connected <see cref="IDisplayOutput"/> is activated on the current <see cref="GpuDevice"/>.</summary>
@@ -26,6 +32,11 @@ public abstract partial class GpuDevice : EngineObject
     uint _newFrameBufferSize;
     uint _maxStagingSize;
 
+    TaskQueue[] _queues;
+    List<GpuTaskBank> _banks;
+    Dictionary<Type, GpuTaskBank> _banksByType;
+    GpuDevice _device;
+    Interlocker _locker;
     ThreadedList<GpuObject> _disposals;
 
     /// <summary>
@@ -40,7 +51,17 @@ public abstract partial class GpuDevice : EngineObject
         Manager = manager;
         Log = renderer.Log;
         Profiler = new GraphicsDeviceProfiler();
-        Tasks = new GpuTaskManager(this);
+
+        _banks = new List<GpuTaskBank>();
+        _banksByType = new Dictionary<Type, GpuTaskBank>();
+        _locker = new Interlocker();
+        _queues = new TaskQueue[2];
+
+        for (int i = 0; i < _queues.Length; i++)
+        {
+            _queues[i] = new TaskQueue();
+            _queues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(_device, (gpu) => gpu.GetCommandList());
+        }
 
         Cache = new ObjectCache();
         _disposals = new ThreadedList<GpuObject>();
@@ -49,6 +70,85 @@ public abstract partial class GpuDevice : EngineObject
         SettingValue<FrameBufferMode> bufferingMode = renderer.Settings.Graphics.FrameBufferMode;
         BufferingMode_OnChanged(bufferingMode.Value, bufferingMode.Value);
         bufferingMode.OnChanged += BufferingMode_OnChanged;
+    }
+
+
+    /// <summary>
+    /// Pushes a <see cref="IGpuTask{T}"/> to the specified priority queue in the current <see cref="GpuTaskManager"/>.
+    /// </summary>
+    /// <param name="priority">The priority of the task.</param>
+    /// <param name="task"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
+    public void PushTask<T>(GpuPriority priority, ref T task, GpuCommandList cmd)
+        where T : struct, IGpuTask<T>
+    {
+        if (priority == GpuPriority.Immediate)
+        {
+            if (cmd == null)
+                throw new ArgumentNullException("A command list must be provided when using GpuPriority.Immediate.");
+
+            bool success = T.Process(cmd, ref task);
+            task.Complete(success);
+        }
+        else
+        {
+            TaskQueue priorityQueue = _queues[(int)priority];
+            GpuTaskBank<T> bank;
+
+            _locker.Lock();
+            if (!_banksByType.TryGetValue(typeof(T), out GpuTaskBank tb))
+            {
+                int bankIndex = _banks.Count;
+                bank = new GpuTaskBank<T>(bankIndex);
+                _banks.Add(tb);
+                _banksByType.Add(typeof(T), tb);
+            }
+            else
+            {
+                bank = tb as GpuTaskBank<T>;
+            }
+
+            uint taskIndex = bank.Enqueue(ref task);
+            ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
+            _locker.Unlock();
+
+            priorityQueue.Tasks.Enqueue(queueIndex);
+        }
+    }
+
+    /// <summary>
+    /// Pushes a compute-based shader as a task.
+    /// </summary>
+    /// <param name="priority"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
+    /// <param name="shader">The compute shader to be run inside the task.</param>
+    /// <param name="groupsX">The number of X compute thread groups.</param>
+    /// <param name="groupsY">The number of Y compute thread groups.</param>
+    /// <param name="groupsZ">The number of Z compute thread groups.</param>
+    /// <param name="callback">A callback to run once the task is completed.</param>
+    public void PushTask(GpuPriority priority, GpuCommandList cmd, Shader shader, uint groupsX, uint groupsY, uint groupsZ, GpuTaskCallback callback = null)
+    {
+        PushTask(priority, cmd, shader, new Vector3UI(groupsX, groupsY, groupsZ), callback);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="priority"></param>
+    /// <param name="cmd">The command list to use if excuting a task with <see cref="GpuPriority.Immediate"/>. 
+    /// If the task is not executed with immediate priority, the command list parameter is ignored.</param>
+    /// <param name="shader"></param>
+    /// <param name="groups"></param>
+    /// <param name="callback"></param>
+    public void PushTask(GpuPriority priority, GpuCommandList cmd, Shader shader, Vector3UI groups, GpuTaskCallback callback = null)
+    {
+        ComputeTask task = new();
+        task.Shader = shader;
+        task.Groups = groups;
+        task.OnCompleted = callback;
+        PushTask(priority, ref task, cmd);
     }
 
     /// <summary>
@@ -109,7 +209,7 @@ public abstract partial class GpuDevice : EngineObject
     /// </summary>
     public abstract void RemoveAllActiveOutputs();
 
-    internal void DisposeMarkedObjects(uint framesToWait, ulong frameID)
+    private void DisposeMarkedObjects(uint framesToWait, ulong frameID)
     {
         // Are we disposing before the render thread has started?
         _disposals.ForReverse(1, (index, obj) =>
@@ -134,7 +234,8 @@ public abstract partial class GpuDevice : EngineObject
 
     protected override void OnDispose(bool immediate)
     {
-        Tasks?.Dispose();
+        foreach (TaskQueue queue in _queues)
+            queue.Cmd.Dispose();
 
         // Dispose of any registered output services.
         Resources.OutputSurfaces.For(0, (index, surface) =>
@@ -219,24 +320,69 @@ public abstract partial class GpuDevice : EngineObject
     /// <returns></returns>
     public abstract bool Wait(GpuFence fence, ulong nsTimeout = ulong.MaxValue);
 
-    internal void BeginFrame()
+    /// <summary>
+    /// Processes all tasks held in the manager for the specified priority queue, for the current <see cref="GpuDevice"/>.
+    /// </summary>
+    /// <param name="priority">The priority of the task.</param>
+    /// <param name="endCallback"></param>
+    private void ProcessTasks(GpuPriority priority, Action<GpuCommandList> endCallback)
     {
-        OnBeginFrame(Resources.OutputSurfaces);
+        if (priority == GpuPriority.Immediate)
+            throw new InvalidOperationException("Cannot process immediate priority tasks, as these are not queueable.");
 
-        // TODO check if _maxStagingSize has changed due to settings. May need to resize all existing staging buffers.
+        // TODO Implement "AllowBatching" property on RenderTask to allow multiple tasks to be processed in a single Begin()-End() command block
+        //      Tasks that don't allow batching will:
+        //       - Be executed in individual Begin()-End() command blocks
+        //       - Be executed on the next available compute device queue
+        //       - May not finish in the order they were requested due to task size, queue size and device performance.
+
+        TaskQueue queue = _queues[(int)priority];
+        GpuCommandList cmd = queue.Cmd.Prepare();
+
+        cmd.Begin();
+        cmd.BeginEvent($"Process queued '{priority}' tasks");
+
+        while (queue.Tasks.TryDequeue(out ulong queueIndex))
+        {
+            _locker.Lock();
+            uint bankIndex = (uint)(queueIndex >> 32);
+            uint taskIndex = (uint)(queueIndex & 0xFFFFFFFF);
+
+            GpuTaskBank bank = _banks[(int)bankIndex];
+            bank.Process(cmd, taskIndex);
+            _locker.Unlock();
+        }
+
+        cmd.EndEvent();
+
+        endCallback?.Invoke(cmd);
+        cmd.End();
+        _device.Execute(cmd);
+    }
+
+    internal void BeginFrame(uint disposalNumFrames, ulong frameID)
+    {
+        DisposeMarkedObjects(disposalNumFrames, frameID);
         CheckFrameBufferSize();
+        ProcessTasks(GpuPriority.StartOfFrame, (cmd) =>
+        {
+            OnBeginFrame(cmd, Resources.OutputSurfaces);
+        });
     }
 
     internal void EndFrame(Timing time)
     {
-        OnEndFrame(Resources.OutputSurfaces);
+        ProcessTasks(GpuPriority.EndOfFrame, (cmd) =>
+        {
+            OnEndFrame(cmd, Resources.OutputSurfaces);
+        });
 
         _frameIndex = (_frameIndex + 1U) % FrameBufferSize;
     }
 
-    protected abstract void OnBeginFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces);
+    protected abstract void OnBeginFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces);
 
-    protected abstract void OnEndFrame(IReadOnlyThreadedList<ISwapChainSurface> surfaces);
+    protected abstract void OnEndFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces);
 
     /// <summary>
     /// Gets the amount of VRAM that has been allocated on the current <see cref="GpuDevice"/>. 
@@ -321,11 +467,6 @@ public abstract partial class GpuDevice : EngineObject
     /// Gets the <see cref="ObjectCache"/> that is bound to the current <see cref="GpuDevice"/>.
     /// </summary>
     public ObjectCache Cache { get; }
-
-    /// <summary>
-    /// Gets the task manager of the current <see cref="GpuDevice"/>.
-    /// </summary>
-    public GpuTaskManager Tasks { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuResourceManager"/> implementation for the current <see cref="GpuDevice"/>. 

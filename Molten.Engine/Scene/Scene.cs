@@ -152,6 +152,8 @@ public partial class Scene : EngineObject
 
     /// <summary>Adds a <see cref="SceneObject"/> to the scene.</summary>
     /// <param name="obj">The object to be added.</param>
+    /// <param name="layer">The scene layer to add to. Must belong to the current <see cref="Scene"/> instance.
+    /// If null, the default layer will be used.</param>
     public void AddObject(SceneObject obj, SceneLayer layer = null)
     {
         layer ??= _defaultLayer;
@@ -166,7 +168,8 @@ public partial class Scene : EngineObject
 
     /// <summary>Removes a <see cref="SceneObject"/> from the scene.</summary>
     /// <param name="obj">The object to be removed.</param>
-    /// <param name="layer">The layer from which to remove the object. Must belong to the current <see cref="Scene"/> instance.</param>
+    /// <param name="layer">The layer from which to remove the object. Must belong to the current <see cref="Scene"/> instance.
+    /// If null, the default layer will be used.</param>
     public void RemoveObject(SceneObject obj, SceneLayer layer = null)
     {
         layer ??= _defaultLayer;

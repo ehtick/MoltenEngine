@@ -26,7 +26,7 @@ public class RenderSurface1DVK : Texture1DVK, IRenderSurface1D, IRenderSurfaceVK
         SurfaceClearTaskVK task = new();
         task.Surface = this;
         task.Color = color;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <inheritdoc/>

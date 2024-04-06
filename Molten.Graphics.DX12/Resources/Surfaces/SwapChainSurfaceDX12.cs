@@ -134,7 +134,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
     {
         Apply(cmd);
 
-        if (OnPresent() && SwapChainHandle != null)
+        if (OnPresent(cmd) && SwapChainHandle != null)
         {
             // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
             uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
@@ -177,7 +177,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         base.OnGpuRelease();
     }
 
-    protected abstract bool OnPresent();
+    protected abstract bool OnPresent(CommandListDX12 cmd);
 
     /// <inheritdoc/>
     public bool IsEnabled { get; set; }

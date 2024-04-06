@@ -80,7 +80,7 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
         task.DepthValue = depthValue;
         task.StencilValue = stencilValue;
         task.Flags = clearFlags;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     protected override unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)

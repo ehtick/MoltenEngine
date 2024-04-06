@@ -62,7 +62,7 @@ public abstract class GpuResource : GpuObject, IGpuResource
         task.Source = this;
         task.Destination = destination;
         task.OnCompleted += completeCallback;
-        Device.Tasks.Push(priority, ref task, cmd);
+        Device.PushTask(priority, ref task, cmd);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public abstract class GpuResource : GpuObject, IGpuResource
                 task.DestStart = Vector3UI.Zero;
                 task.DestSubResource = (destSlice * destTex.MipMapCount) + destLevel;
                 task.OnCompleted += completeCallback;
-                Device.Tasks.Push(priority, ref task, cmd);
+                Device.PushTask(priority, ref task, cmd);
             }
             else
             {
