@@ -16,6 +16,7 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         base(device)
     {
         _desc = desc;
+        _lockerExecute = new Interlocker();
         Log = log;
         Device = device;
 

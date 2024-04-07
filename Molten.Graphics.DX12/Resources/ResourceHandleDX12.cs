@@ -13,6 +13,12 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
 
         SetResources(ptr);
         Device = resource.Device as DeviceDX12;
+
+        if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
+            SRV = new SRViewDX12(this);
+
+        if (resource.Flags.Has(GpuResourceFlags.UnorderedAccess))
+            UAV = new UAViewDX12(this);
     }
 
     internal ResourceHandleDX12(GpuResource resource, ID3D12Resource1** ptr, uint numResources) : base(resource)
@@ -35,7 +41,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
         _ptr = ptr;
     }
 
-    public void SetResources(ID3D12Resource1** ptr, uint numResources)
+    internal void SetResources(ID3D12Resource1** ptr, uint numResources)
     {
         if(_ptr == null || _ptr.Length != numResources)
             _ptr = new ID3D12Resource1*[numResources];

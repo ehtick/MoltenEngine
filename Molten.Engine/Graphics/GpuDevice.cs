@@ -119,6 +119,8 @@ public abstract partial class GpuDevice : EngineObject
             {
                 int bankIndex = _taskBanks.Count;
                 bank = new GpuTaskBank<T>(bankIndex);
+                tb = bank;
+
                 _taskBanks.Add(tb);
                 _taskBanksByType.Add(typeof(T), tb);
             }

@@ -54,8 +54,8 @@ public class GpuDiscardBuffer<T> : GpuObject
         Format = format;
         _stride = (uint)sizeof(T);
         _maxAllocationSize = Math.Min(blockCapacity, (1024 * 1024) * 128); // 128 MB - TODO: Get limit from hardware capabilities
-
-        throw new NotImplementedException("Intialize buffer with the provided initial capacity");
+        _frames = new GpuFrameBuffer<Frame>(device, (gpu) => new Frame(gpu));
+        Prepare();
     }
 
     private void Allocate()
