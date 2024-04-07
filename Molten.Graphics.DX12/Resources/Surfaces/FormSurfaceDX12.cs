@@ -128,7 +128,7 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         {
             Width = (uint)_bounds.Width,
             Height = (uint)_bounds.Height,
-            RefreshRate = new Rational(60, 1),
+            RefreshRate = new Rational(60, 1), // TODO detect closest output refresh rate (attempt to match vsync frame rate where possible)
             Format = DxgiFormat,
             Scaling = ModeScaling.Stretched,
             ScanlineOrdering = ModeScanlineOrder.Progressive,

@@ -104,6 +104,12 @@ public unsafe class CommandListDX12 : GpuCommandList
         _isClosed = false;
     }
 
+    public override void End()
+    {
+        base.End();
+        Close();
+    }
+
     private void Close()
     {
         if (!_isClosed)
