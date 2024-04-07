@@ -32,11 +32,10 @@ public abstract partial class GpuDevice : EngineObject
     uint _newFrameBufferSize;
     uint _maxStagingSize;
 
-    TaskQueue[] _queues;
-    List<GpuTaskBank> _banks;
-    Dictionary<Type, GpuTaskBank> _banksByType;
-    GpuDevice _device;
-    Interlocker _locker;
+    TaskQueue[] _taskQueues;
+    List<GpuTaskBank> _taskBanks;
+    Dictionary<Type, GpuTaskBank> _taskBanksByType;
+    Interlocker _taskLocker;
     ThreadedList<GpuObject> _disposals;
 
     /// <summary>
@@ -52,17 +51,6 @@ public abstract partial class GpuDevice : EngineObject
         Log = renderer.Log;
         Profiler = new GraphicsDeviceProfiler();
 
-        _banks = new List<GpuTaskBank>();
-        _banksByType = new Dictionary<Type, GpuTaskBank>();
-        _locker = new Interlocker();
-        _queues = new TaskQueue[2];
-
-        for (int i = 0; i < _queues.Length; i++)
-        {
-            _queues[i] = new TaskQueue();
-            _queues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(_device, (gpu) => gpu.GetCommandList());
-        }
-
         Cache = new ObjectCache();
         _disposals = new ThreadedList<GpuObject>();
         _maxStagingSize = (uint)ByteMath.FromMegabytes(renderer.Settings.Graphics.FrameStagingSize);
@@ -72,6 +60,36 @@ public abstract partial class GpuDevice : EngineObject
         bufferingMode.OnChanged += BufferingMode_OnChanged;
     }
 
+    public bool Initialize()
+    {
+        if (IsInitialized)
+            throw new InvalidOperationException("Cannot initialize a GraphicsDevice that has already been initialized.");
+
+        CheckFrameBufferSize();
+
+        if (OnInitialize())
+        {
+            IsInitialized = true;
+            CheckFrameBufferSize();
+
+            _taskLocker = new Interlocker();
+            _taskQueues = new TaskQueue[2];
+            _taskBanks = new List<GpuTaskBank>();
+            _taskBanksByType = new Dictionary<Type, GpuTaskBank>();
+
+            for (int i = 0; i < _taskQueues.Length; i++)
+            {
+                _taskQueues[i] = new TaskQueue();
+                _taskQueues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(this, (gpu) => gpu.GetCommandList());
+            }
+        }
+        else
+        {
+            Log.Error($"Failed to initialize {this.Name}");
+        }
+
+        return IsInitialized;
+    }
 
     /// <summary>
     /// Pushes a <see cref="IGpuTask{T}"/> to the specified priority queue in the current <see cref="GpuTaskManager"/>.
@@ -93,16 +111,16 @@ public abstract partial class GpuDevice : EngineObject
         }
         else
         {
-            TaskQueue priorityQueue = _queues[(int)priority];
+            TaskQueue priorityQueue = _taskQueues[(int)priority];
             GpuTaskBank<T> bank;
 
-            _locker.Lock();
-            if (!_banksByType.TryGetValue(typeof(T), out GpuTaskBank tb))
+            _taskLocker.Lock();
+            if (!_taskBanksByType.TryGetValue(typeof(T), out GpuTaskBank tb))
             {
-                int bankIndex = _banks.Count;
+                int bankIndex = _taskBanks.Count;
                 bank = new GpuTaskBank<T>(bankIndex);
-                _banks.Add(tb);
-                _banksByType.Add(typeof(T), tb);
+                _taskBanks.Add(tb);
+                _taskBanksByType.Add(typeof(T), tb);
             }
             else
             {
@@ -111,7 +129,7 @@ public abstract partial class GpuDevice : EngineObject
 
             uint taskIndex = bank.Enqueue(ref task);
             ulong queueIndex = ((ulong)bank.BankIndex << 32) | taskIndex;
-            _locker.Unlock();
+            _taskLocker.Unlock();
 
             priorityQueue.Tasks.Enqueue(queueIndex);
         }
@@ -234,7 +252,7 @@ public abstract partial class GpuDevice : EngineObject
 
     protected override void OnDispose(bool immediate)
     {
-        foreach (TaskQueue queue in _queues)
+        foreach (TaskQueue queue in _taskQueues)
             queue.Cmd.Dispose();
 
         // Dispose of any registered output services.
@@ -261,28 +279,6 @@ public abstract partial class GpuDevice : EngineObject
         Interlocked.Add(ref _allocatedVRAM, -bytes);
     }
 
-    public bool Initialize()
-    {
-        if (IsInitialized)
-            throw new InvalidOperationException("Cannot initialize a GraphicsDevice that has already been initialized.");
-
-        CheckFrameBufferSize();
-
-        if (OnInitialize())
-        {
-            IsInitialized = true;
-            CheckFrameBufferSize();
-        }
-        else
-        {
-            Log.Error($"Failed to initialize {this.Name}");
-        }
-
-        return IsInitialized;
-    }
-
-    protected abstract bool OnInitialize();
-
     private void CheckFrameBufferSize()
     {
         // Do we need to resize the number of buffered frames?
@@ -295,6 +291,8 @@ public abstract partial class GpuDevice : EngineObject
             FrameBufferSize = _newFrameBufferSize;
         }
     }
+
+    protected abstract bool OnInitialize();
 
     /// <summary>Returns a new (or recycled) <see cref="GpuCommandList"/> which can be used to record GPU commands.</summary>
     /// <param name="flags">The flags to apply to the underlying command segment.</param>   
@@ -336,7 +334,7 @@ public abstract partial class GpuDevice : EngineObject
         //       - Be executed on the next available compute device queue
         //       - May not finish in the order they were requested due to task size, queue size and device performance.
 
-        TaskQueue queue = _queues[(int)priority];
+        TaskQueue queue = _taskQueues[(int)priority];
         GpuCommandList cmd = queue.Cmd.Prepare();
 
         cmd.Begin();
@@ -344,20 +342,20 @@ public abstract partial class GpuDevice : EngineObject
 
         while (queue.Tasks.TryDequeue(out ulong queueIndex))
         {
-            _locker.Lock();
+            _taskLocker.Lock();
             uint bankIndex = (uint)(queueIndex >> 32);
             uint taskIndex = (uint)(queueIndex & 0xFFFFFFFF);
 
-            GpuTaskBank bank = _banks[(int)bankIndex];
+            GpuTaskBank bank = _taskBanks[(int)bankIndex];
             bank.Process(cmd, taskIndex);
-            _locker.Unlock();
+            _taskLocker.Unlock();
         }
 
         cmd.EndEvent();
 
         endCallback?.Invoke(cmd);
-        cmd.End();
-        _device.Execute(cmd);
+        cmd.End();     
+        Execute(cmd);
     }
 
     internal void BeginFrame(uint disposalNumFrames, ulong frameID)

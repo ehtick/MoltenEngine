@@ -31,6 +31,7 @@ public unsafe class CommandListDX12 : GpuCommandList
         _dsv = EngineUtil.AllocArray<CpuDescriptorHandle>(1);
         _dsv[0] = default;
 
+        _handle = handle;
         Close();
     }
 
