@@ -42,8 +42,6 @@ public unsafe class CommandQueueVK : GpuObject<DeviceVK>
         if (cmd.Level != CommandBufferLevel.Secondary)
             throw new InvalidOperationException("Cannot submit a secondary command list to a queue");
 
-
-
         CommandBuffer* ptrBuffers = stackalloc CommandBuffer[] { cmd.Ptr };
         SubmitInfo submit = new SubmitInfo(StructureType.SubmitInfo);
         submit.PCommandBuffers = ptrBuffers;

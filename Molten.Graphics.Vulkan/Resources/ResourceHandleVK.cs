@@ -87,23 +87,23 @@ public unsafe class ResourceHandleVK<T, SH> : ResourceHandleVK
         }
     }
 
-    internal override sealed void Discard()
-    {
-        _subIndex++;
+    //internal override sealed void Discard()
+    //{
+    //    _subIndex++;
 
-        // Do we need a new sub-handle or can we use an existing one?
-        if (_subIndex == _subHandles.Count)
-        {
-            AllocateSubHandle();
-            _discardCallback(Device, _sub, _subHandles[0].Memory.Flags);
-        }
-        else
-        {
-            _sub = _subHandles[_subIndex];
-        }
+    //    // Do we need a new sub-handle or can we use an existing one?
+    //    if (_subIndex == _subHandles.Count)
+    //    {
+    //        AllocateSubHandle();
+    //        _discardCallback(Device, _sub, _subHandles[0].Memory.Flags);
+    //    }
+    //    else
+    //    {
+    //        _sub = _subHandles[_subIndex];
+    //    }
 
-        _sub.LastFrameUsed = Device.Renderer.FrameID;
-    }
+    //    _sub.LastFrameUsed = Device.Renderer.FrameID;
+    //}
 
     /// <inheritdoc/>
     protected override void OnDispose()

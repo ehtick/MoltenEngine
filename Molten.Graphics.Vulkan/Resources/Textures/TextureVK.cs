@@ -62,11 +62,11 @@ public unsafe abstract class TextureVK : GpuTexture
         _info.Samples = SampleCountFlags.Count1Bit;
         _info.Flags = ImageCreateFlags.None;
 
-        // Queue properties are ignored if sharing mode is not VK_SHARING_MODE_CONCURRENT.
+        // Queue family values are ignored if sharing mode is not VK_SHARING_MODE_CONCURRENT.
         if (_info.SharingMode == SharingMode.Concurrent)
         {
             _info.PQueueFamilyIndices = EngineUtil.AllocArray<uint>(1);
-            _info.PQueueFamilyIndices[0] = (Device.Queue as CommandQueueVK).Index;
+            _info.PQueueFamilyIndices[0] = Device.MainQueue.FamilyIndex;
             _info.QueueFamilyIndexCount = 1;
         }
 

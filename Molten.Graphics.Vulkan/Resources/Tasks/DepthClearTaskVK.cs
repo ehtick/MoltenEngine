@@ -18,14 +18,14 @@ internal struct DepthClearTaskVK : IGpuTask<DepthClearTaskVK>
         //  -- Transition from the current layout to the one we need.
         //  -- Transition back to the original layout once we're done.
 
-        if (t.Surface.ApplyQueue.Count > 0)
+        /*if (t.Surface.ApplyQueue.Count > 0)
         {
             t.Surface.ClearValue = null;
 
-            CommandQueueVK vkCmd = queue as CommandQueueVK;
-            t.Surface.Apply(queue);
+            CommandListVK vkCmd = cmd as CommandListVK;
+            t.Surface.Apply(cmd);
 
-            vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
+            //vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
             t.Surface.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
 
             ImageSubresourceRange range = new ImageSubresourceRange
@@ -42,9 +42,9 @@ internal struct DepthClearTaskVK : IGpuTask<DepthClearTaskVK>
             vkCmd.Sync();
         }
         else
-        {
+        {*/
             t.Surface.ClearValue = new ClearDepthStencilValue(t.DepthValue, t.StencilValue);
-        }
+        //}
 
         return true;
     }

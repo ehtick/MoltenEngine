@@ -16,12 +16,12 @@ internal struct SurfaceClearTaskVK : IGpuTask<SurfaceClearTaskVK>
         //  -- Transition from the current layout to the one we need.
         //  -- Transition back to the original layout once we're done.
 
-        if (t.Surface.ApplyQueue.Count > 0)
+        /*if (t.Surface.ApplyQueue.Count > 0)
         {
             CommandListVK vkCmd = cmd as CommandListVK;
             t.Surface.Apply(cmd);
 
-            vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
+            //vkCmd.Sync(GpuCommandListFlags.SingleSubmit);
             t.Surface.Transition(vkCmd, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
 
             ImageSubresourceRange range = new ImageSubresourceRange
@@ -57,7 +57,7 @@ internal struct SurfaceClearTaskVK : IGpuTask<SurfaceClearTaskVK>
             //          0.0 ≤ depth value< 0.5 correlates with VK_COMPARE_OP_GREATER_OR_EQUAL
         }
         else
-        {
+        {*/
             switch (t.Surface)
             {
                 case RenderSurface1DVK surface1D:
@@ -68,7 +68,7 @@ internal struct SurfaceClearTaskVK : IGpuTask<SurfaceClearTaskVK>
                     surface2D.ClearColor = t.Color;
                     break;
             }
-        }
+        //}
 
         return true;
     }

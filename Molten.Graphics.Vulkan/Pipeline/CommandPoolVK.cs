@@ -52,21 +52,21 @@ internal unsafe class CommandPoolVK : EngineObject
             result = allocation.Get();
         }
 
-        if (flags.Has(GpuCommandListFlags.CpuSyncable))
-        {
-            if (result.Fence != null)
-                result.Fence.Reset();
-            else
-                result.Fence = Queue.Device.GetFence();
-        }
-        else
-        {
-            if (result.Fence != null)
-            {
-                Queue.Device.FreeFence(result.Fence);
-                result.Fence = null;
-            }
-        }
+        //if (flags.Has(GpuCommandListFlags.CpuSyncable))
+        //{
+        //    if (result.Fence != null)
+        //        result.Fence.Reset();
+        //    else
+        //        result.Fence = Queue.Device.GetFence();
+        //}
+        //else
+        //{
+        //    if (result.Fence != null)
+        //    {
+        //        Queue.Device.FreeFence(result.Fence);
+        //        result.Fence = null;
+        //    }
+        //}
 
         result.Flags = flags;
         return result;

@@ -197,7 +197,7 @@ public abstract class SwapChainSurfaceVK : RenderSurface2DVK, INativeSurface
         };
 
         // Detect swap-chain sharing mode.
-        (createInfo.ImageSharingMode, CommandQueueVK[] sharingWith) = Device.GetSharingMode(Device.Queue, _presentQueue);
+        (createInfo.ImageSharingMode, CommandQueueVK[] sharingWith) = Device.GetSharingMode(Device.MainQueue, _presentQueue);
         uint* familyIndices = stackalloc uint[sharingWith.Length];
 
         for (int i = 0; i < sharingWith.Length; i++)
@@ -214,10 +214,10 @@ public abstract class SwapChainSurfaceVK : RenderSurface2DVK, INativeSurface
         return _extSwapChain.CreateSwapchain(Device, &createInfo, null, out _swapChain);
     }
 
-    internal void Prepare(CommandQueueVK queue, uint imageIndex)
+    internal void Prepare(CommandListVK cmd, uint imageIndex)
     {
         SetHandle(_handles[imageIndex]);
-        Transition(queue, ImageLayout.Undefined, ImageLayout.PresentSrcKhr);
+        Transition(cmd, ImageLayout.Undefined, ImageLayout.PresentSrcKhr);
     }
 
     private void ValidateBackBufferSize()
