@@ -96,6 +96,7 @@ public sealed class BufferDX12 : GpuBuffer
             }
             else
             {
+                RootBuffer.Apply(cmd);
                 resource = (ID3D12Resource1*)RootBuffer.Handle.Ptr;
             }
 
@@ -238,7 +239,9 @@ public sealed class BufferDX12 : GpuBuffer
 
         Offset = offset;
         SizeInBytes = numBytes;
-        InitializeViews();
+
+        if(_handle != null)
+            InitializeViews();
 
         return true;
     }

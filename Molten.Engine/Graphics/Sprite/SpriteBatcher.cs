@@ -531,7 +531,7 @@ public partial class SpriteBatcher : IDisposable
 
         _buffer.Prepare();
         GpuBuffer dataBuffer = _buffer.Get(vertexCount, 1);
-        dataBuffer.SetData(GpuPriority.Immediate, cmd, Data);
+        dataBuffer.SetData(GpuPriority.Immediate, cmd, Data, 0, vertexCount, 0);
 
         // TODO Improve this. Wasting a discard at the start of each frame!
         /*if (dataBuffer.LastUsedFrameID != cmd.Device.Renderer.FrameID)
