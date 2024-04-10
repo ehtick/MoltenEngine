@@ -19,6 +19,8 @@ public struct SubResourceCopyTask : IGpuTask<SubResourceCopyTask>
 
     public event GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref SubResourceCopyTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref SubResourceCopyTask t)
     {
         t.Source.Apply(cmd);

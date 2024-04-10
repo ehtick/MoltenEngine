@@ -12,6 +12,8 @@ internal struct DepthClearTaskVK : IGpuTask<DepthClearTaskVK>
 
     internal GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref DepthClearTaskVK t) => true;
+
     public unsafe static bool Process(GpuCommandList cmd, ref DepthClearTaskVK t)
     {
         // TODO Implement proper handling of barrier transitions.

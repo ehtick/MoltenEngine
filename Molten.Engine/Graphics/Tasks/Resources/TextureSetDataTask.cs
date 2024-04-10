@@ -1,7 +1,7 @@
 ﻿namespace Molten.Graphics;
 internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 {
-    internal GpuTexture Resource;
+    internal GpuTexture Texture;
     internal TextureData Data;
     internal uint DestArrayIndex;
     internal uint DestLevelIndex;
@@ -12,11 +12,18 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
     public event GpuTaskCallback OnCompleted;
 
+
+    public static bool Validate(ref TextureSetDataTask t)
+    {
+        if (!t.Texture.Flags.Has(GpuResourceFlags.UploadMemory))
+            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
+
+        return true;
+    }
+
     public unsafe static bool Process(GpuCommandList cmd, ref TextureSetDataTask t)
     {
         TextureSlice level;
-
-        
 
         for (uint a = 0; a < t.ArrayCount; a++)
         {
@@ -34,7 +41,7 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
                 uint destLevel = t.DestLevelIndex + m;
 
                 TextureSetSubResourceTask<byte> subTask = new(level.Data, 1, 0, level.TotalBytes, true);
-                subTask.Texture = t.Resource;
+                subTask.Texture = t.Texture;
                 subTask.StartIndex = 0;
                 subTask.ArrayIndex = destArray;
                 subTask.MipLevel = destLevel;

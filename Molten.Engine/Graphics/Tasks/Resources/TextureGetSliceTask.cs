@@ -12,6 +12,8 @@ internal struct TextureGetSliceTask : IGpuTask<TextureGetSliceTask>
 
     public GpuMapType MapType;
 
+    public static bool Validate(ref TextureGetSliceTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref TextureGetSliceTask t)
     {
         TextureSlice slice = TextureSlice.FromTextureSlice(cmd, t.Texture, t.MipMapLevel, t.ArrayIndex, t.MapType);

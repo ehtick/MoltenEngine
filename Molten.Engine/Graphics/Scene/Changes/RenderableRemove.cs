@@ -11,6 +11,8 @@ internal struct RenderableRemove : IGpuTask<RenderableRemove>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RenderableRemove t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderableRemove t)
     {
         RenderDataBatch batch;

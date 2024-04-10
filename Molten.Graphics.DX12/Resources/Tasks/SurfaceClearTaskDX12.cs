@@ -8,6 +8,8 @@ internal struct SurfaceClearTaskDX12 : IGpuTask<SurfaceClearTaskDX12>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref SurfaceClearTaskDX12 t) => true;
+
     public static bool Process(GpuCommandList cmd, ref SurfaceClearTaskDX12 t)
     {
         t.Surface.Apply(cmd);

@@ -101,6 +101,12 @@ public abstract partial class GpuDevice : EngineObject
     public void PushTask<T>(GpuPriority priority, ref T task, GpuCommandList cmd)
         where T : struct, IGpuTask<T>
     {
+        if (!T.Validate(ref task))
+        {
+            Log.Error($"Failed to queue {typeof(T).Name} GPU task");
+            return;
+        }
+
         if (priority == GpuPriority.Immediate)
         {
             if (cmd == null)

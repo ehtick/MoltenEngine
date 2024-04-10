@@ -8,6 +8,8 @@ internal struct RemoveCamera : IGpuTask<RemoveCamera>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RemoveCamera t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RemoveCamera t)
     {
         t.Data.Cameras.Remove(t.Camera);

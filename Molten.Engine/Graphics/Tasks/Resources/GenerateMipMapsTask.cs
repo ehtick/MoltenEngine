@@ -6,6 +6,8 @@ internal struct GenerateMipMapsTask : IGpuTask<GenerateMipMapsTask>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref GenerateMipMapsTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref GenerateMipMapsTask t)
     {
         cmd.OnGenerateMipmaps(t.Texture);

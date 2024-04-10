@@ -11,6 +11,8 @@ internal struct RenderableAdd : IGpuTask<RenderableAdd>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RenderableAdd t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderableAdd t)
     {
         RenderDataBatch batch;

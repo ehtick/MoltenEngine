@@ -9,6 +9,8 @@ public struct ResizeTextureTask : IGpuTask<ResizeTextureTask>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref ResizeTextureTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref ResizeTextureTask t)
     {
         t.Texture.ProcessResize(cmd, ref t);

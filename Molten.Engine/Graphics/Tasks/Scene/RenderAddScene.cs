@@ -5,6 +5,8 @@ internal struct RenderAddScene : IGpuTask<RenderAddScene>
 {
     public SceneRenderData Data;
 
+    public static bool Validate(ref RenderAddScene t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderAddScene t)
     {
         cmd.Device.Renderer.Scenes.Add(t.Data);

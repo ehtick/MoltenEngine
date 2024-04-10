@@ -14,6 +14,8 @@ public interface IGpuTask<T>
     /// <param name="success"></param>
     void Complete(bool success);
 
+    static abstract bool Validate(ref T t);
+
     /// <summary>
     /// Invoked when a task should be processed immediately instead of being queued.
     /// </summary>

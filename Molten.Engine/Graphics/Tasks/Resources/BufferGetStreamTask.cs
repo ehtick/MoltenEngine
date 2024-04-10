@@ -13,6 +13,8 @@ internal struct BufferGetStreamTask : IGpuTask<BufferGetStreamTask>
     /// <summary>A callback to interact with the retrieved stream.</summary>
     internal event Action<GpuBuffer, GpuStream> OnStreamOpened;
 
+    public static bool Validate(ref BufferGetStreamTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref BufferGetStreamTask t)
     {
         using (GpuStream stream = cmd.MapResource(t.Buffer, 0, t.ByteOffset, t.MapType))

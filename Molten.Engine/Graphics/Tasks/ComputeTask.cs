@@ -8,6 +8,8 @@ internal struct ComputeTask : IGpuTask<ComputeTask>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref ComputeTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref ComputeTask t)
     {
         cmd.Dispatch(t.Shader, t.Groups);

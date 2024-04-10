@@ -48,12 +48,13 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
         }
     }
 
-    public unsafe void Complete(bool success)
-    {
-        OnCompleted?.Invoke(success);
 
-        if (!_immediate)
-            EngineUtil.Free(ref Data);
+    public static bool Validate(ref TextureSetSubResourceTask<T> t)
+    {
+        if (!t.Texture.Flags.Has(GpuResourceFlags.UploadMemory))
+            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
+
+        return true;
     }
 
     public unsafe static bool Process(GpuCommandList cmd, ref TextureSetSubResourceTask<T> t)
@@ -65,9 +66,6 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
         uint levelWidth = tex.Width;
         uint levelHeight = tex.Height;
         uint levelDepth = tex.Depth;
-
-        if (!tex.Flags.Has(GpuResourceFlags.UploadMemory))
-            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
 
         if (tex.IsBlockCompressed)
         {
@@ -163,5 +161,13 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
 
         tex.Version++;
         return true;
+    }
+
+    public unsafe void Complete(bool success)
+    {
+        OnCompleted?.Invoke(success);
+
+        if (!_immediate)
+            EngineUtil.Free(ref Data);
     }
 }

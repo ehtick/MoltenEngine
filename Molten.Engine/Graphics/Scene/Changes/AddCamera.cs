@@ -8,6 +8,8 @@ internal struct AddCamera : IGpuTask<AddCamera>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref AddCamera t) => true;
+
     public static bool Process(GpuCommandList cmd, ref AddCamera t)
     {
         t.Data.Cameras.Add(t.Camera);

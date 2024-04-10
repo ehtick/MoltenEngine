@@ -14,6 +14,8 @@ internal struct DepthClearTaskDX12 : IGpuTask<DepthClearTaskDX12>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref DepthClearTaskDX12 t) => true;
+
     public unsafe static bool Process(GpuCommandList cmd, ref DepthClearTaskDX12 t)
     {
         CommandListDX12 cmDX12 = (CommandListDX12)cmd;

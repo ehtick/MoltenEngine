@@ -9,6 +9,8 @@ internal struct RenderLayerRemove : IGpuTask<RenderLayerRemove>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RenderLayerRemove t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderLayerRemove t)
     {
         t.SceneData.Layers.Remove(t.LayerData);

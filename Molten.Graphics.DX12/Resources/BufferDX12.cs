@@ -39,9 +39,6 @@ public sealed class BufferDX12 : GpuBuffer
     {
         if (_handle == null)
         {
-
-            _handle?.Dispose();
-
             HeapFlags heapFlags = HeapFlags.None;
             ResourceFlags flags = Flags.ToResourceFlags();
             HeapType heapType = Flags.ToHeapType();

@@ -10,6 +10,8 @@ internal struct TextureGetDataTask : IGpuTask<TextureGetDataTask>
 
     public GpuMapType MapType;
 
+    public static bool Validate(ref TextureGetDataTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref TextureGetDataTask t)
     {
         GpuTexture tex = t.Texture;

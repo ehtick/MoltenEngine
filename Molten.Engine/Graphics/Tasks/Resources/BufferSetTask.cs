@@ -20,6 +20,8 @@ internal struct BufferSetTask<T> : IGpuTask<BufferSetTask<T>>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref BufferSetTask<T> t) => true;
+
     public static bool Process(GpuCommandList cmd, ref BufferSetTask<T> t)
     {
         ulong actualOffset = t.Buffer.Offset + t.ByteOffset;

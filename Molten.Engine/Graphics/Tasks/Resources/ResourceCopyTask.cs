@@ -8,6 +8,8 @@ public struct ResourceCopyTask : IGpuTask<ResourceCopyTask>
 
     public event GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref ResourceCopyTask t) => true;
+
     public static bool Process(GpuCommandList cmd, ref ResourceCopyTask t)
     {
         t.Source.Apply(cmd);

@@ -24,6 +24,8 @@ internal struct BufferGetTask<T> : IGpuTask<BufferGetTask<T>>
     /// </summary>
     public event Action<T[]> OnGetData;
 
+    public static bool Validate(ref BufferGetTask<T> t) => true;
+
     public static bool Process(GpuCommandList cmd, ref BufferGetTask<T> t)
     {
         t.DestArray ??= new T[t.Count];

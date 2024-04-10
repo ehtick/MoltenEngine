@@ -124,7 +124,7 @@ public abstract class GpuTexture : GpuResource, ITexture
     {
         TextureSetDataTask task = new();
         task.Data = data;
-        task.Resource = this;
+        task.Texture = this;
         task.LevelStartIndex = levelStartIndex;
         task.ArrayStartIndex = arrayStartIndex;
         task.LevelCount = levelCount;

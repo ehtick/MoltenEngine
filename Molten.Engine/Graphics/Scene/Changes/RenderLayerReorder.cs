@@ -9,6 +9,8 @@ internal struct RenderLayerReorder : IGpuTask<RenderLayerReorder>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RenderLayerReorder t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderLayerReorder t)
     {
         int indexOf = t.SceneData.Layers.IndexOf(t.LayerData);

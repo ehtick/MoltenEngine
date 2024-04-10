@@ -5,6 +5,8 @@ internal struct RenderRemoveScene : IGpuTask<RenderRemoveScene>
 {
     public SceneRenderData Data;
 
+    public static bool Validate(ref RenderRemoveScene t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderRemoveScene t)
     {
         cmd.Device.Renderer.Scenes.Remove(t.Data);

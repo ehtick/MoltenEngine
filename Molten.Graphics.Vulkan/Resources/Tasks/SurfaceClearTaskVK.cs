@@ -10,6 +10,8 @@ internal struct SurfaceClearTaskVK : IGpuTask<SurfaceClearTaskVK>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref SurfaceClearTaskVK t) => true;
+
     public unsafe static bool Process(GpuCommandList cmd, ref SurfaceClearTaskVK t)
     {
         // TODO Implement proper handling of barrier transitions.

@@ -9,6 +9,8 @@ internal struct RenderLayerAdd : IGpuTask<RenderLayerAdd>
 
     public GpuTaskCallback OnCompleted;
 
+    public static bool Validate(ref RenderLayerAdd t) => true;
+
     public static bool Process(GpuCommandList cmd, ref RenderLayerAdd t)
     {
         t.SceneData.Layers.Add(t.LayerData);
