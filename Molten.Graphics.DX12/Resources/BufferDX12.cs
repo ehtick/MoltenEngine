@@ -26,7 +26,7 @@ public sealed class BufferDX12 : GpuBuffer
     private BufferDX12(BufferDX12 parentBuffer, ulong offset, uint stride, ulong numElements, GpuResourceFlags flags, GpuBufferType type, uint alignment)
         : base(parentBuffer.Device, stride, numElements, flags, type, alignment)
     {
-        if (ParentBuffer != null)
+        if (parentBuffer != null)
         {
             ParentBuffer = parentBuffer;
             RootBuffer = parentBuffer.RootBuffer ?? parentBuffer;
