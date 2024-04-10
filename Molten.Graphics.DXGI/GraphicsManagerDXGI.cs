@@ -154,7 +154,7 @@ public unsafe class GraphicsManagerDXGI : GpuManager
 
         return de;
     }
-
+ 
     /// <inheritdoc/>
     public override void GetCompatibleAdapters(GpuCapabilities cap, List<GpuDevice> devices)
     {

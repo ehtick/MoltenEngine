@@ -70,7 +70,7 @@ internal class RenderChain : EngineObject
         Renderer.Surfaces.MultiSampleLevel = camera.MultiSampleLevel;
         context.Scene = sceneData;
 
-        cmd.Begin();
+        //cmd.Begin();
         cmd.BeginEvent($"Pre-Render");
         RenderChainLink stepPreRender = BuildPreRender(sceneData, camera);
         stepPreRender.Run(cmd, camera, context, time);
@@ -99,7 +99,7 @@ internal class RenderChain : EngineObject
         stepPostRender.Run(cmd, camera, context, time);
         RenderChainLink.Recycle(stepPostRender);
         cmd.EndEvent();
-        cmd.End();
+        //cmd.End();
     }
 
     protected override void OnDispose(bool immediate)
