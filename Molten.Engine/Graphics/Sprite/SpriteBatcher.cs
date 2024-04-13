@@ -69,8 +69,6 @@ public partial class SpriteBatcher : IDisposable
     uint _dataCount;
     uint _flushIndex;
 
-    GpuDiscardBuffer<GpuData> _buffer;
-
     CheckerCallback[] _checkers;
     Shader _matDefault;
     Shader _matDefaultMS;
@@ -100,7 +98,7 @@ public partial class SpriteBatcher : IDisposable
         Reset();
 
         //throw new NotImplementedException("Implement per-frame buffer");
-        _buffer = device.Resources.CreateDiscardBuffer<GpuData>(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, FlushCapacity * 10);
+        //_buffer = device.Resources.CreateDiscardBuffer<GpuData>(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, FlushCapacity * 10);
 
         ShaderCompileResult result = device.Resources.LoadEmbeddedShader("Molten.Assets", "sprite.json");
         _matDefaultNoTexture = result["sprite-no-texture"];
@@ -527,10 +525,10 @@ public partial class SpriteBatcher : IDisposable
 
     private unsafe void FlushBuffer(GpuCommandList cmd, RenderCamera camera, ObjectRenderData data, uint rangeID, uint rangeCount, uint vertexStartIndex, uint vertexCount)
     {
-        uint flushByteOffset = 0;
+        //uint flushByteOffset = 0;
 
-        _buffer.Prepare();
-        GpuBuffer dataBuffer = _buffer.Get(vertexCount, 1);
+        //_buffer.Prepare();
+        GpuBuffer dataBuffer = cmd.Device.UploadBuffer.Get<GpuData>(vertexCount, 1);
         dataBuffer.SetData(GpuPriority.Immediate, cmd, Data, 0, vertexCount, 0);
 
         // TODO Improve this. Wasting a discard at the start of each frame!
@@ -648,7 +646,6 @@ public partial class SpriteBatcher : IDisposable
         _matLine.Dispose();
         _matCircle.Dispose();
         _matCircleNoTexture.Dispose();
-        _buffer.Dispose();
     }
 
     /// <summary>

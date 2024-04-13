@@ -6,13 +6,13 @@ internal class LightingStep : RenderStep
 {
     Shader _matPoint;
     Shader _matDebugPoint;
-    GpuDiscardBuffer<LightData> _lightBuffer;
+    //GpuDiscardBuffer<LightData> _lightBuffer;
 
     protected override void OnInitialize(RenderService renderer)
     {
         uint stride = (uint)Marshal.SizeOf<LightData>();
         uint maxLights = 2000; // TODO move to graphics settings
-        _lightBuffer = renderer.Device.Resources.CreateDiscardBuffer<LightData>(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, maxLights);
+        //_lightBuffer = renderer.Device.Resources.CreateDiscardBuffer<LightData>(GpuBufferType.Structured, GpuResourceFlags.UploadMemory, GpuResourceFormat.Unknown, maxLights);
 
         // Load shaders
         ShaderCompileResult result = renderer.Device.Resources.LoadEmbeddedShader("Molten.Assets", "light_point.json");
@@ -22,7 +22,7 @@ internal class LightingStep : RenderStep
 
     public override void Dispose()
     {
-        _lightBuffer.Dispose();
+        //_lightBuffer.Dispose();
         _matPoint.Dispose();
         _matDebugPoint.Dispose();
     }
@@ -42,7 +42,7 @@ internal class LightingStep : RenderStep
 
     private void RenderPointLights(RenderService renderer, GpuCommandList cmd, RenderCamera camera, SceneRenderData scene, IDepthStencilSurface dsSurface)
     {
-        _lightBuffer.Prepare();
+        //_lightBuffer.Prepare();
         IRenderSurface2D sScene = renderer.Surfaces[MainSurfaceType.Scene];
         IRenderSurface2D sNormals = renderer.Surfaces[MainSurfaceType.Normals];
 
@@ -63,11 +63,11 @@ internal class LightingStep : RenderStep
             scene.PointLights.Data[i] = ld;
         }
 
-        GpuBuffer lightData = _lightBuffer.Get(scene.PointLights.Data.Length);
+        GpuBuffer lightData = cmd.Device.UploadBuffer.Get<LightData>(scene.PointLights.Data.Length);
         lightData.SetData(GpuPriority.Immediate, cmd, scene.PointLights.Data);
 
         // Set data buffer on domain and pixel shaders
-        _matPoint.Light.Data.Value = _lightBuffer; // TODO Need to implement a dynamic structured buffer we can reuse here.
+        _matPoint.Light.Data.Value = lightData; // TODO Need to implement a dynamic structured buffer we can reuse here.
         _matPoint.Light.MapDiffuse.Value = sScene;
         _matPoint.Light.MapNormal.Value =  sNormals;
         _matPoint.Light.MapDepth.Value = dsSurface;

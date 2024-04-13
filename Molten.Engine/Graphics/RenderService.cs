@@ -223,7 +223,7 @@ public abstract class RenderService : EngineService
         for (int i = 0; i < _devices.Count; i++)
         {
             device = _devices[i];
-            _devices[i].EndFrame(time);
+            _devices[i].EndFrame();
 
             // Accumulate profiling information.
             //device.Profiler.Accumulate(device.Queue.Profiler);

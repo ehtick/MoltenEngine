@@ -1,7 +1,6 @@
 ﻿namespace Molten.Graphics;
 
-public class GpuDiscardBuffer<T> : GpuObject
-    where T : unmanaged
+public class GpuDiscardBuffer : GpuObject
 {
     class BufferPair
     {
@@ -28,7 +27,6 @@ public class GpuDiscardBuffer<T> : GpuObject
     GpuFrameBuffer<Frame> _frames;
     ulong _maxAllocationSize;
     Frame _curFrame;
-    uint _stride;
 
     /// <summary>
     /// 
@@ -49,7 +47,6 @@ public class GpuDiscardBuffer<T> : GpuObject
         BufferType = bufferType;
         Flags = flags;
         Format = format;
-        _stride = (uint)sizeof(T);
         _maxAllocationSize = Math.Min(blockCapacity, (1024 * 1024) * 128); // 128 MB - TODO: Get limit from hardware capabilities
         _frames = new GpuFrameBuffer<Frame>(device, (gpu) => new Frame(gpu));
         Prepare();
@@ -58,22 +55,27 @@ public class GpuDiscardBuffer<T> : GpuObject
     private void Allocate()
     {
         BufferPair pair = new BufferPair();
-
-        uint numElements = (uint)(_maxAllocationSize / _stride);
-        pair.Buffer = Device.Resources.CreateBuffer<T>(BufferType, Flags, numElements, Format, 1);
-        pair.Ring = pair.Buffer.Allocate<T>(0, 1, Flags, BufferType, 1);
+        pair.Buffer = Device.Resources.CreateBuffer(BufferType, Flags, _maxAllocationSize, 1, Format, 1);
+        pair.Ring = pair.Buffer.Allocate(0, 1, _maxAllocationSize, Flags, BufferType, 1);
 
         _curFrame.Pairs.Add(pair);
     }
 
-    public GpuBuffer Get(int numElements, uint alignment = 1)
+    public unsafe GpuBuffer Get<T>(int numElements, uint alignment = 1)
+    where T : unmanaged
     {
-        return Get((uint)numElements, alignment);
+        return Get((uint)numElements, (uint)sizeof(T), alignment);
     }
 
-    public GpuBuffer Get(uint numElements, uint alignment = 1)
+    public unsafe GpuBuffer Get<T>(uint numElements, uint alignment = 1)
+        where T : unmanaged
     {
-        ulong neededBytes = numElements * _stride;
+        return Get(numElements, (uint)sizeof(T), alignment);
+    }
+
+    public GpuBuffer Get(uint numElements, uint stride, uint alignment = 1)
+    {
+        ulong neededBytes = numElements * stride;
         if (neededBytes > _maxAllocationSize)
             throw new InvalidOperationException($"Requested buffer size exceeds the maximum allocation size of {_maxAllocationSize:N0} bytes.");
 

@@ -82,6 +82,9 @@ public abstract partial class GpuDevice : EngineObject
                 _taskQueues[i] = new TaskQueue();
                 _taskQueues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(this, (gpu) => gpu.GetCommandList());
             }
+
+            UploadBuffer = new GpuDiscardBuffer(this, GpuBufferType.Upload, GpuResourceFlags.None, GpuResourceFormat.Unknown, _maxStagingSize);
+            DownloadBuffer = new GpuDiscardBuffer(this, GpuBufferType.Download, GpuResourceFlags.None, GpuResourceFormat.Unknown, _maxStagingSize);
         }
         else
         {
@@ -370,13 +373,17 @@ public abstract partial class GpuDevice : EngineObject
     {
         DisposeMarkedObjects(disposalNumFrames, frameID);
         CheckFrameBufferSize();
+
+        UploadBuffer.Prepare();
+        DownloadBuffer.Prepare();
+
         ProcessTasks(GpuPriority.StartOfFrame, (cmd) =>
         {
             OnBeginFrame(cmd, Resources.OutputSurfaces);
         });
     }
 
-    internal void EndFrame(Timing time)
+    internal void EndFrame()
     {
         ProcessTasks(GpuPriority.EndOfFrame, (cmd) =>
         {
@@ -478,4 +485,8 @@ public abstract partial class GpuDevice : EngineObject
     /// Gets the <see cref="GpuResourceManager"/> implementation for the current <see cref="GpuDevice"/>. 
     /// </summary>
     public abstract GpuResourceManager Resources { get; }
+
+    public GpuDiscardBuffer UploadBuffer { get; private set; }
+
+    public GpuDiscardBuffer DownloadBuffer { get; private set; }
 }
