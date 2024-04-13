@@ -24,14 +24,9 @@ public class ResourceManagerVK :GraphicsResourceManager<DeviceVK>
         throw new NotImplementedException();
     }
 
-    protected unsafe override GpuBuffer OnCreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong numElements, T[] initialData = null)
+    protected override GpuBuffer OnCreateBuffer(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong numElements, uint stride, uint alignment)
     {
-        BufferVK buffer = new BufferVK(Device, type, flags, (uint)sizeof(T), numElements, 1);
-
-        if (initialData != null)
-            buffer.SetData(GpuPriority.StartOfFrame, null, initialData);
-
-        return buffer;
+        return new BufferVK(Device, type, flags, stride, numElements, 1);
     }
 
     public override GpuBuffer CreateConstantBuffer(ConstantBufferInfo info)

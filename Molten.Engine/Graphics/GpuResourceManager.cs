@@ -71,23 +71,34 @@ public abstract class GpuResourceManager : GpuObject
         return new GpuDiscardBuffer<T>(Device, type, flags, format, blockCapacity);
     }
 
-    public GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, T[] initialData, GpuResourceFormat format = GpuResourceFormat.Unknown, uint alignment = 1)
+    public unsafe GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, T[] initialData, GpuResourceFormat format = GpuResourceFormat.Unknown, uint alignment = 1)
         where T : unmanaged
     {
-        return CreateBuffer(type, flags, (ulong)initialData.LongLength, format, alignment, initialData);
+        return CreateBuffer(type, flags, (ulong)initialData.LongLength, (uint)sizeof(T), format, alignment);
     }
 
-    public GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, 
+    public unsafe GpuBuffer CreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, 
         ulong numElements,
         GpuResourceFormat format = GpuResourceFormat.Unknown,
         uint alignment = 1,
         T[] initialData = null)
         where T : unmanaged
     {
-        SetBufferProperties(type, ref flags, ref format);
-        GpuBuffer buffer = OnCreateBuffer<T>(type, flags, format, numElements, initialData);
+        GpuBuffer buffer = CreateBuffer(type, flags, numElements, (uint)sizeof(T), format, alignment);
+
+        if (initialData != null)
+        {
+            // TODO If buffer does not have CPU access, upload via transfer buffer.
+            // buffer.SetData<T>(GraphicsPriority.StartOfFrame, initialData);
+        }
 
         return buffer;
+    }
+
+    public GpuBuffer CreateBuffer(GpuBufferType type, GpuResourceFlags flags, ulong numElements, uint stride, GpuResourceFormat format = GpuResourceFormat.Unknown, uint alignment = 1)
+    {
+        SetBufferProperties(type, ref flags, ref format);
+        return OnCreateBuffer(type, flags, format, numElements, stride, alignment);
     }
 
     private void SetBufferProperties(GpuBufferType type, ref GpuResourceFlags flags, ref GpuResourceFormat format)
@@ -125,8 +136,7 @@ public abstract class GpuResourceManager : GpuObject
         }
     }
 
-    protected abstract GpuBuffer OnCreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format,
-        ulong numElements, T[] initialData = null) where T : unmanaged;
+    protected abstract GpuBuffer OnCreateBuffer(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong numElements, uint stride, uint alignment);
     #endregion
 
     #region Samplers

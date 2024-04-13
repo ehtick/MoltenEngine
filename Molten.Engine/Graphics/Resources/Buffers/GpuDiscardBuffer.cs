@@ -1,11 +1,8 @@
-﻿using Molten.Collections;
-
-namespace Molten.Graphics;
+﻿namespace Molten.Graphics;
 
 public class GpuDiscardBuffer<T> : GpuObject
     where T : unmanaged
 {
-
     class BufferPair
     {
         internal GpuBuffer Buffer;

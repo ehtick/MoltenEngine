@@ -29,10 +29,8 @@ internal class ResourceManagerDX12 : GraphicsResourceManager<DeviceDX12>
         return new ShaderPassDX12(shader, name);
     }
 
-    protected unsafe override GpuBuffer OnCreateBuffer<T>(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong numElements, T[] initialData = null)
+    protected unsafe override GpuBuffer OnCreateBuffer(GpuBufferType type, GpuResourceFlags flags, GpuResourceFormat format, ulong numElements, uint stride, uint alignment)
     {
-        uint stride = (uint)sizeof(T);
-        uint alignment = stride;
         if (type == GpuBufferType.Constant)
         {
             alignment = D3D12.ConstantBufferDataPlacementAlignment; // Constant buffers must be 256-bit aligned.
@@ -41,14 +39,7 @@ internal class ResourceManagerDX12 : GraphicsResourceManager<DeviceDX12>
                 throw new GpuStrideException(stride, $"The data type of a DX12 constant buffer must be a multiple of 256 bytes.");
         }
 
-        BufferDX12 buffer = new BufferDX12(Device, stride, numElements, flags, type, alignment);
-        if (initialData != null)
-        {
-            // TODO send initial data to the buffer.
-            // buffer.SetData<T>(GraphicsPriority.Immediate, initialData);
-        }
-
-        return buffer;
+        return new BufferDX12(Device, stride, numElements, flags, type, alignment);
     }
 
     public override GpuBuffer CreateConstantBuffer(ConstantBufferInfo info)
