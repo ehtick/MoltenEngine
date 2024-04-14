@@ -178,7 +178,7 @@ public unsafe class CommandListDX12 : GpuCommandList
 
     internal void Transition(TextureDX12 texture, ResourceStates newState, uint subResource = 0)
     {
-        if (texture.BarrierState == newState)
+        if (texture.Handle.BarrierState == newState)
             return;
 
         ResourceBarrier barrier = new()
@@ -189,12 +189,12 @@ public unsafe class CommandListDX12 : GpuCommandList
             {
                 PResource = texture.Handle,
                 StateAfter = newState,
-                StateBefore = texture.BarrierState,
+                StateBefore = texture.Handle.BarrierState,
                 Subresource = subResource,
             },
         };
 
-        texture.BarrierState = newState;
+        texture.Handle.BarrierState = newState;
         _handle->ResourceBarrier(1, &barrier);
     }
 

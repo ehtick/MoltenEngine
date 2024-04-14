@@ -5,6 +5,7 @@ namespace Molten.Graphics.DX12;
 public unsafe class ResourceHandleDX12 : GpuResourceHandle
 {
     ID3D12Resource1*[] _ptr;
+    ResourceStates[] _states;
 
     internal ResourceHandleDX12(GpuResource resource, params ID3D12Resource1*[] ptr) : base(resource)
     {
@@ -13,6 +14,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
 
         SetResources(ptr);
         Device = resource.Device as DeviceDX12;
+        _states = new ResourceStates[ptr.Length];
 
         if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
             SRV = new SRViewDX12(this);
@@ -28,6 +30,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
 
         SetResources(ptr, numResources);
         Device = resource.Device as DeviceDX12;
+        _states = new ResourceStates[numResources];
 
         if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
             SRV = new SRViewDX12(this);
@@ -73,7 +76,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
 
     internal UAViewDX12 UAV { get; }
 
-    internal DeviceDX12 Device { get; }
+    internal new DeviceDX12 Device { get; }
 
     internal unsafe ID3D12Resource1* Ptr1 => _ptr[Index];
 
@@ -94,9 +97,11 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
     /// </summary>
     /// <param name="index">The resource pointer index.</param>
     /// <returns></returns>
-    internal ID3D12Resource1* this[uint index]
-    {
-        get => _ptr[index];
-        set => _ptr[index] = value;
-    }
+    internal ref ID3D12Resource1* this[uint index] => ref _ptr[index];
+
+
+    /// <summary>
+    /// Gets the internal resource barrier state of the underlying resource.
+    /// </summary>
+    internal ref ResourceStates BarrierState => ref _states[Index];
 }

@@ -56,7 +56,7 @@ public class SdfGenerator
         Color[] finalData = new Color[src.Width * src.Height];
         ITexture2D tex = renderer.Device.Resources.CreateTexture2D(src.Width, src.Height, 1, 1, 
             GpuResourceFormat.R8G8B8A8_UNorm, 
-            GpuResourceFlags.None, name: $"SDF_{src.Width}x{src.Height}");
+            GpuResourceFlags.DefaultMemory, name: $"SDF_{src.Width}x{src.Height}");
 
         fixed (Color* ptr = finalData)
         {

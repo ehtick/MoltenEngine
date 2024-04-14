@@ -140,6 +140,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
 
         if (OnPresent(cmd) && SwapChainHandle != null)
         {
+            cmd.Transition(this, ResourceStates.Present);
 
             // TODO implement partial-present - Partial Presentation (using scroll or dirty rects)
             // is not valid until first submitting a regular Present without scroll or dirty rects.
@@ -161,6 +162,8 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
             // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
             uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
             _handle.Index = bbIndex;
+
+            cmd.Transition(this, ResourceStates.RenderTarget);
         }
 
         if (!IsDisposed)

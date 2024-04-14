@@ -7,9 +7,9 @@ namespace Molten.Content;
 
 public class TextureProcessor : ContentProcessor<TextureParameters>
 {
-    public override Type[] AcceptedTypes { get; } = [ typeof(ITexture), typeof(TextureData) ];
+    public override Type[] AcceptedTypes { get; } = [typeof(ITexture), typeof(TextureData)];
 
-    public override Type[] RequiredServices { get; } = [typeof(RenderService) ];
+    public override Type[] RequiredServices { get; } = [typeof(RenderService)];
 
     public override Type PartType { get; } = typeof(TextureData);
 
@@ -80,6 +80,7 @@ public class TextureProcessor : ContentProcessor<TextureParameters>
             {
                 Format = data.Format,
                 IsCompressed = data.IsCompressed,
+                Flags = GpuResourceFlags.DefaultMemory,
             };
 
 

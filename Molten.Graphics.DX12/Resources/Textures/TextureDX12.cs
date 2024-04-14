@@ -34,6 +34,11 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         if (resourceDimension == ResourceDimension.Buffer)
             throw new InvalidOperationException("Textures cannot use a buffer resource dimension.");
 
+        if(Flags == GpuResourceFlags.None)
+        {
+
+        }
+
         Desc = new ResourceDesc1()
         {
             Width = dimensions.Width,
@@ -203,11 +208,6 @@ public abstract class TextureDX12 : GpuTexture, ITexture
     public new DeviceDX12 Device { get; }
 
     public override ResourceHandleDX12 Handle => _handle;
-
-    /// <summary>
-    /// Gets the internal resource barrier state of the current <see cref="BufferDX12"/>.
-    /// </summary>
-    internal ResourceStates BarrierState { get; set; }
 
     internal ref ResourceDesc1 Desc => ref _desc;
 }
