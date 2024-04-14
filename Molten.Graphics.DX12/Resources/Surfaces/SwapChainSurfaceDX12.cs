@@ -100,7 +100,11 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
             },
         };
 
-        _handle.RTV.Initialize(ref desc); 
+        _handle.RTV.Initialize(ref desc);
+
+        // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
+        uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
+        _handle.Index = bbIndex;
 
         return _handle;
     }
@@ -136,9 +140,6 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
 
         if (OnPresent(cmd) && SwapChainHandle != null)
         {
-            // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
-            uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
-            _handle.Index = bbIndex;
 
             // TODO implement partial-present - Partial Presentation (using scroll or dirty rects)
             // is not valid until first submitting a regular Present without scroll or dirty rects.
@@ -152,10 +153,14 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
             {
                 if (_lastError != de)
                 {
-                    Device.Log.Error($"Creation of swapchain failed with result: {de}");
+                    Device.Log.Error($"Swapchain present failed with result: {de}");
                     _lastError = de;
                 }
             }
+
+            // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
+            uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
+            _handle.Index = bbIndex;
         }
 
         if (!IsDisposed)

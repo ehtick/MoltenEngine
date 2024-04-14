@@ -236,22 +236,6 @@ public unsafe class CommandListDX12 : GpuCommandList
         _handle->IASetVertexBuffers(0, (uint)count, pBuffers);
     }
 
-    internal void ClearDSV(TextureDX12 surface, Color color)
-    {
-        if (surface.Handle is RTHandleDX12 rtHandle)
-        {
-            Transition(surface, ResourceStates.RenderTarget);
-            ref CpuDescriptorHandle cpuHandle = ref rtHandle.RTV.CpuHandle;
-            Color4 c4 = color.ToColor4();
-
-            _handle->ClearRenderTargetView(cpuHandle, c4.Values, 0, null);
-        }
-        else
-        {
-            throw new GpuResourceException(surface, "Cannot clear a non-render surface texture.");
-        }
-    }
-
     protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
     {
         //Box* destBox = null;

@@ -1,4 +1,7 @@
-﻿namespace Molten.Graphics.DX12;
+﻿using Silk.NET.Direct3D12;
+using System.Drawing;
+
+namespace Molten.Graphics.DX12;
 
 internal struct SurfaceClearTaskDX12 : IGpuTask<SurfaceClearTaskDX12>
 {
@@ -10,10 +13,23 @@ internal struct SurfaceClearTaskDX12 : IGpuTask<SurfaceClearTaskDX12>
 
     public static bool Validate(ref SurfaceClearTaskDX12 t) => true;
 
-    public static bool Process(GpuCommandList cmd, ref SurfaceClearTaskDX12 t)
+    public unsafe static bool Process(GpuCommandList cmd, ref SurfaceClearTaskDX12 t)
     {
+        CommandListDX12 dxCmd = (CommandListDX12)cmd;
+
         t.Surface.Apply(cmd);
-        (cmd as CommandListDX12).ClearDSV(t.Surface, t.Color);
+        if (t.Surface.Handle is RTHandleDX12 rtHandle)
+        {
+            dxCmd.Transition(t.Surface, ResourceStates.RenderTarget);
+            ref CpuDescriptorHandle cpuHandle = ref rtHandle.RTV.CpuHandle;
+            Color4 c4 = t.Color.ToColor4();
+
+            dxCmd.Handle->ClearRenderTargetView(cpuHandle, c4.Values, 0, null);
+        }
+        else
+        {
+            throw new GpuResourceException(t.Surface, "Cannot clear a non-render surface texture.");
+        }
         return true;
     }
 
