@@ -254,13 +254,13 @@ public unsafe class CommandListDX12 : GpuCommandList
 
     protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
     {
-        Box* destBox = null;
+        //Box* destBox = null;
 
-        if (region != null)
-        {
-            ResourceRegion value = region.Value;
-            destBox = (Box*)&value;
-        }
+        //if (region != null)
+        //{
+        //    ResourceRegion value = region.Value;
+        //    destBox = (Box*)&value;
+        //}
 
         // TODO Calculate byte offset and number of bytes from resource region.
 

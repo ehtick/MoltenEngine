@@ -67,13 +67,13 @@ public class GpuDiscardBuffer : GpuObject
         return Get((uint)numElements, (uint)sizeof(T), alignment);
     }
 
-    public unsafe GpuBuffer Get<T>(uint numElements, uint alignment = 1)
+    public unsafe GpuBuffer Get<T>(ulong numElements, uint alignment = 1)
         where T : unmanaged
     {
         return Get(numElements, (uint)sizeof(T), alignment);
     }
 
-    public GpuBuffer Get(uint numElements, uint stride, uint alignment = 1)
+    public GpuBuffer Get(ulong numElements, uint stride, uint alignment = 1)
     {
         ulong neededBytes = numElements * stride;
         if (neededBytes > _maxAllocationSize)

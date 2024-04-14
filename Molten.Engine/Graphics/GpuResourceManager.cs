@@ -100,12 +100,12 @@ public abstract class GpuResourceManager : GpuObject
         switch (type)
         {
             case GpuBufferType.Download:
-                flags = GpuResourceFlags.DownloadMemory | GpuResourceFlags.DenyShaderAccess;
+                flags = GpuResourceFlags.DownloadMemory;
                 format = GpuResourceFormat.Unknown;
                 break;
 
             case GpuBufferType.Upload:
-                flags = GpuResourceFlags.UploadMemory | GpuResourceFlags.DenyShaderAccess;
+                flags = GpuResourceFlags.UploadMemory;
                 format = GpuResourceFormat.Unknown;
                 break;
 

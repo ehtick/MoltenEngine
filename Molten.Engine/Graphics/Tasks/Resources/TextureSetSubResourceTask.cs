@@ -51,8 +51,11 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
 
     public static bool Validate(ref TextureSetSubResourceTask<T> t)
     {
-        if (!t.Texture.Flags.Has(GpuResourceFlags.UploadMemory))
-            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
+        if (t.Texture.IsBlockCompressed)
+        {
+            if (t.Region != null)
+                throw new NotImplementedException("Region-based SetData on block-compressed texture is currently unsupported!");
+        }
 
         return true;
     }
@@ -69,9 +72,6 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
 
         if (tex.IsBlockCompressed)
         {
-            if (t.Region != null)
-                throw new NotImplementedException("Region-based SetData on block-compressed texture is currently unsupported. Sorry!");
-
             blockSize = BCHelper.GetBlockSize(tex.ResourceFormat);
 
             // Collect total level size.
@@ -99,14 +99,14 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
         ulong stride = (ulong)sizeof(T);
         ulong startBytes = t.StartIndex * stride;
         ulong numBytes = t.NumElements * stride;
-        byte* ptrData = (byte*)t.Data;
+        byte* ptrData = t.Data;
         ptrData += startBytes;
 
-        uint subLevel = (tex.MipMapCount * t.ArrayIndex) + t.MipLevel;
+        uint subResourceIndex = (tex.MipMapCount * t.ArrayIndex) + t.MipLevel;
 
         if (tex.Flags.Has(GpuResourceFlags.UploadMemory))
         {
-            using (GpuStream stream = cmd.MapResource(tex, subLevel, 0, GpuMapType.Write))
+            using (GpuStream stream = cmd.MapResource(tex, subResourceIndex, 0, GpuMapType.Write))
             {
                 // Are we constrained to an area of the texture?
                 if (t.Region != null)
@@ -142,19 +142,24 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
                 levelWidth = Math.Max(1, tex.Width >> (int)t.MipLevel);
                 uint bcPitch = BCHelper.GetBCPitch(levelWidth, blockSize);
 
+
+                GpuBuffer stagingBuffer = cmd.Device.UploadBuffer.Get<byte>(arraySliceBytes);
+
                 // TODO support copy flags (DX11.1 feature)
-                cmd.UpdateResource(tex, subLevel, null, ptrData, bcPitch, arraySliceBytes);
+                cmd.UpdateResource(stagingBuffer, subResourceIndex, null, ptrData, bcPitch, arraySliceBytes);
             }
             else
             {
                 if (t.Region != null)
                 {
                     ulong regionPitch = stride * t.Region.Value.Width;
-                    cmd.UpdateResource(tex, subLevel, t.Region.Value, ptrData, regionPitch, numBytes);
+                    GpuBuffer stagingBuffer = cmd.Device.UploadBuffer.Get<byte>(numBytes);     
+                    cmd.UpdateResource(stagingBuffer, 0, t.Region.Value, ptrData, regionPitch, numBytes);
                 }
                 else
                 {
-                    cmd.UpdateResource(tex, subLevel, null, ptrData, t.Pitch, arraySliceBytes);
+                    GpuBuffer stagingBuffer = cmd.Device.UploadBuffer.Get<byte>(arraySliceBytes);
+                    cmd.UpdateResource(stagingBuffer, subResourceIndex, null, ptrData, t.Pitch, arraySliceBytes);
                 }
             }
         }

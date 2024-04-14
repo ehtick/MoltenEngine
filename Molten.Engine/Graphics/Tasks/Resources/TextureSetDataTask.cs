@@ -15,9 +15,6 @@ internal struct TextureSetDataTask : IGpuTask<TextureSetDataTask>
 
     public static bool Validate(ref TextureSetDataTask t)
     {
-        if (!t.Texture.Flags.Has(GpuResourceFlags.UploadMemory))
-            throw new InvalidOperationException("Data cannot be set on a texture that does not have the 'UploadMemory' flag set to provide CPU access.");
-
         return true;
     }
 

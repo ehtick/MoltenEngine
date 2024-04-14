@@ -129,9 +129,9 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         {
             Type = heapType,
             CPUPageProperty = CpuPageProperty.Unknown,
-            CreationNodeMask = 1,
+            //CreationNodeMask = 1,
             MemoryPoolPreference = MemoryPool.Unknown,
-            VisibleNodeMask = 1,
+            //VisibleNodeMask = 1,
         };
 
         // TODO Adjust for GPU memory architecture based on UMA support.

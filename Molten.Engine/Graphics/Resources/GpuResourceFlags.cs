@@ -31,12 +31,12 @@ public enum GpuResourceFlags
     /// <para>These are UAV resources in DX11 and DX12.</para>
     /// <para>These are Shader Storage Objects (SSO) resources in OpenGL and Vulkan.</para>
     /// </summary>
-    UnorderedAccess = 1 << 4,
+    UnorderedAccess = 1 << 3,
 
     /// <summary>
     /// Do not allow shader access. For example in DX11 this would prevent a shader resource view (SRV) from being bound to the resource.
     /// </summary>
-    DenyShaderAccess = 1 << 5,
+    DenyShaderAccess = 1 << 4,
 
     /// <summary>
     /// Allows the resource to be shared between logical devices, queues or processes. 
@@ -47,17 +47,17 @@ public enum GpuResourceFlags
     /// <item>Multiple command queues which need to write to the same resource at different locations.</item>
     /// </list>
     /// </summary>
-    SharedAccess = 1 << 6,
+    SharedAccess = 1 << 5,
 
     /// <summary>
     /// Allows the resource to be shared between physical devices e.g. Two descreet GPUs or one integrated and one descreet GPU.
     /// </summary>
-    CrossAdapter = 1 << 7,
+    CrossAdapter = 1 << 6,
 
     /// <summary>
     /// Allow mi-pmap generation for the resource.
     /// </summary>
-    MipMapGeneration = 1 << 8,
+    MipMapGeneration = 1 << 7,
 }
 
 public static class ResourceFlagsExtensions
