@@ -84,6 +84,7 @@ internal unsafe class PipelineInputLayoutDX12 : GpuObject<DeviceDX12>
         // Copy final element list into the unsafe array of elements.
         Span<InputElementDesc> elementSpan = new Span<InputElementDesc>(_desc.PInputElementDescs, elements.Count);
         elements.CopyTo(elementSpan);
+        _expectedBindings = expected.ToArray();
     }
 
     public bool IsMatch(GpuStateValueGroup<GpuBuffer> grp)
