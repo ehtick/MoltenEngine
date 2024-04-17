@@ -41,7 +41,7 @@ public sealed class BufferDX12 : GpuBuffer
         {
             HeapFlags heapFlags = HeapFlags.None;
             ResourceFlags flags = Flags.ToResourceFlags();
-            HeapType heapType = Flags.ToHeapType();
+            HeapType heapType = Flags.ToHeapType(); // TODO Add UMA support.
             ResourceStates stateFlags = Flags.ToResourceState();
             ID3D12Resource1* resource = null;
 
@@ -215,7 +215,7 @@ public sealed class BufferDX12 : GpuBuffer
         return new BufferDX12(this, offset, stride, numElements, Flags, BufferType, alignment);
     }
 
-    public override bool SetLocation(ulong offset, ulong numBytes, Logger log = null)
+    public override bool SetLocation(ulong offset, uint stride, ulong numBytes, Logger log = null)
     {
         if (ParentBuffer == null)
             throw new InvalidOperationException("Cannot set the location of a root GPU buffer. Must be a sub-allocated buffer");
@@ -236,6 +236,7 @@ public sealed class BufferDX12 : GpuBuffer
 
         Offset = offset;
         SizeInBytes = numBytes;
+        Stride = stride;
 
         if(_handle != null)
             InitializeViews();

@@ -55,7 +55,7 @@ public abstract class GpuBuffer : GpuResource
         if(ParentBuffer == null)
             throw new InvalidOperationException("Cannot seek a buffer that has no parent buffer.");
 
-        return SetLocation((ulong)((long)Offset + deltaBytes), SizeInBytes);
+        return SetLocation((ulong)((long)Offset + deltaBytes), Stride, SizeInBytes);
     }
 
     public unsafe bool Seek<T>(uint numElements)
@@ -162,10 +162,11 @@ public abstract class GpuBuffer : GpuResource
     /// Re-points the current <see cref="GpuBuffer"/> to another location within its underlying GPU buffer resource.
     /// </summary>
     /// <param name="offset">The number of bytes from the start of the underlying GPU buffer.</param>
-    /// <param name="numBytes">The number of bytes required.</param>
+    /// <param name="stride">The stride of each element, in bytes</param>
+    /// <param name="numElements">The number of elements required.</param>
     /// <param name="log">An optional <see cref="Logger"/> for logging any offset/capacity errors.</param>
     /// <returns>True if the update succeeded or false if the location or capacity could not be updated. e.g. Due to reaching or exceeding the end of the buffer.</returns>
-    public abstract bool SetLocation(ulong offset, ulong numBytes, Logger log = null);
+    public abstract bool SetLocation(ulong offset, uint stride, ulong numElements, Logger log = null);
 
     protected override void OnGpuRelease()
     {
@@ -178,7 +179,7 @@ public abstract class GpuBuffer : GpuResource
     /// <summary>
     /// Gets the stride (byte size) of each element within the current <see cref="GpuBuffer"/>.
     /// </summary>
-    public uint Stride { get; }
+    public uint Stride { get; protected set; }
 
     /// <summary>
     /// Gets the number of elements that the current <see cref="GpuBuffer"/> can store.

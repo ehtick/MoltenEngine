@@ -34,11 +34,6 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         if (resourceDimension == ResourceDimension.Buffer)
             throw new InvalidOperationException("Textures cannot use a buffer resource dimension.");
 
-        if(Flags == GpuResourceFlags.None)
-        {
-
-        }
-
         Desc = new ResourceDesc1()
         {
             Width = dimensions.Width,
@@ -127,8 +122,19 @@ public abstract class TextureDX12 : GpuTexture, ITexture
     {
         HeapFlags heapFlags = HeapFlags.None;
         ResourceFlags flags = Flags.ToResourceFlags();
-        HeapType heapType = HeapType.Default; // Flags.ToHeapType(); // TODO Properly set heap properties based on access flags and UMA support.
-        ResourceStates stateFlags = Flags.ToResourceState();
+        HeapType heapType = Flags.ToHeapType(); // TODO Add UMA support.
+        ResourceStates initialState = Flags.ToResourceState();
+
+        switch (this)
+        {
+            case IRenderSurface:
+                initialState |= ResourceStates.RenderTarget;
+                break;
+
+            case IDepthStencilSurface:
+                initialState |= ResourceStates.DepthWrite;
+                break;
+        }
 
         HeapProperties heapProp = new HeapProperties()
         {
@@ -159,7 +165,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
         fixed (ResourceDesc1* ptrDesc = &_desc)
         {
-            HResult hr = Device.Handle->CreateCommittedResource2(&heapProp, heapFlags, ptrDesc, stateFlags, ptrClearValue, _protectedSession, &guid, &ptr);
+            HResult hr = Device.Handle->CreateCommittedResource2(&heapProp, heapFlags, ptrDesc, initialState, ptrClearValue, _protectedSession, &guid, &ptr);
             if (!Device.Log.CheckResult(hr, () => $"Failed to create {_desc.Dimension} resource"))
                 return null;
         }
