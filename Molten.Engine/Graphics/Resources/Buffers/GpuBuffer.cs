@@ -184,7 +184,7 @@ public abstract class GpuBuffer : GpuResource
     /// <summary>
     /// Gets the number of elements that the current <see cref="GpuBuffer"/> can store.
     /// </summary>
-    public ulong ElementCount { get; }
+    public ulong ElementCount { get; protected set; }
 
     /// <summary>
     /// Gets the total size of the buffer, in bytes.

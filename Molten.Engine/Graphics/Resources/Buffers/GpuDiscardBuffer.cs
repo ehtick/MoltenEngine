@@ -61,19 +61,19 @@ public class GpuDiscardBuffer : GpuObject
         _curFrame.Pairs.Add(pair);
     }
 
-    public unsafe GpuBuffer Get<T>(int numElements, uint alignment = 1)
+    public unsafe GpuBuffer Get<T>(int numElements)
     where T : unmanaged
     {
-        return Get((uint)numElements, (uint)sizeof(T), alignment);
+        return Get((uint)numElements, (uint)sizeof(T));
     }
 
-    public unsafe GpuBuffer Get<T>(ulong numElements, uint alignment = 1)
+    public unsafe GpuBuffer Get<T>(ulong numElements)
         where T : unmanaged
     {
-        return Get(numElements, (uint)sizeof(T), alignment);
+        return Get(numElements, (uint)sizeof(T));
     }
 
-    public GpuBuffer Get(ulong numElements, uint stride, uint alignment = 1)
+    public GpuBuffer Get(ulong numElements, uint stride)
     {
         ulong neededBytes = numElements * stride;
         if (neededBytes > _maxAllocationSize)
@@ -85,7 +85,9 @@ public class GpuDiscardBuffer : GpuObject
         for (int i = 0; i < _curFrame.Pairs.Count; i++)
         {
             pair = _curFrame.Pairs[i];
-            ulong newOffset = EngineUtil.Align(pair.NextOffset, alignment);
+            ulong newOffset = pair.NextOffset % stride;
+            if(newOffset > 0)
+                newOffset += (stride - (pair.NextOffset % stride));
 
             // Check if we've hit the last ring buffer and need to allocate a new one.
             if (!pair.Ring.SetLocation(newOffset, stride, neededBytes) && i == (_curFrame.Pairs.Count - 1))
@@ -99,6 +101,7 @@ public class GpuDiscardBuffer : GpuObject
 
         return pair.Ring;
     }
+
 
     internal void Prepare()
     {

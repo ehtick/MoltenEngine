@@ -237,6 +237,7 @@ public sealed class BufferDX12 : GpuBuffer
         Offset = offset;
         SizeInBytes = numBytes;
         Stride = stride;
+        ElementCount = numBytes / stride;
 
         if(_handle != null)
             InitializeViews();

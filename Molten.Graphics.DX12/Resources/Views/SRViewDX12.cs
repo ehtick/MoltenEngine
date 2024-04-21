@@ -8,10 +8,6 @@ internal class SRViewDX12 : ViewDX12<ShaderResourceViewDesc>
 
     protected override unsafe void OnCreate(ref ShaderResourceViewDesc desc, ID3D12Resource1* resource, ref CpuDescriptorHandle heapHandle, uint resourceIndex)
     {
-        if(desc.Buffer.FirstElement == 6000)
-        {
-
-        }
         Handle.Device.Handle->CreateShaderResourceView((ID3D12Resource*)resource, desc, heapHandle);
     }
 
