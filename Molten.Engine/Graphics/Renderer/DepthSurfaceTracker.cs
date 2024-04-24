@@ -26,21 +26,24 @@ internal class DepthSurfaceTracker : IDisposable
         _surfaces = new Dictionary<AntiAliasLevel, IDepthStencilSurface>();
     }
 
-    internal void RefreshSize(uint minWidth, uint minHeight)
+    internal void Prepare(GpuCommandList cmd, uint targetWidth, uint targetHeight)
     {
-        _width = minWidth;
-        _height = minHeight;
+        if (_width == targetWidth && _height == targetHeight)
+            return;
+
+        _width = targetWidth;
+        _height = targetHeight;
 
         switch (_mode)
         {
             case SurfaceSizeMode.Full:
                 foreach(IDepthStencilSurface rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.StartOfFrame, null, minWidth, minHeight);
+                    rs?.Resize(GpuPriority.Immediate, cmd, targetWidth, targetHeight);
                 break;
 
             case SurfaceSizeMode.Half:
                 foreach (IDepthStencilSurface rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.StartOfFrame, null, (minWidth / 2) + 1, (minHeight / 2) + 1);
+                    rs?.Resize(GpuPriority.Immediate, cmd, (targetWidth / 2) + 1, (targetHeight / 2) + 1);
                 break;
         }
     }

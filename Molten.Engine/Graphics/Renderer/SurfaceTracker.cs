@@ -41,22 +41,26 @@ public class SurfaceTracker : IDisposable
         _surfaces = new Dictionary<AntiAliasLevel, GpuFrameBuffer<FrameBufferSurface>>();
     }
 
-    internal void RefreshSize(uint minWidth, uint minHeight)
+    internal void Prepare(GpuCommandList cmd, uint targetWidth, uint targetHeight)
     {
-        _width = minWidth;
-        _height = minHeight;
+        if (_width == targetWidth && _height == targetHeight)
+            return;
 
-        switch (_mode)
+        _width = targetWidth;
+        _height = targetHeight;
+
+        // Reduce target surface dimensions by half if required.
+        if (_mode == SurfaceSizeMode.Half)
         {
-            case SurfaceSizeMode.Full:
-                foreach (IRenderSurface2D rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.StartOfFrame, null, minWidth, minHeight);
-                break;
+            targetWidth = (targetWidth / 2) + 1;
+            targetHeight = (targetHeight / 2) + 1;
+        }
 
-            case SurfaceSizeMode.Half:
-                foreach (IRenderSurface2D rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.StartOfFrame, null, (minWidth / 2) + 1, (minHeight / 2) + 1);
-                break;
+        // Resize each surface for the current frame.
+        foreach (GpuFrameBuffer<FrameBufferSurface> frameBuffer in _surfaces.Values)
+        {
+            FrameBufferSurface fbs = frameBuffer.Prepare();
+            fbs.Surface?.Resize(GpuPriority.Immediate, cmd, targetWidth, targetHeight);
         }
     }
 

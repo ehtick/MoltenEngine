@@ -77,4 +77,9 @@ public class GpuFrameBuffer<T> : GpuObject
 
         _resources = null;
     }
+
+    /// <summary>
+    /// Gets the underlying object for the current frame-buffer index.
+    /// </summary>
+    public T Value => _resources[Device.FrameBufferIndex];
 }

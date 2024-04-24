@@ -74,10 +74,10 @@ public class SurfaceManager : IDisposable
         _mainSurfaces[(uint)mainType] = tracker;
     }
 
-    internal void Rebuild(uint requiredWidth, uint requiredHeight)
+    internal void Prepare(GpuCommandList cmd, uint requiredWidth, uint requiredHeight)
     {
-        _surfaces.For(0, (index, config) => config.RefreshSize(requiredWidth, requiredHeight));
-        _depthSurface.RefreshSize(requiredWidth, requiredHeight);
+        _surfaces.For(0, (index, tracker) => tracker.Prepare(cmd, requiredWidth, requiredHeight));
+        _depthSurface.Prepare(cmd, requiredWidth, requiredHeight);
     }
 
     internal SurfaceTracker RegisterSurface(string key, uint width, uint height, GpuResourceFormat format, SurfaceSizeMode sizeMode = SurfaceSizeMode.Full)

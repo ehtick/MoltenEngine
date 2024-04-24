@@ -1,4 +1,5 @@
 ﻿using Molten.Graphics.Overlays;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Molten.Graphics;
 
@@ -15,7 +16,6 @@ public abstract class RenderService : EngineService
     RenderChain _chain;
 
     List<GpuDevice> _devices;
-    GpuFrameBuffer<GpuCommandList> _cmdMain;
 
     AntiAliasLevel _requestedMultiSampleLevel = AntiAliasLevel.None;
 
@@ -102,9 +102,6 @@ public abstract class RenderService : EngineService
         Surfaces.Initialize(BiggestWidth, BiggestHeight);
         Fonts = new SpriteFontManager(Log, this);
         Fonts.Initialize();
-
-        // The primary GPU will be used for main rendering, so we'll create a command list buffer for it.
-        _cmdMain = new GpuFrameBuffer<GpuCommandList>(Device, (gpu) => gpu.GetCommandList());
     }
 
     /// <summary>
@@ -134,9 +131,6 @@ public abstract class RenderService : EngineService
         // Handle any pending graphics-based disposals.
         Timing timing = Thread.Timing;
         uint framesToWait = (uint)timing.TargetUPS / 5U;
-
-        for (int i = 0; i < _devices.Count; i++)
-            _devices[i].BeginFrame(framesToWait, time.FrameID);
 
         // Perform preliminary checks on active scene data.
         // Also ensure the backbuffer is always big enough for the largest scene render surface.
@@ -173,16 +167,43 @@ public abstract class RenderService : EngineService
             }
         }
 
-        // Update surfaces if dirty. This may involve resizing or changing their format.
-        if (_surfaceResizeRequired)
+        for (int i = 0; i < _devices.Count; i++)
         {
-            Surfaces.Rebuild(BiggestWidth, BiggestHeight);
-            _surfaceResizeRequired = false;
-        }
+            device = _devices[i];
+            GpuCommandList cmd = device.BeginFrame(framesToWait, time.FrameID);
 
-        // Draw scene with primary device command list.
-        GpuCommandList cmd = _cmdMain.Prepare();
-        cmd.Begin();
+            cmd.Begin();
+
+            // Only perform main render on the primary GPU device.
+            if (device == Device)
+                MainRender(cmd, time);
+
+            cmd.End();
+            device.EndFrame();
+
+            // Accumulate profiling information.
+            //device.Profiler.Accumulate(device.Queue.Profiler);
+            Profiler.Accumulate(device.Profiler);
+        }
+        
+
+        /* Current issues:
+         *  - DX12 command allocator is prepared inside of a callback to ProcessTasks() in BeginFrame()
+         *      -- This changes allocator AFTER the command list has already began - Invalid
+         *  - EndFrame() presents swapchain surfaces, but does not wait
+         *      - A wait fence is required for each device that does not have its next frame ready - See HelloFrameBuffering
+         */
+
+        Surfaces.ResetFirstCleared();
+    }
+
+    private void MainRender(GpuCommandList cmd, Timing time)
+    {
+        SceneRenderData data;
+        RenderCamera camera;
+
+        Surfaces.Prepare(cmd, BiggestWidth, BiggestHeight);
+
         for (int i = 0; i < Scenes.Count; i++)
         {
             data = Scenes[i];
@@ -217,20 +238,6 @@ public abstract class RenderService : EngineService
             data.PostRenderInvoke(this);
             cmd.EndEvent();
         }
-        cmd.End();
-        Device.Execute(cmd);
-
-        for (int i = 0; i < _devices.Count; i++)
-        {
-            device = _devices[i];
-            _devices[i].EndFrame();
-
-            // Accumulate profiling information.
-            //device.Profiler.Accumulate(device.Queue.Profiler);
-            Profiler.Accumulate(device.Profiler);
-        }
-
-        Surfaces.ResetFirstCleared();
     }
 
     internal void RenderSceneLayer(GpuCommandList cmd, LayerRenderData layerData, RenderCamera camera)
@@ -317,7 +324,6 @@ public abstract class RenderService : EngineService
 
         _chain?.Dispose();
         SpriteBatch?.Dispose();
-        _cmdMain?.Dispose();
 
         foreach (GpuDevice device in _devices)
             device.Dispose();

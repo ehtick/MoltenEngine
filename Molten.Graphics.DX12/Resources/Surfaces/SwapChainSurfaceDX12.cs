@@ -133,11 +133,20 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         _vsync = newValue ? 1U : 0;
     }
 
-    DxgiError _lastError;
-    internal void Present(CommandListDX12 cmd)
+    internal void Prepare(CommandListDX12 cmd)
     {
         Apply(cmd);
 
+        // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
+        uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
+        _handle.Index = bbIndex;
+
+        cmd.Transition(this, ResourceStates.RenderTarget);
+    }
+
+    DxgiError _lastError;
+    internal void Present(CommandListDX12 cmd)
+    {
         if (OnPresent(cmd) && SwapChainHandle != null)
         {
             cmd.Transition(this, ResourceStates.Present);
@@ -158,12 +167,6 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
                     _lastError = de;
                 }
             }
-
-            // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
-            uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
-            _handle.Index = bbIndex;
-
-            cmd.Transition(this, ResourceStates.RenderTarget);
         }
 
         if (!IsDisposed)

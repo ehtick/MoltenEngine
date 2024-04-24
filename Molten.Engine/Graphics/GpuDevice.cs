@@ -37,6 +37,7 @@ public abstract partial class GpuDevice : EngineObject
     Dictionary<Type, GpuTaskBank> _taskBanksByType;
     Interlocker _taskLocker;
     ThreadedList<GpuObject> _disposals;
+    GpuFrameBuffer<GpuCommandList> _cmdMain;
 
     /// <summary>
     /// Creates a new instance of <see cref="GpuDevice"/>.
@@ -77,11 +78,15 @@ public abstract partial class GpuDevice : EngineObject
             _taskBanks = new List<GpuTaskBank>();
             _taskBanksByType = new Dictionary<Type, GpuTaskBank>();
 
+            // Command lists for each level of task priority.
             for (int i = 0; i < _taskQueues.Length; i++)
             {
                 _taskQueues[i] = new TaskQueue();
                 _taskQueues[i].Cmd = new GpuFrameBuffer<GpuCommandList>(this, (gpu) => gpu.GetCommandList());
             }
+
+            // The primary GPU will be used for main rendering, so we'll create a command list buffer for it.
+            _cmdMain = new GpuFrameBuffer<GpuCommandList>(this, (gpu) => gpu.GetCommandList());
 
             UploadBuffer = new GpuDiscardBuffer(this, GpuBufferType.Upload, GpuResourceFlags.None, GpuResourceFormat.Unknown, _maxStagingSize);
             DownloadBuffer = new GpuDiscardBuffer(this, GpuBufferType.Download, GpuResourceFlags.None, GpuResourceFormat.Unknown, _maxStagingSize);
@@ -266,6 +271,8 @@ public abstract partial class GpuDevice : EngineObject
         foreach (TaskQueue queue in _taskQueues)
             queue.Cmd.Dispose();
 
+        _cmdMain?.Dispose();
+
         // Dispose of any registered output services.
         Resources.OutputSurfaces.For(0, (index, surface) =>
         {
@@ -333,8 +340,7 @@ public abstract partial class GpuDevice : EngineObject
     /// Processes all tasks held in the manager for the specified priority queue, for the current <see cref="GpuDevice"/>.
     /// </summary>
     /// <param name="priority">The priority of the task.</param>
-    /// <param name="endCallback"></param>
-    private void ProcessTasks(GpuPriority priority, Action<GpuCommandList> endCallback)
+    private void ProcessTasks(GpuPriority priority)
     {
         if (priority == GpuPriority.Immediate)
             throw new InvalidOperationException("Cannot process immediate priority tasks, as these are not queueable.");
@@ -363,13 +369,11 @@ public abstract partial class GpuDevice : EngineObject
         }
 
         cmd.EndEvent();
-
-        endCallback?.Invoke(cmd);
         cmd.End();     
         Execute(cmd);
     }
 
-    internal void BeginFrame(uint disposalNumFrames, ulong frameID)
+    internal GpuCommandList BeginFrame(uint disposalNumFrames, ulong frameID)
     {
         DisposeMarkedObjects(disposalNumFrames, frameID);
         CheckFrameBufferSize();
@@ -377,19 +381,20 @@ public abstract partial class GpuDevice : EngineObject
         UploadBuffer.Prepare();
         DownloadBuffer.Prepare();
 
-        ProcessTasks(GpuPriority.StartOfFrame, (cmd) =>
-        {
-            OnBeginFrame(cmd, Resources.OutputSurfaces);
-        });
+        ProcessTasks(GpuPriority.StartOfFrame);
+
+        GpuCommandList cmd = _cmdMain.Prepare();
+        OnBeginFrame(cmd, Resources.OutputSurfaces);
+        return cmd;
     }
 
     internal void EndFrame()
     {
-        ProcessTasks(GpuPriority.EndOfFrame, (cmd) =>
-        {
-            OnEndFrame(cmd, Resources.OutputSurfaces);
-        });
+        GpuCommandList cmd = _cmdMain.Value;
+        Execute(cmd);
+        OnEndFrame(cmd, Resources.OutputSurfaces);
 
+        ProcessTasks(GpuPriority.EndOfFrame);
         _frameIndex = (_frameIndex + 1U) % FrameBufferSize;
     }
 
