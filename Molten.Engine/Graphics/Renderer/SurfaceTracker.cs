@@ -1,11 +1,12 @@
 ﻿
 namespace Molten.Graphics;
 
-public class SurfaceTracker : IDisposable
+public abstract class SurfaceTracker<T> : IDisposable
+    where T : ITexture2D
 {
     class FrameBufferSurface : GpuObject
     {
-        public IRenderSurface2D Surface;
+        public T Surface;
 
         public FrameBufferSurface(GpuDevice device) : base(device) { }
 
@@ -15,29 +16,22 @@ public class SurfaceTracker : IDisposable
         }
     }
 
-    SurfaceSizeMode _mode;
     Dictionary<AntiAliasLevel, GpuFrameBuffer<FrameBufferSurface>> _surfaces;
 
-    GpuDevice _device;
     uint _width;
     uint _height;
-    GpuResourceFormat _format;
-    string _name;
 
     internal SurfaceTracker(GpuDevice device,
-        AntiAliasLevel[] aaLevels,
         uint width,
         uint height,
-        GpuResourceFormat format,
         string name,
         SurfaceSizeMode mode = SurfaceSizeMode.Full)
     {
-        _device = device;
+        Device = device;
         _width = width;
         _height = height;
-        _format = format;
-        _name = name;
-        _mode = mode;
+        Name = name;
+        Mode = mode;
         _surfaces = new Dictionary<AntiAliasLevel, GpuFrameBuffer<FrameBufferSurface>>();
     }
 
@@ -50,7 +44,7 @@ public class SurfaceTracker : IDisposable
         _height = targetHeight;
 
         // Reduce target surface dimensions by half if required.
-        if (_mode == SurfaceSizeMode.Half)
+        if (Mode == SurfaceSizeMode.Half)
         {
             targetWidth = (targetWidth / 2) + 1;
             targetHeight = (targetHeight / 2) + 1;
@@ -66,21 +60,23 @@ public class SurfaceTracker : IDisposable
 
     public void Dispose()
     {
-        foreach (IRenderSurface2D rs in _surfaces.Values)
-            rs.Dispose();
+        foreach (GpuFrameBuffer<FrameBufferSurface> fb in _surfaces.Values)
+            fb.Dispose(true);
     }
 
-    internal IRenderSurface2D this[AntiAliasLevel aaLevel]
+    protected abstract T Create(AntiAliasLevel aaLevel, uint width, uint height);
+
+    internal T this[AntiAliasLevel aaLevel]
     {
         get
         {
             if (!_surfaces.TryGetValue(aaLevel, out GpuFrameBuffer<FrameBufferSurface> fb))
             {
-                fb = new GpuFrameBuffer<FrameBufferSurface>(_device, (device) =>
+                fb = new GpuFrameBuffer<FrameBufferSurface>(Device, (device) =>
                 {
                     return new FrameBufferSurface(device)
                     {
-                        Surface = _device.Resources.CreateSurface(_width, _height, _format, aaLevel: aaLevel, name: $"{_name}_{aaLevel}aa"),
+                        Surface = Create(aaLevel, _width, _height)
                     };
                 });
 
@@ -88,12 +84,34 @@ public class SurfaceTracker : IDisposable
             }
 
             FrameBufferSurface fbs = fb.Prepare();
-            IRenderSurface2D rs = fbs.Surface;
+            T surface = fbs.Surface;
 
-            if (rs.Width != _width || rs.Height != _height)
-                rs.Resize(GpuPriority.StartOfFrame, null, _width, _height);
+            if (surface.Width != _width || surface.Height != _height)
+                surface.Resize(GpuPriority.StartOfFrame, null, _width, _height);
 
-            return rs;
+            return surface;
         }
+    }
+
+    internal SurfaceSizeMode Mode { get; }
+
+    internal GpuDevice Device { get; }
+
+    internal string Name { get; }
+}
+
+public class SurfaceTracker : SurfaceTracker<IRenderSurface2D>
+{
+    GpuResourceFormat _format;
+
+    public SurfaceTracker(GpuDevice device, uint width, uint height, GpuResourceFormat format, string name, SurfaceSizeMode mode = SurfaceSizeMode.Full) : 
+        base(device, width, height, name, mode)
+    {
+        _format = format;
+    }
+
+    protected override IRenderSurface2D Create(AntiAliasLevel aaLevel, uint width, uint height)
+    {
+        return Device.Resources.CreateSurface(width, height, _format, aaLevel: aaLevel, name: $"{Name}_{aaLevel}aa");
     }
 }

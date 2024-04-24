@@ -42,7 +42,7 @@ public class SurfaceManager : IDisposable
         RegisterMainSurface(MainSurfaceType.Composition1, width, height, GpuResourceFormat.R16G16B16A16_Float);
         RegisterMainSurface(MainSurfaceType.Composition2, width, height, GpuResourceFormat.R16G16B16A16_Float);
         RegisterMainSurface(MainSurfaceType.Lighting, width, height, GpuResourceFormat.R16G16B16A16_Float);
-        _depthSurface = new DepthSurfaceTracker(_renderer.Device, _aaLevels, width, height, DepthFormat.R24G8);
+        _depthSurface = new DepthSurfaceTracker(_renderer.Device, width, height, DepthFormat.R24G8);
     }
 
     internal void ClearIfFirstUse(GpuCommandList cmd, IRenderSurface2D surface, Color color)
@@ -85,7 +85,7 @@ public class SurfaceManager : IDisposable
         key = key.ToLower();
         if (!_surfacesByKey.TryGetValue(key, out SurfaceTracker config))
         {
-            config = new SurfaceTracker(_renderer.Device, _aaLevels, width, height, format, key, sizeMode);
+            config = new SurfaceTracker(_renderer.Device, width, height, format, key, sizeMode);
             _surfacesByKey.TryAdd(key, config);
             _surfaces.Add(config);
         }

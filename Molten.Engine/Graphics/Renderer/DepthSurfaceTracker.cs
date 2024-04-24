@@ -1,81 +1,22 @@
 ﻿namespace Molten.Graphics;
 
-internal class DepthSurfaceTracker : IDisposable
+internal class DepthSurfaceTracker : SurfaceTracker<IDepthStencilSurface>
 {
-    SurfaceSizeMode _mode;
-    Dictionary<AntiAliasLevel, IDepthStencilSurface> _surfaces;
-    GpuDevice _device;
-
-    uint _width;
-    uint _height;
     DepthFormat _format;
 
     internal DepthSurfaceTracker(
         GpuDevice device,
-        AntiAliasLevel[] aaLevels,
         uint width,
         uint height,
         DepthFormat format,
-        SurfaceSizeMode mode = SurfaceSizeMode.Full)
+        SurfaceSizeMode mode = SurfaceSizeMode.Full) : base(device, width, height, "depth", mode)
     {
-        _width = width;
-        _height = height;
         _format = format;
-        _mode = mode;
-        _device = device;
-        _surfaces = new Dictionary<AntiAliasLevel, IDepthStencilSurface>();
     }
 
-    internal void Prepare(GpuCommandList cmd, uint targetWidth, uint targetHeight)
+    protected override IDepthStencilSurface Create(AntiAliasLevel aaLevel, uint width, uint height)
     {
-        if (_width == targetWidth && _height == targetHeight)
-            return;
-
-        _width = targetWidth;
-        _height = targetHeight;
-
-        switch (_mode)
-        {
-            case SurfaceSizeMode.Full:
-                foreach(IDepthStencilSurface rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.Immediate, cmd, targetWidth, targetHeight);
-                break;
-
-            case SurfaceSizeMode.Half:
-                foreach (IDepthStencilSurface rs in _surfaces.Values)
-                    rs?.Resize(GpuPriority.Immediate, cmd, (targetWidth / 2) + 1, (targetHeight / 2) + 1);
-                break;
-        }
-    }
-
-    internal IDepthStencilSurface Create(AntiAliasLevel aa)
-    {
-        IDepthStencilSurface ds = _device.Resources.CreateDepthSurface(_width, _height, _format, aaLevel:aa, name:$"depth_{aa}aa");
-        _surfaces[aa] = ds;
+        IDepthStencilSurface ds = Device.Resources.CreateDepthSurface(width, height, _format, aaLevel:aaLevel, name:$"{Name}_{aaLevel}aa");
         return ds;
-    }
-
-    public void Dispose()
-    {
-        foreach(IDepthStencilSurface rs in _surfaces.Values)
-            rs.Dispose();
-    }
-
-    internal IDepthStencilSurface this[AntiAliasLevel aaLevel]
-    {
-        get
-        {
-            if (!_surfaces.TryGetValue(aaLevel, out IDepthStencilSurface rs))
-            {
-                rs = Create(aaLevel);
-                _surfaces[aaLevel] = rs;
-            }
-            else if (rs.Width != _width || rs.Height != _height)
-            {
-                rs.Resize(GpuPriority.StartOfFrame, null, _width, _height);
-            }
-
-            return rs;
-        }
     }
 }

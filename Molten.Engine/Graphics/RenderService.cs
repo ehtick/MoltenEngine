@@ -178,6 +178,8 @@ public abstract class RenderService : EngineService
             if (device == Device)
                 MainRender(cmd, time);
 
+            // TODO Further improvements to include rendering scenes on secondary devices using device-specific resources.
+
             cmd.End();
             device.EndFrame();
 
@@ -185,14 +187,6 @@ public abstract class RenderService : EngineService
             //device.Profiler.Accumulate(device.Queue.Profiler);
             Profiler.Accumulate(device.Profiler);
         }
-        
-
-        /* Current issues:
-         *  - DX12 command allocator is prepared inside of a callback to ProcessTasks() in BeginFrame()
-         *      -- This changes allocator AFTER the command list has already began - Invalid
-         *  - EndFrame() presents swapchain surfaces, but does not wait
-         *      - A wait fence is required for each device that does not have its next frame ready - See HelloFrameBuffering
-         */
 
         Surfaces.ResetFirstCleared();
     }
