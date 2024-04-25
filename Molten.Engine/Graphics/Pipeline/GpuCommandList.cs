@@ -354,7 +354,6 @@ public abstract partial class GpuCommandList : GpuObject
         if (mapType == GpuMapType.Write && !resource.Flags.IsCpuWritable())
             throw new GpuResourceException(resource, "Resource must have CPU write access to be mapped for writing.");
 
-        resource.Apply(this);
         GpuResourceMap map = GetResourcePtr(resource, subresource, mapType);
 
         if (map.Ptr == null)

@@ -61,11 +61,18 @@ public unsafe class CommandListDX12 : GpuCommandList
             {
                 // TODO Calculate row pitch based on texture size, subresource level, format and dimensions. Also consider block-compression size.
             }
-            else if (resource is GpuBuffer buffer)
+            else if (resource is BufferDX12 buffer)
             {
-                rowPitch = buffer.SizeInBytes;
-                depthPitch = buffer.SizeInBytes;
+                if (buffer.RootBuffer != null)
+                    rowPitch = buffer.RootBuffer.SizeInBytes;
+                else
+                    rowPitch = buffer.SizeInBytes;
+
+                depthPitch = rowPitch;
             }
+
+            // TODO Implement support for the read Range parameter. This determines the area of a sub-resouce that the CPU may want to read.
+            //      Irrelevant for writing.
 
             void* ptrMap = null;
             HResult hr = handle.Ptr1->Map(subresource, null, &ptrMap);
@@ -154,7 +161,8 @@ public unsafe class CommandListDX12 : GpuCommandList
         // TODO: Implement compute-based mip-map generation - This can then be commonized for DX11/Vulkan too.
         //       See: https://www.3dgep.com/learning-directx-12-4/#Generate_Mipmaps_Compute_Shader
 
-        throw new NotImplementedException();
+        Device.Log.Error("DX12 does not currently support compute-based mip-map generation.");
+        //throw new NotImplementedException();
     }
 
     internal void Transition(BufferDX12 buffer, ResourceStates newState)

@@ -36,7 +36,7 @@ public struct TextureSetSubResourceTask<T> : IGpuTask<TextureSetSubResourceTask<
         NumBytes = Stride * NumElements;
         _immediate= immediate;
 
-        if (immediate)
+        if (!immediate)
         {
             Data = (byte*)EngineUtil.Alloc(NumBytes);
             void* ptrStart = (byte*)data + (startIndex * stride);
