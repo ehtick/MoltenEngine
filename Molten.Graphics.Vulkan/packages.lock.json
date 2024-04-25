@@ -4,41 +4,41 @@
     "net8.0": {
       "Silk.NET.GLFW": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "VCnaHew1xH+j0AxS54zVQNLQ4HJAaTpIFQdPpmMzbJ3XB21zNPV/5MBGhz4PyBgXKEHezjT6NPkYOerbzHqkfA==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "HWu21xUICqYH9ZfSlQo4c71Q7o++tip2v7LiWczvEwgqlJacZ3L9c1+jyOlfcGo9IN9pRao8QIbPNC9dlMcSZQ==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Ultz.Native.GLFW": "3.3.9.2"
+          "Silk.NET.Core": "2.21.0",
+          "Ultz.Native.GLFW": "3.4.0"
         }
       },
       "Silk.NET.Vulkan": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "Hoz78z0GqajqeO//n7oM/qRJcqYFDPULkbLVO/Lp99rEQCUPR8cTsiY6JE6bO24eFB81kO9pZC/tjQE/9rpNMA==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "Sm9AsGdKg4sz3xUockXwS743+h3fIkfTUnkPA58A2pzTv5k7aHUYy2zoll1VYj6V6VYLSjWo7hA/XWXSYEMn2w==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0"
+          "Silk.NET.Core": "2.21.0"
         }
       },
       "Silk.NET.Vulkan.Extensions.EXT": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "Xs4DyHf8nT16NgtPj4SBS4XKbCx0EDXP5u8q94AMqZYlN2jEMRth4X8Byuuk40gBVZ2lfFTofrGPro0b9q6C/w==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "EFlG4wKh8nV211BPP+4m+Y+Hw4q8ttOfA1bz6F+AJCVh2DTmpRx88GFgrHXEO23+MvjLC12LZwAKNXvwWawD7Q==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Silk.NET.Vulkan": "2.20.0"
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.Vulkan": "2.21.0"
         }
       },
       "Silk.NET.Vulkan.Extensions.KHR": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "OFMFzNTyqoF95c8GPaQOaUvI0fo2fwYbBXKpx/kOEsT7Yz9vYBzir+0mx70EtCezg7aLUcMnuzyy2FMPWtvy0g==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "lYogbhkd25f7zwuHbBLlLOr5j/WQ7QUTbs7Pzyh5y3TJE8mKB/LO6smYqY7YARBrxzVVtrkFnWFiwXvhZRlUvQ==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Silk.NET.Vulkan": "2.20.0"
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.Vulkan": "2.21.0"
         }
       },
       "SpirvReflector": {
@@ -89,8 +89,8 @@
       },
       "Silk.NET.Core": {
         "type": "Transitive",
-        "resolved": "2.20.0",
-        "contentHash": "vin8fW0bUBD3hDbN3s3br+ePtAzzdOCygslGfb7JR86ZKVQ/fAsgLcKQLDbNjZAn020F4eUEg/UNEZqpBwhOcg==",
+        "resolved": "2.21.0",
+        "contentHash": "U8gATeEGvSIc1ogSdG/LKr6SLgOjkis7Oo/QzCq+aOoGjw4tHYRVpm02V+pHp/qlQhziBbdQ/Vl5d58cmFY+PA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
@@ -102,10 +102,10 @@
       },
       "Silk.NET.Direct3D.Compilers": {
         "type": "Transitive",
-        "resolved": "2.20.0",
-        "contentHash": "vFZOfsDOVVAkQuN6/b8TWig/Ax9Af06g4wShMsZ0Oh9R3vq/6F7FH9QrJ5tu44pt5k2q9Bw5vO4p1a/jD2ANdg==",
+        "resolved": "2.21.0",
+        "contentHash": "c1Qvg5DxDzqoopa7K/ScTFCqOhpUYarivapHAVjxBXtVgDC+juwToPjmKiJ3xOQTsvcTjmrqXOVH9ouSjjI1Lg==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0"
+          "Silk.NET.Core": "2.21.0"
         }
       },
       "System.Memory": {
@@ -138,8 +138,8 @@
       },
       "Ultz.Native.GLFW": {
         "type": "Transitive",
-        "resolved": "3.3.9.2",
-        "contentHash": "4b7gJEfMZcw207CZkFV3VUBagmHlX9jYVkk1mrzacnAOgr90JoZSILTEFPc5lz5LT7yFKxQnsnqqIsFnVO7k/Q=="
+        "resolved": "3.4.0",
+        "contentHash": "Iy22JopynbOJ32vA0lBhFEzGi65GQJBuJHYBYRBpydrDpNoTiHnjIXfA65Gu+8qsOr/ZEoIF8r9aHCgAXuO6DA=="
       },
       "molten.engine": {
         "type": "Project",
@@ -156,7 +156,7 @@
           "Molten.Engine": "[0.8.0, )",
           "Molten.Math": "[0.8.0, )",
           "Molten.Utility": "[0.8.0, )",
-          "Silk.NET.Direct3D.Compilers": "[2.20.0, )"
+          "Silk.NET.Direct3D.Compilers": "[2.21.0, )"
         }
       },
       "molten.math": {
@@ -165,7 +165,7 @@
       "molten.utility": {
         "type": "Project",
         "dependencies": {
-          "Silk.NET.Core": "[2.20.0, )"
+          "Silk.NET.Core": "[2.21.0, )"
         }
       }
     }

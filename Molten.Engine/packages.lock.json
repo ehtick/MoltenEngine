@@ -43,8 +43,8 @@
       },
       "Silk.NET.Core": {
         "type": "Transitive",
-        "resolved": "2.20.0",
-        "contentHash": "vin8fW0bUBD3hDbN3s3br+ePtAzzdOCygslGfb7JR86ZKVQ/fAsgLcKQLDbNjZAn020F4eUEg/UNEZqpBwhOcg==",
+        "resolved": "2.21.0",
+        "contentHash": "U8gATeEGvSIc1ogSdG/LKr6SLgOjkis7Oo/QzCq+aOoGjw4tHYRVpm02V+pHp/qlQhziBbdQ/Vl5d58cmFY+PA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
@@ -88,7 +88,7 @@
       "molten.utility": {
         "type": "Project",
         "dependencies": {
-          "Silk.NET.Core": "[2.20.0, )"
+          "Silk.NET.Core": "[2.21.0, )"
         }
       }
     }

@@ -4,11 +4,11 @@
     "net8.0": {
       "Silk.NET.Direct3D.Compilers": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "vFZOfsDOVVAkQuN6/b8TWig/Ax9Af06g4wShMsZ0Oh9R3vq/6F7FH9QrJ5tu44pt5k2q9Bw5vO4p1a/jD2ANdg==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "c1Qvg5DxDzqoopa7K/ScTFCqOhpUYarivapHAVjxBXtVgDC+juwToPjmKiJ3xOQTsvcTjmrqXOVH9ouSjjI1Lg==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0"
+          "Silk.NET.Core": "2.21.0"
         }
       },
       "Magick.NET-Q8-AnyCPU": {
@@ -50,8 +50,8 @@
       },
       "Silk.NET.Core": {
         "type": "Transitive",
-        "resolved": "2.20.0",
-        "contentHash": "vin8fW0bUBD3hDbN3s3br+ePtAzzdOCygslGfb7JR86ZKVQ/fAsgLcKQLDbNjZAn020F4eUEg/UNEZqpBwhOcg==",
+        "resolved": "2.21.0",
+        "contentHash": "U8gATeEGvSIc1ogSdG/LKr6SLgOjkis7Oo/QzCq+aOoGjw4tHYRVpm02V+pHp/qlQhziBbdQ/Vl5d58cmFY+PA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
@@ -104,7 +104,7 @@
       "molten.utility": {
         "type": "Project",
         "dependencies": {
-          "Silk.NET.Core": "[2.20.0, )"
+          "Silk.NET.Core": "[2.21.0, )"
         }
       }
     }

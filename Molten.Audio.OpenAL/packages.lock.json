@@ -4,51 +4,51 @@
     "net8.0": {
       "Silk.NET.OpenAL": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "RpRuHuVx4Ms5ZiEGfu7Fi6lSyhtxYGxApw+rn2RVvuFTtlFmy5tf+a5pvJHW7eEoYOgUzZRS4P3S6jM9QkbwYw==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "zF18SdntuL/7rKiNO/2HaiiCS+x2hYVmfxIs2jN12Bm1XZvEGs6u6p+m+P8SwjxlBgX15NSaX5hMCo/59eZH8Q==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
+          "Silk.NET.Core": "2.21.0",
           "System.Buffers": "4.5.1",
           "System.Numerics.Vectors": "4.5.0"
         }
       },
       "Silk.NET.OpenAL.Extensions.Enumeration": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "RKcsZZgidRFFF1KkYdxE3QviwBpJDYC0I3jaYuKMh0vFcqqbjzqKm7+PlCGYtl4kEdNKIRdbsimDTNcp+wvZ1g==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "ofk6zC9Pp81vLodkF79O28Cdo29RJsih6SPtpjvji9q99qEJ3+sRDtNqUtyKZFme0oJhLqucZiIj7rL6cOQD0A==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Silk.NET.OpenAL": "2.20.0",
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenAL": "2.21.0",
           "System.Buffers": "4.5.1"
         }
       },
       "Silk.NET.OpenAL.Extensions.EXT": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "LZWan4xqdm5EhR+eOTxiRsHyKTtFKY19AROi0dRsKSvhkp0JwcSjvNk5mBQL0bbrlRw+qECPfh/z0ApyjdlV5w==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "syJiKtFecsTtZ2uqreRg7VFPwTu8Nq4OB9YKJA2r+BSOsgPNX7KQsi6r1ydUBfhPmhf4uGBHHe1p87+A8iyr/w==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Silk.NET.OpenAL": "2.20.0"
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenAL": "2.21.0"
         }
       },
       "Silk.NET.OpenAL.Extensions.Soft": {
         "type": "Direct",
-        "requested": "[2.20.0, )",
-        "resolved": "2.20.0",
-        "contentHash": "ZAycy1LKiVLuwtQmams/9WjDBiQtYgDYhvIjM+r0R6YaJPk6RGWtpBDo0CCXuCV24vIBfPHnIM/0tnP007hkPA==",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "q+tQCjfcuMxLw8bkFzfYXi1V4GMOEz+bATGz1Mj3RQ5OtkkxTh33bAkOqPiK8nBNHLUuGApwO8O/zkp6KymkDg==",
         "dependencies": {
-          "Silk.NET.Core": "2.20.0",
-          "Silk.NET.OpenAL": "2.20.0"
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenAL": "2.21.0"
         }
       },
       "Silk.NET.OpenAL.Soft.Native": {
         "type": "Direct",
-        "requested": "[1.21.1.2, )",
-        "resolved": "1.21.1.2",
-        "contentHash": "8kFOTuP1T/zUd/iGS8H6pdLcXz4uGoiQQJSddUuLt00A6Zs1K0dyaQ4zNQT+p2M7afyoMY1O0XCycsVvgX16Gg=="
+        "requested": "[1.23.1, )",
+        "resolved": "1.23.1",
+        "contentHash": "gZIbksInoiXbJZmepYnTs5O6Edg5O5k86c1+Uus0zSaVnQx5WRbInGz2VTlvudbs0qAqXs/asL1YvJzco/nfAQ=="
       },
       "Magick.NET-Q8-AnyCPU": {
         "type": "Transitive",
@@ -89,8 +89,8 @@
       },
       "Silk.NET.Core": {
         "type": "Transitive",
-        "resolved": "2.20.0",
-        "contentHash": "vin8fW0bUBD3hDbN3s3br+ePtAzzdOCygslGfb7JR86ZKVQ/fAsgLcKQLDbNjZAn020F4eUEg/UNEZqpBwhOcg==",
+        "resolved": "2.21.0",
+        "contentHash": "U8gATeEGvSIc1ogSdG/LKr6SLgOjkis7Oo/QzCq+aOoGjw4tHYRVpm02V+pHp/qlQhziBbdQ/Vl5d58cmFY+PA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
@@ -148,7 +148,7 @@
       "molten.utility": {
         "type": "Project",
         "dependencies": {
-          "Silk.NET.Core": "[2.20.0, )"
+          "Silk.NET.Core": "[2.21.0, )"
         }
       }
     }
