@@ -30,7 +30,7 @@ public abstract class SwapChainSurfaceVK : RenderSurface2DVK, INativeSurface
 
     protected SwapChainSurfaceVK(DeviceVK device, string title, uint width, uint height, uint mipCount,
         GpuResourceFlags flags = GpuResourceFlags.None,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm,
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm,
         PresentModeKHR presentMode = PresentModeKHR.ImmediateKhr,
         string name = null) :
         base(device, width, height, mipCount, 1, AntiAliasLevel.None, MSAAQuality.Default, format, flags, name)

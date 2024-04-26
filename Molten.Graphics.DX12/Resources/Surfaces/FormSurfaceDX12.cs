@@ -77,7 +77,7 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
     System.Drawing.Rectangle? _preBorderlessScreenArea;
 
     public FormSurfaceDX12(DeviceDX12 device, uint width, uint height, uint mipCount, string title, string controlName,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm) : 
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm) : 
         base(device, width, height, mipCount, format)
     {
         _title = title;

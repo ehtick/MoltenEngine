@@ -48,7 +48,7 @@ internal class ResourceManagerDX12 : GraphicsResourceManager<DeviceDX12>
     }
 
     protected override INativeSurface OnCreateFormSurface(string formTitle, string formName, uint width, uint height,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm, uint mipCount = 1)
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm, uint mipCount = 1)
     {
         return new FormSurfaceDX12(Device, width, height, 1, formTitle, formName);
     }

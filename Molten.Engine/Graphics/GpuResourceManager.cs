@@ -472,7 +472,7 @@ where T : unmanaged, IVertexType
     /// <param name="enabled">Whether or not the form is enabled for presentation.</param>
     /// <returns></returns>
     public INativeSurface CreateFormSurface(string formTitle, string formName, uint width, uint height,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm,
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm,
         uint mipCount = 1, bool enabled = true)
     {
         INativeSurface surface = OnCreateFormSurface(formTitle, formName, width, height, format, mipCount);
@@ -504,7 +504,7 @@ where T : unmanaged, IVertexType
     /// <param name="format">The format of the form surface.</param>
     /// <returns></returns>
     protected abstract INativeSurface OnCreateFormSurface(string formTitle, string formName, uint width, uint height,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm,
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm,
         uint mipCount = 1);
 
     /// <summary>Creates a GUI control with a surface which can be rendered on to.</summary>

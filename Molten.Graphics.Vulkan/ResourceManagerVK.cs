@@ -61,7 +61,7 @@ public class ResourceManagerVK :GraphicsResourceManager<DeviceVK>
         string formName,
         uint width,
         uint height,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm,
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm,
         uint mipCount = 1)
     {
         return new WindowSurfaceVK(Device, formTitle, width, height, mipCount, GpuResourceFlags.None, format);

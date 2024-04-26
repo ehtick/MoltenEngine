@@ -87,7 +87,7 @@ public sealed class BufferDX12 : GpuBuffer
                 void* ptr = null;
                 HResult hr = Device.Handle->CreateCommittedResource2(heapProp, heapFlags, desc, stateFlags, null, null, &guid, &ptr);
                 if (!Device.Log.CheckResult(hr, () => $"Failed to create {desc.Dimension} resource"))
-                    return;
+                    return; 
 
                 resource = (ID3D12Resource1*)ptr;
             }

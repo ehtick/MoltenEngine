@@ -210,6 +210,8 @@ public unsafe class CommandListDX12 : GpuCommandList
     {
         // Unbind all output surfaces
         _handle->OMSetRenderTargets(0, null, false, null);
+        _boundTopology = D3DPrimitiveTopology.D3DPrimitiveTopologyUndefined;
+        _boundDepthMode = GpuDepthWritePermission.Enabled;
     }
 
     protected override GpuBindResult DoComputePass(ShaderPass pass)

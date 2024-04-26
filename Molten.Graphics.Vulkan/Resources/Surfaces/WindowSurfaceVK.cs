@@ -12,7 +12,7 @@ internal unsafe class WindowSurfaceVK : SwapChainSurfaceVK, IWindow
 
     internal unsafe WindowSurfaceVK(DeviceVK device, string title, uint width, uint height, uint mipCount,
         GpuResourceFlags flags = GpuResourceFlags.None,
-        GpuResourceFormat format = GpuResourceFormat.B8G8R8A8_UNorm,
+        GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm,
         PresentModeKHR presentMode = PresentModeKHR.ImmediateKhr,
         string name = null) : 
         base(device, title, width, height, mipCount, flags, format, presentMode, name)
