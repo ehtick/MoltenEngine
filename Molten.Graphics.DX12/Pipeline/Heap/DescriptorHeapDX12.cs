@@ -17,7 +17,7 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
     {
         Guid guid = ID3D12DescriptorHeap.Guid;
         void* ptr = null;
-        HResult hr = device.Handle->CreateDescriptorHeap(desc, &guid, &ptr);
+        HResult hr = device.Handle->CreateDescriptorHeap(ref desc, &guid, &ptr);
 
         if(!device.Log.CheckResult(hr, () => $"Failed to create descriptor heap with capacity '{desc.NumDescriptors}'"))
             return;

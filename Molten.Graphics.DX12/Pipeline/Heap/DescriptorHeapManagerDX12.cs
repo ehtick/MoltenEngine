@@ -88,48 +88,39 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
         {
             ShaderBindType bindType = (ShaderBindType)i;
             ref ShaderBind<ShaderResourceVariable>[] resources = ref pass.Bindings.Resources[i];
+
+            // Iterate over resources
             for (int r = 0; r < resources.Length; r++)
             {
                 ref ShaderBind<ShaderResourceVariable> bind = ref resources[r];
                 bind.Object.Resource?.Apply(cmd);
-            }
-        }
 
-        // Iterate over pass resources
-        for (int i = 0; i < pass.Bindings.Resources.Length; i++)
-        {
-            ShaderBindType bindType = (ShaderBindType)i;
-            ref ShaderBind<ShaderResourceVariable>[] resources = ref pass.Bindings.Resources[i];
-            for (int r = 0; r < resources.Length; r++)
-            {
-                ref ShaderBind<ShaderResourceVariable> bind = ref resources[r];
-                if (bind.Object?.Value != null)
+                // TODO Improve this
+                ResourceHandleDX12 resHandle = bind.Object.Resource.Handle as ResourceHandleDX12;
+                CpuDescriptorHandle cpuHandle = default;
+                switch (bindType)
                 {
-                    // TODO Improve this
-                    ResourceHandleDX12 resHandle = bind.Object.Resource.Handle as ResourceHandleDX12;
-                    CpuDescriptorHandle cpuHandle = default;
-                    switch (bindType)
-                    {
-                        case ShaderBindType.ConstantBuffer:
-                            CBHandleDX12 cbHandle = resHandle as CBHandleDX12;
-                            cpuHandle = cbHandle.CBV.CpuHandle;
-                            break;
+                    case ShaderBindType.ConstantBuffer:
+                        CBHandleDX12 cbHandle = resHandle as CBHandleDX12;
+                        cpuHandle = cbHandle.CBV.CpuHandle;
+                        break;
 
-                        case ShaderBindType.Resource:
-                            cpuHandle = resHandle.SRV.CpuHandle;
-                            break;
+                    case ShaderBindType.Resource:
+                        cpuHandle = resHandle.SRV.CpuHandle;
+                        break;
 
-                        case ShaderBindType.UnorderedAccess:
-                            cpuHandle = resHandle.UAV.CpuHandle;
-                            break;
-                    }
-
-                    if (cpuHandle.Ptr != 0)
-                        device.Handle->CopyDescriptorsSimple(1, gpuResHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);
-
-                    // Increment GPU heap handle
-                    gpuResHandle.Ptr += resHeap.IncrementSize;
+                    case ShaderBindType.UnorderedAccess:
+                        cpuHandle = resHandle.UAV.CpuHandle;
+                        break;
                 }
+
+                if (cpuHandle.Ptr != 0)
+                {
+                    device.Handle->CopyDescriptorsSimple(1, gpuResHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);
+                }
+
+                // Increment GPU heap handle
+                gpuResHandle.Ptr += resHeap.IncrementSize;
             }
         }
 
@@ -148,7 +139,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
         // Populate SRV, UAV, and CBV descriptors first.
         // TODO Pull descriptor info from our pass, render targets, samplers, depth-stencil, etc.
 
-        if (gpuResHandle.Ptr != resHeap.CpuStartHandle.Ptr 
+        if (gpuResHandle.Ptr != resHeap.CpuStartHandle.Ptr
             && gpuSamplerHandle.Ptr != samplerHeap.CpuStartHandle.Ptr)
         {
             ID3D12DescriptorHeap** pHeaps = stackalloc ID3D12DescriptorHeap*[2] { resHeap.Handle, samplerHeap.Handle };
@@ -156,7 +147,8 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
             cmd.Handle->SetDescriptorHeaps(2, pHeaps);
             cmd.Handle->SetGraphicsRootDescriptorTable(0, resHeap.GetGpuHandle());
             cmd.Handle->SetGraphicsRootDescriptorTable(1, samplerHeap.GetGpuHandle());
-        }else if (gpuResHandle.Ptr != resHeap.CpuStartHandle.Ptr)
+        }
+        else if (gpuResHandle.Ptr != resHeap.CpuStartHandle.Ptr)
         {
             ID3D12DescriptorHeap** pHeaps = stackalloc ID3D12DescriptorHeap*[1] { resHeap.Handle };
             cmd.Handle->SetDescriptorHeaps(1, pHeaps);

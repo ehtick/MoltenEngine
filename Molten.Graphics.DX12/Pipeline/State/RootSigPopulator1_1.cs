@@ -14,9 +14,10 @@ internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
         PopulateStaticSamplers(ref desc.PStaticSamplers, ref desc.NumStaticSamplers, pass);
 
         List<DescriptorRange1> ranges = new();
-        PopulateRanges(DescriptorRangeType.Cbv, ranges, bindings.Resources[(int)ShaderBindType.ConstantBuffer]);
-        PopulateRanges(DescriptorRangeType.Srv, ranges, bindings.Resources[(int)ShaderBindType.Resource]);
-        PopulateRanges(DescriptorRangeType.Uav, ranges, bindings.Resources[(int)ShaderBindType.UnorderedAccess]);
+        uint numDescriptors = 0;
+        PopulateRanges(DescriptorRangeType.Cbv, ranges, bindings.Resources[(int)ShaderBindType.ConstantBuffer], ref numDescriptors);
+        PopulateRanges(DescriptorRangeType.Srv, ranges, bindings.Resources[(int)ShaderBindType.Resource], ref numDescriptors);
+        PopulateRanges(DescriptorRangeType.Uav, ranges, bindings.Resources[(int)ShaderBindType.UnorderedAccess], ref numDescriptors);
 
         // TODO Add support for heap-based samplers.
         // TODO Add support for static CBV (which require their own root parameter with the data_static flag set.
@@ -47,7 +48,7 @@ internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
         EngineUtil.Free(ref desc.PStaticSamplers);
     }
 
-    private void PopulateRanges<V>(DescriptorRangeType type, List<DescriptorRange1> ranges, ShaderBind<V>[] variables)
+    private void PopulateRanges<V>(DescriptorRangeType type, List<DescriptorRange1> ranges, ShaderBind<V>[] variables, ref uint numDescriptors)
         where V: ShaderVariable
     {
         uint prevBindPoint = 0;
@@ -67,12 +68,13 @@ internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
                 range.BaseShaderRegister = bp.Info.BindPoint;
                 range.RangeType = type;
                 range.RegisterSpace = bp.Info.BindSpace;
-                range.OffsetInDescriptorsFromTableStart = 0;
+                range.OffsetInDescriptorsFromTableStart = numDescriptors;
                 range.Flags = DescriptorRangeFlags.None;
             }
 
             prevBindPoint = bp.Info.BindPoint;
             range.NumDescriptors++;
+            numDescriptors++;
         }
 
         // Finalize the last range, if any.
