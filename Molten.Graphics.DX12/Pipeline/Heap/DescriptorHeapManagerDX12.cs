@@ -114,6 +114,10 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                         break;
                 }
 
+                // TODO transition resources to PIXEL_SHADER_RESOURCE
+                // TODO transition CBs to VERTEX_AND_CONSTANT_BUFFER
+                // TODO Move cmd.Transition into ResourceHandleDX12.Transition(cmd, ResourceState) - Track per-resource barrier state.
+
                 if (cpuHandle.Ptr != 0)
                 {
                     device.Handle->CopyDescriptorsSimple(1, gpuResHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);

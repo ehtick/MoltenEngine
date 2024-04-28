@@ -5,16 +5,25 @@ namespace Molten.Graphics.DX12;
 public unsafe class ResourceHandleDX12 : GpuResourceHandle
 {
     ID3D12Resource1*[] _ptr;
-    ResourceStates[] _states;
+    ResourceStateTrackerDX12[] _stateTracker;
 
     internal ResourceHandleDX12(GpuResource resource, params ID3D12Resource1*[] ptr) : base(resource)
     {
         if (ptr == null || ptr.Length == 0)
             throw new ArgumentException("Resource handle must contain at least one resource pointer.");
 
-        SetResources(ptr);
+        _ptr = ptr;
         Device = resource.Device as DeviceDX12;
-        _states = new ResourceStates[ptr.Length];
+        _stateTracker = new ResourceStateTrackerDX12[ptr.Length];
+        for (int i = 0; i < ptr.Length; i++)
+        {
+            uint numSubResources = resource switch
+            {
+                TextureDX12 tex => tex.ArraySize * tex.MipMapCount,
+                _ => 1,
+            };
+            _stateTracker[i] = new ResourceStateTrackerDX12(numSubResources);
+        }
 
         if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
             SRV = new SRViewDX12(this);
@@ -28,9 +37,21 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
         if (numResources == 0)
             throw new ArgumentException("Resource handle must contain at least one resource pointer.");
 
-        SetResources(ptr, numResources);
+        _stateTracker = new ResourceStateTrackerDX12[numResources];
+        _ptr = new ID3D12Resource1*[numResources];
+
+        for (int i = 0; i < numResources; i++)
+        {
+            _ptr[i] = ptr[i];
+            uint numSubResources = resource switch
+            {
+                TextureDX12 tex => tex.ArraySize * tex.MipMapCount,
+                _ => 1,
+            };
+            _stateTracker[i] = new ResourceStateTrackerDX12(numSubResources);
+        }
+
         Device = resource.Device as DeviceDX12;
-        _states = new ResourceStates[numResources];
 
         if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
             SRV = new SRViewDX12(this);
@@ -39,24 +60,11 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
             UAV = new UAViewDX12(this);
     }
 
-    internal void SetResources(params ID3D12Resource1*[] ptr)
-    {
-        _ptr = ptr;
-    }
-
-    internal void SetResources(ID3D12Resource1** ptr, uint numResources)
-    {
-        if(_ptr == null || _ptr.Length != numResources)
-            _ptr = new ID3D12Resource1*[numResources];
-
-        for (int i = 0; i < numResources; i++)
-            _ptr[i] = ptr[i];
-    }
-
     protected override void OnGpuRelease()
     {
         SRV?.Dispose();
         UAV?.Dispose();
+        _stateTracker = null;
 
         for (int i = 0; i < _ptr.Length; i++)
             NativeUtil.ReleasePtr(ref _ptr[i]);
@@ -99,9 +107,8 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
     /// <returns></returns>
     internal ref ID3D12Resource1* this[uint index] => ref _ptr[index];
 
-
     /// <summary>
-    /// Gets the internal resource barrier state of the underlying resource.
+    /// Gets the resoruce barrier state tracker for the current resource handle.
     /// </summary>
-    internal ref ResourceStates BarrierState => ref _states[Index];
+    internal ResourceStateTrackerDX12 State => _stateTracker[Index];
 }

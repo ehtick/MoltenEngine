@@ -26,14 +26,14 @@ public unsafe class CommandAllocatorDX12 : GpuObject<DeviceDX12>
     internal CommandListDX12 Allocate(ID3D12PipelineState* pInitialState = null /*TODO Properly provide a PipelineStateDX12*/)
     {
         void* ptr = null;
-        Guid guid = ID3D12GraphicsCommandList.Guid;
+        Guid guid = ID3D12GraphicsCommandList7.Guid;
         HResult hr = Device.Handle->CreateCommandList(0, Type, _handle, pInitialState, &guid, &ptr);
         if (!Device.Log.CheckResult(hr, () => $"Failed to allocate {Type} command list"))
             hr.Throw();
 
         // TODO Check free list.
 
-        CommandListDX12 list = new CommandListDX12(this, (ID3D12GraphicsCommandList*) ptr);
+        CommandListDX12 list = new CommandListDX12(this, (ID3D12GraphicsCommandList7*) ptr);
         _allocated.Add(list);
 
         return list;

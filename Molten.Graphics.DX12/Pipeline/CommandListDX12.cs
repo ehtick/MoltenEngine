@@ -7,7 +7,7 @@ namespace Molten.Graphics.DX12;
 public unsafe class CommandListDX12 : GpuCommandList
 {
     bool _isClosed;
-    ID3D12GraphicsCommandList* _handle;
+    ID3D12GraphicsCommandList7* _handle;
     PipelineInputLayoutDX12 _inputLayout;
     PipelineStateDX12 _pipelineState;
 
@@ -19,9 +19,16 @@ public unsafe class CommandListDX12 : GpuCommandList
     GpuDepthWritePermission _boundDepthMode;
 
 
-    internal CommandListDX12(CommandAllocatorDX12 allocator, ID3D12GraphicsCommandList* handle) :
+    ResourceStates[] _pendingBarriers;
+    Dictionary<ResourceHandleDX12, uint> _pendingBarrierLookup;
+    uint _nextBarrierIndex;
+
+    internal CommandListDX12(CommandAllocatorDX12 allocator, ID3D12GraphicsCommandList7* handle) :
         base(allocator.Device)
     {
+        _pendingBarrierLookup = new Dictionary<ResourceHandleDX12, uint>();
+        _pendingBarriers = new ResourceStates[256];
+
         Device = allocator.Device;
         Allocator = allocator;
         Fence = new FenceDX12(allocator.Device, FenceFlags.None);
@@ -134,7 +141,7 @@ public unsafe class CommandListDX12 : GpuCommandList
             if (dxCmd.Type != CommandListType.Bundle)
                 throw new GpuCommandListException(this, "Cannot execute a non-bundle command list on another command list");
 
-            _handle->ExecuteBundle(dxCmd.Handle);
+            _handle->ExecuteBundle((ID3D12GraphicsCommandList*)dxCmd.Handle);
         }
     }
 
@@ -165,45 +172,81 @@ public unsafe class CommandListDX12 : GpuCommandList
         //throw new NotImplementedException();
     }
 
-    internal void Transition(BufferDX12 buffer, ResourceStates newState)
+    internal void Transition(GpuResource resource, ResourceStates newState, uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
     {
-        ResourceBarrier barrier = new()
+        ResourceHandleDX12 handle = resource.Handle as ResourceHandleDX12;
+        if(!_pendingBarrierLookup.TryGetValue(handle, out uint barrierStartIndex))
         {
-            Flags = ResourceBarrierFlags.None,
-            Type = ResourceBarrierType.Transition,
-            Transition = new ResourceTransitionBarrier()
-            {
-                PResource = buffer.Handle,
-                StateAfter = newState,
-                StateBefore = buffer.BarrierState,
-                Subresource = 0,
-            },
-        };
+            barrierStartIndex = _nextBarrierIndex;
+            _nextBarrierIndex += handle.State.NumSubResources;
+            _pendingBarrierLookup.Add(handle, barrierStartIndex);
+        }
 
-        buffer.BarrierState = newState;
-        _handle->ResourceBarrier(1, &barrier);
+        // If all sub resources should be set to the same state, iterate over all.
+        if (subResourceIndex == D3D12.ResourceBarrierAllSubresources && handle.State.NumSubResources > 1)
+        {
+            ResourceBarrier* barriers = stackalloc ResourceBarrier[(int)handle.State.NumSubResources];
+            for(int i = 0; i < handle.State.NumSubResources; i++)
+            {
+                ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex + i];
+
+                barriers[i] = new ResourceBarrier()
+                {
+                    Flags = ResourceBarrierFlags.None,
+                    Type = ResourceBarrierType.Transition,
+                    Transition = new ResourceTransitionBarrier()
+                    {
+                        PResource = handle,
+                        StateAfter = newState,
+                        StateBefore = beforeState,
+                        Subresource = (uint)i,
+                    },
+                };
+
+                beforeState = newState;
+            }
+
+            // Store the new state in pending states.
+            uint lastIndex = barrierStartIndex + handle.State.NumSubResources;
+            for (uint i = barrierStartIndex; i < lastIndex; i++)
+                _pendingBarriers[i] = newState;
+
+            _handle->ResourceBarrier(handle.State.NumSubResources, barriers);
+        }
+        else
+        {
+            ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex];
+
+            ResourceBarrier barrier = new ResourceBarrier()
+            {
+                Flags = ResourceBarrierFlags.None,
+                Type = ResourceBarrierType.Transition,
+                Transition = new ResourceTransitionBarrier()
+                {
+                    PResource = handle,
+                    StateAfter = newState,
+                    StateBefore = beforeState,
+                    Subresource = 0,
+                },
+            };
+
+            _handle->ResourceBarrier(1, &barrier);
+        }
     }
 
-    internal void Transition(TextureDX12 texture, ResourceStates newState, uint subResource = 0)
+    internal void ApplyBarrierStates()
     {
-        if (texture.Handle.BarrierState == newState)
-            return;
-
-        ResourceBarrier barrier = new()
+        foreach (KeyValuePair<ResourceHandleDX12, uint> kvp in _pendingBarrierLookup)
         {
-            Flags = ResourceBarrierFlags.None,
-            Type = ResourceBarrierType.Transition,
-            Transition = new ResourceTransitionBarrier()
-            {
-                PResource = texture.Handle,
-                StateAfter = newState,
-                StateBefore = texture.Handle.BarrierState,
-                Subresource = subResource,
-            },
-        };
+            ResourceHandleDX12 handle = kvp.Key;
+            uint startIndex = kvp.Value;
 
-        texture.Handle.BarrierState = newState;
-        _handle->ResourceBarrier(1, &barrier);
+            for (uint i = 0; i < handle.State.NumSubResources; i++)
+                handle.State[i] = _pendingBarriers[startIndex + i];
+        }
+
+        _nextBarrierIndex = 0;
+        _pendingBarrierLookup.Clear();
     }
 
     protected override void OnResetState()
@@ -330,7 +373,7 @@ public unsafe class CommandListDX12 : GpuCommandList
             if (iBuffer != null)
             {
                 IBHandleDX12 ibHandle = (IBHandleDX12)iBuffer.Handle;
-                _handle->IASetIndexBuffer(ibHandle.View);
+                _handle->IASetIndexBuffer(ref ibHandle.View);
             }
             else
             {
@@ -477,7 +520,7 @@ public unsafe class CommandListDX12 : GpuCommandList
 
     public unsafe ID3D12CommandList* BaseHandle => (ID3D12CommandList*)_handle;
 
-    internal ref readonly ID3D12GraphicsCommandList* Handle => ref _handle;
+    internal ref readonly ID3D12GraphicsCommandList7* Handle => ref _handle;
 
     public new DeviceDX12 Device { get; }
 }

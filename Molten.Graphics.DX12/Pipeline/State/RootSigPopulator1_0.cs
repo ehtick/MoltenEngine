@@ -35,7 +35,6 @@ internal class RootSigPopulator1_0 : RootSignaturePopulatorDX12
         Span<DescriptorRange> rangeSpan = CollectionsMarshal.AsSpan(ranges);
         Span<DescriptorRange> tableRanges = new(param.DescriptorTable.PDescriptorRanges, ranges.Count);
         rangeSpan.CopyTo(tableRanges);
-
     }
 
     internal unsafe override void Free(ref VersionedRootSignatureDesc versionedDesc)
@@ -69,7 +68,7 @@ internal class RootSigPopulator1_0 : RootSignaturePopulatorDX12
                 range.BaseShaderRegister = bp.Info.BindPoint;
                 range.RangeType = type;
                 range.RegisterSpace = bp.Info.BindSpace;
-                range.OffsetInDescriptorsFromTableStart = 0;
+                range.OffsetInDescriptorsFromTableStart = numDescriptors;
             }
 
             prevBindPoint = bp.Info.BindPoint;

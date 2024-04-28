@@ -29,7 +29,7 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         void* cmdQueue = null;
 
         DeviceDX12 device = Device; 
-        HResult r = device.Handle->CreateCommandQueue(_desc, &cmdGuid, &cmdQueue);
+        HResult r = device.Handle->CreateCommandQueue(ref _desc, &cmdGuid, &cmdQueue);
         if (!device.Log.CheckResult(r))
         {
             Log.Error($"Failed to initialize '{_desc.Type}' command queue");
@@ -46,8 +46,8 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         if (cmd.HasBegan)
             throw new GpuCommandListException(cmd, "Cannot execute a command list that has not been closed.");
 
-        CommandListDX12 cmdDx12 = (CommandListDX12)cmd;
-        ID3D12CommandList** lists = stackalloc ID3D12CommandList*[] { cmdDx12.BaseHandle };
+        CommandListDX12 dxCmd = (CommandListDX12)cmd;
+        ID3D12CommandList** lists = stackalloc ID3D12CommandList*[] { dxCmd.BaseHandle };
 
         _lockerExecute.Lock();
 
@@ -59,7 +59,8 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         }
 
         _handle->ExecuteCommandLists(1, lists);
-        _prevCmdList = cmdDx12;
+        dxCmd.ApplyBarrierStates();
+        _prevCmdList = dxCmd;
         _lockerExecute.Unlock();
     }
 

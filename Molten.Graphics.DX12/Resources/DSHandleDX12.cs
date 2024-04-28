@@ -10,13 +10,6 @@ internal class DSHandleDX12 : ResourceHandleDX12
         ReadOnlyDSV = new DSViewDX12(this);
     }
 
-    internal unsafe DSHandleDX12(TextureDX12 texture, ID3D12Resource1** resources, uint numResources) : 
-        base(texture, resources, numResources)
-    {
-        DSV = new DSViewDX12(this);
-        ReadOnlyDSV = new DSViewDX12(this);
-    }
-
     protected override void OnGpuRelease()
     {
         DSV.Dispose();
