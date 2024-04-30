@@ -11,8 +11,8 @@ internal class DSViewDX12 : ViewDX12<DepthStencilViewDesc>
         Handle.Device.Handle->CreateDepthStencilView((ID3D12Resource*)resource, desc, heapHandle);
     }
 
-    private protected override void OnAllocateHandle(uint numDescriptors, out HeapHandleDX12 handle)
+    private protected override void OnAllocateHandle(out HeapHandleDX12 handle)
     {
-        handle = Handle.Device.Heap.GetDepthHandle(numDescriptors);
+        handle = Handle.Device.Heap.GetDepthHandle(1);
     }
 }

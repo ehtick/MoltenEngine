@@ -6,7 +6,11 @@ namespace Molten.Graphics.DX12;
 
 public abstract class TextureDX12 : GpuTexture, ITexture
 {
-    ResourceHandleDX12 _handle;
+    unsafe ID3D12Resource1** _ptrs = null;
+    uint _numResources = 0;
+    ResourceHandleDX12[] _handles;
+    uint _handleIndex;
+
     ResourceBarrier _barrier;
     ResourceStates _barrierState;
     ResourceDesc1 _desc;
@@ -53,7 +57,6 @@ public abstract class TextureDX12 : GpuTexture, ITexture
             SamplerFeedbackMipRegion = new MipRegion() // Sampler feedback info: https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html
         };
 
-
         if (this is IRenderSurface)
             Desc.Flags |= ResourceFlags.AllowRenderTarget;
 
@@ -63,7 +66,7 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     protected override void OnApply(GpuCommandList cmd)
     {
-        if (_handle == null)
+        if (_handles == null)
             OnCreateResource();
     }
 
@@ -79,46 +82,85 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     protected unsafe void OnCreateResource()
     {
-        ID3D12Resource1* ptr = OnCreateTexture();
-        _handle = OnCreateHandle(ptr);
-        ShaderResourceViewDesc srvDesc = new ShaderResourceViewDesc
-        {
-            Format = DxgiFormat,
-            Shader4ComponentMapping = ResourceInterop.EncodeShader4ComponentMapping(ShaderComponentMapping.FromMemoryComponent0,
-                    ShaderComponentMapping.FromMemoryComponent1,
-                    ShaderComponentMapping.FromMemoryComponent2,
-                    ShaderComponentMapping.FromMemoryComponent3),
-        };
+        OnCreateTexture(ref _ptrs, ref _numResources);
 
-        if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
+        // Check if the _handles array needs to be created or resized.
+        if (_handles == null)
         {
-            SetSRVDescription(ref srvDesc);
-            _handle.SRV.Initialize(ref srvDesc);
+            _handles = new ResourceHandleDX12[_numResources];
+        }
+        else if (_handles.Length != _numResources)
+        {
+            // Resize handles array. If it shrinks, dispose of any leftover handles.
+            if (_handles.Length < _numResources)
+            {
+                for (uint i = _numResources; i < _handles.Length; i++)
+                    _handles[i].Dispose();
+            }
+
+            Array.Resize(ref _handles, (int)_numResources);
         }
 
-        if (Flags.Has(GpuResourceFlags.UnorderedAccess))
+        // Create or update resource handles.
+        for (int i = 0; i < _numResources; i++)
         {
-            UnorderedAccessViewDesc uavDesc = default;
-            SetUAVDescription(ref srvDesc, ref uavDesc);
-            _handle.UAV.Initialize(ref uavDesc);
+            OnCreateHandle(ref _ptrs[i], ref _handles[i]);
+
+            ShaderResourceViewDesc srvDesc = new ShaderResourceViewDesc
+            {
+                Format = DxgiFormat,
+                Shader4ComponentMapping = ResourceInterop.EncodeShader4ComponentMapping(ShaderComponentMapping.FromMemoryComponent0,
+                        ShaderComponentMapping.FromMemoryComponent1,
+                        ShaderComponentMapping.FromMemoryComponent2,
+                        ShaderComponentMapping.FromMemoryComponent3),
+            };
+
+            if (!Flags.Has(GpuResourceFlags.DenyShaderAccess))
+            {
+                SetSRVDescription(ref srvDesc);
+                _handles[i].SRV.Initialize(ref srvDesc);
+            }
+
+            if (Flags.Has(GpuResourceFlags.UnorderedAccess))
+            {
+                UnorderedAccessViewDesc uavDesc = default;
+                SetUAVDescription(ref srvDesc, ref uavDesc);
+                _handles[i].UAV.Initialize(ref uavDesc);
+            }
         }
     }
 
     protected override void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t)
     {
-        _handle?.Dispose();
-        _handle = null;
+        if (_handles != null)
+        {
+            for (int i = 0; i < _handles.Length; i++)
+            {
+                _handles[i]?.Dispose();
+                _handles[i] = null;
+            }
+        }
+
         Apply(cmd);
     }
 
     protected virtual ClearValue GetClearValue() => default;
 
-    protected override void OnGpuRelease()
+    protected unsafe override void OnGpuRelease()
     {
-        _handle?.Dispose();
+        if (_handles != null)
+        {
+            for (int i = 0; i < _handles.Length; i++)
+            {
+                _handles[i]?.Dispose();
+                _handles[i] = null;
+            }
+        }
+
+        EngineUtil.FreePtrArray(ref _ptrs);
     }
 
-    protected unsafe virtual ID3D12Resource1* OnCreateTexture()
+    protected unsafe virtual void OnCreateTexture(ref ID3D12Resource1** ptrResources, ref uint numResources)
     {
         HeapFlags heapFlags = HeapFlags.None;
         ResourceFlags flags = Flags.ToResourceFlags();
@@ -167,20 +209,23 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         {
             HResult hr = Device.Handle->CreateCommittedResource2(&heapProp, heapFlags, ptrDesc, initialState, ptrClearValue, _protectedSession, &guid, &ptr);
             if (!Device.Log.CheckResult(hr, () => $"Failed to create {_desc.Dimension} resource"))
-                return null;
+            {
+                _ptrs = null;
+                return;
+            }
         }
 
-        return (ID3D12Resource1*)ptr;
+        _numResources = 1;
+
+        if(ptrResources == null)
+            ptrResources = EngineUtil.AllocPtrArray<ID3D12Resource1>(_numResources);
+
+        ptrResources[0] = (ID3D12Resource1*)ptr;
     }
 
-    protected unsafe virtual ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)
+    protected unsafe virtual void OnCreateHandle(ref ID3D12Resource1* ptr, ref ResourceHandleDX12 handle)
     {
-        if (_handle == null)
-            return new ResourceHandleDX12(this, ptr);
-        else
-            _handle[0] = ptr;
-
-        return _handle;
+        handle = new ResourceHandleDX12(this, ptr);
     }
 
     protected abstract void SetUAVDescription(ref ShaderResourceViewDesc srvDesc, ref UnorderedAccessViewDesc desc);
@@ -213,7 +258,9 @@ public abstract class TextureDX12 : GpuTexture, ITexture
 
     public new DeviceDX12 Device { get; }
 
-    public override ResourceHandleDX12 Handle => _handle;
+    public override ResourceHandleDX12 Handle => _handles[_handleIndex];
 
     internal ref ResourceDesc1 Desc => ref _desc;
+
+    protected ref uint HandleIndex => ref _handleIndex;
 }

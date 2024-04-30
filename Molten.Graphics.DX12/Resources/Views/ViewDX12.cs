@@ -10,7 +10,7 @@ public abstract class ViewDX12<DESC> : IDisposable
     where DESC : unmanaged
 {
     HeapHandleDX12 _heapHandle;
-    CpuDescriptorHandle[] _cpuHandles;
+    CpuDescriptorHandle _cpuHandle;
 
     protected ViewDX12(ResourceHandleDX12 handle) {
         Handle = handle;
@@ -24,23 +24,17 @@ public abstract class ViewDX12<DESC> : IDisposable
     /// <param name="numDescriptors"></param>
     internal unsafe void Initialize(ref DESC desc)
     {
-        if (_heapHandle.NumSlots != Handle.NumResources)
-            _heapHandle.Free();
-
         if (_heapHandle.Heap == null)
-        {
-            OnAllocateHandle(Handle.NumResources, out _heapHandle);
-            _cpuHandles = new CpuDescriptorHandle[Handle.NumResources];
-        }
+            OnAllocateHandle(out _heapHandle);
 
         for (uint i = 0; i < _heapHandle.NumSlots; i++)
         {
-            _cpuHandles[i] = _heapHandle.GetCpuHandle(i);
-            OnCreate(ref desc, Handle[i], ref _cpuHandles[i], i);
+            _cpuHandle = _heapHandle.GetCpuHandle(i);
+            OnCreate(ref desc, Handle, ref _cpuHandle, i);
         }
     }
 
-    private protected abstract void OnAllocateHandle(uint numDescriptors, out HeapHandleDX12 handle);
+    private protected abstract void OnAllocateHandle(out HeapHandleDX12 handle);
 
     protected unsafe abstract void OnCreate(ref DESC desc, ID3D12Resource1* resource, ref CpuDescriptorHandle heapHandle, uint resourceIndex);
 
@@ -59,7 +53,7 @@ public abstract class ViewDX12<DESC> : IDisposable
     /// </summary>
     internal ref HeapHandleDX12 DescriptorHeapHandle => ref _heapHandle;
 
-    internal ref CpuDescriptorHandle CpuHandle => ref _cpuHandles[Handle.Index];
+    internal ref CpuDescriptorHandle CpuHandle => ref _cpuHandle;
 
     /// <summary>
     /// Gets the allocated slot within the <see cref="ParentHeap"/>.

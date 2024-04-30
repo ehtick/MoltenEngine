@@ -3,8 +3,8 @@
 namespace Molten.Graphics.DX12;
 internal class DSHandleDX12 : ResourceHandleDX12
 {
-    internal unsafe DSHandleDX12(DepthSurfaceDX12 depthSurface, params ID3D12Resource1*[] resources) : 
-        base(depthSurface, resources)
+    internal unsafe DSHandleDX12(DepthSurfaceDX12 depthSurface, ID3D12Resource1* ptr) : 
+        base(depthSurface, ptr)
     {
         DSV = new DSViewDX12(this);
         ReadOnlyDSV = new DSViewDX12(this);

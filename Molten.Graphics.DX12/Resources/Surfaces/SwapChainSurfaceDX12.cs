@@ -11,16 +11,12 @@ namespace Molten.Graphics.DX12;
 /// <summary>A render target that is created from, and outputs to, a device's swap chain.</summary>
 public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapChainSurface
 {
-
     protected internal IDXGISwapChain4* SwapChainHandle;
 
     PresentParameters* _presentParams;
     SwapChainDesc1 _swapDesc;
-    ID3D12Resource1** _ptrSurfaces;
     ThreadedQueue<Action> _dispatchQueue;
-
     uint _vsync;
-    RTHandleDX12 _handle;
 
     internal SwapChainSurfaceDX12(DeviceDX12 device, uint width, uint height, uint mipCount, GpuResourceFormat format = GpuResourceFormat.R8G8B8A8_UNorm, string name = null)
         : base(device, width, height, 
@@ -32,7 +28,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         _presentParams[0] = new PresentParameters();
     }
 
-    protected override unsafe ID3D12Resource1* OnCreateTexture()
+    protected override unsafe void OnCreateTexture(ref ID3D12Resource1** ptrResources, ref uint numResources)
     {
         // Resize the swap chain if needed.
         if (SwapChainHandle != null)
@@ -56,57 +52,32 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
             Device.Settings.VSync.OnChanged += VSync_OnChanged;
         }
 
-        /* NOTE:
-         *  Discard Mode = Only image index 0 can be accessed
-         *  Sequential/FlipS-Sequential Modes = Only image index 0 can be accesed for writing. The rest can only be accesed for reading.
-         *  
-         *  This means we only need 1 handle for the swap chain, as the next image is always at index 0.
-         */
-        _ptrSurfaces = EngineUtil.AllocPtrArray<ID3D12Resource1>(Device.FrameBufferSize);
+        // Check if the resource pointer array needs to be initialized or resized.
+        if (ptrResources == null || numResources != Device.FrameBufferSize)
+        {
+            EngineUtil.FreePtrArray(ref ptrResources);
+            numResources = Device.FrameBufferSize;
+            ptrResources = EngineUtil.AllocPtrArray<ID3D12Resource1>(numResources);
+        }
 
+        // Populate pointer array.
         for (uint i = 0; i < Device.FrameBufferSize; i++)
         {
             void* ppSurface = null;
             Guid riid = ID3D12Resource1.Guid;
             WinHResult hr = SwapChainHandle->GetBuffer(i, &riid, &ppSurface);
             DxgiError err = hr.ToEnum<DxgiError>();
-            _ptrSurfaces[i] = (ID3D12Resource1*)ppSurface;
-
+           
             if (err != DxgiError.Ok)
             {
                 Device.Log.Error($"Error retrieving resource for SwapChainSurface '{Name}' frame index {i}: {err}");
-                return null;
+                return;
             }
+
+            ptrResources[i] = (ID3D12Resource1*)ppSurface;
         }
 
-        return _ptrSurfaces[0];
-    }
-
-    protected override unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)
-    {
-        if(_handle == null)
-            _handle = new RTHandleDX12(this, _ptrSurfaces, Device.FrameBufferSize);
-
-        RenderTargetViewDesc desc = new()
-        {
-            Format = Desc.Format,
-            ViewDimension = RtvDimension.Texture2Darray,
-            Texture2DArray = new Tex2DArrayRtv()
-            {
-                ArraySize = Desc.DepthOrArraySize,
-                MipSlice = 0,
-                FirstArraySlice = 0,
-                PlaneSlice = 0,
-            },
-        };
-
-        _handle.RTV.Initialize(ref desc);
-
-        // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
-        uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
-        _handle.Index = bbIndex;
-
-        return _handle;
+        HandleIndex = SwapChainHandle->GetCurrentBackBufferIndex();
     }
 
     protected virtual void SetRTVDescription(ref RenderTargetViewDesc desc) { }
@@ -118,6 +89,13 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         // Swap-chain needs a D3D12 command queue so that it can force a swap-chain flush.
         IUnknown* cmdQueueHandle = (IUnknown*)Device.DirectQueue.Handle;
         GraphicsManagerDXGI dxgiManager = Device.Manager as GraphicsManagerDXGI;
+
+        /* NOTE:
+         *  Discard Mode = Only image index 0 can be accessed
+         *  Sequential/FlipS-Sequential Modes = Only image index 0 can be accesed for writing. The rest can only be accesed for reading.
+         *  
+         *  This means we only need 1 handle for the swap chain, as the next image is always at index 0.
+         */
 
         DxgiError result = dxgiManager.CreateSwapChain(mode, SwapEffect.FlipDiscard, Device.FrameBufferSize, Device.Log, cmdQueueHandle, controlHandle, out SwapChainHandle);
         if (result == DxgiError.DeviceRemoved)
@@ -138,8 +116,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         Apply(cmd);
 
         // Update the RTV frame index, so that it points to the correct resource, SRV, UAV and RTV views.
-        uint bbIndex = SwapChainHandle->GetCurrentBackBufferIndex();
-        _handle.Index = bbIndex;
+        HandleIndex = SwapChainHandle->GetCurrentBackBufferIndex();
 
         cmd.Transition(this, ResourceStates.RenderTarget);
     }

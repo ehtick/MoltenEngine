@@ -5,12 +5,12 @@ internal class VBHandleDX12 : ResourceHandleDX12
 {
     VertexBufferView _view;
 
-    internal unsafe VBHandleDX12(BufferDX12 buffer, ID3D12Resource1* resource) : 
-        base(buffer, resource)
+    internal unsafe VBHandleDX12(BufferDX12 buffer, ID3D12Resource1* ptr) : 
+        base(buffer, ptr)
     {
         _view = new VertexBufferView()
         {
-            BufferLocation = resource->GetGPUVirtualAddress() + buffer.Offset,
+            BufferLocation = ptr->GetGPUVirtualAddress() + buffer.Offset,
             SizeInBytes = (uint)buffer.SizeInBytes,
             StrideInBytes = buffer.Stride,
         };

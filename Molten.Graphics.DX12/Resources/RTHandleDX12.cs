@@ -3,14 +3,8 @@
 namespace Molten.Graphics.DX12;
 internal class RTHandleDX12 : ResourceHandleDX12
 {
-    internal unsafe RTHandleDX12(TextureDX12 texture, params ID3D12Resource1*[] resources) : 
-        base(texture, resources)
-    {
-        RTV = new RTViewDX12(this);
-    }
-
-    internal unsafe RTHandleDX12(TextureDX12 texture, ID3D12Resource1** resources, uint numResources) : 
-        base(texture, resources, numResources)
+    internal unsafe RTHandleDX12(TextureDX12 texture, ID3D12Resource1* ptr) : 
+        base(texture, ptr)
     {
         RTV = new RTViewDX12(this);
     }

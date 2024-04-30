@@ -1,5 +1,4 @@
 ﻿using Silk.NET.Direct3D12;
-using System.Drawing;
 
 namespace Molten.Graphics.DX12;
 
@@ -40,6 +39,11 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
         UpdateViewport();
     }
 
+    private void UpdateViewport()
+    {
+        Viewport = new ViewportF(0, 0, Desc.Width, Desc.Height);
+    }
+
     /*protected override ClearValue GetClearValue()
     {
         // TODO Correctly implement to avoid: D3D12_CLEAR_VALUE::Format cannot be a typeless format. A fully qualified format must be supplied. Format = R24G8_TYPELESS.
@@ -57,20 +61,16 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
             default:
             case DepthFormat.R24G8:
                 return DsvFlags.ReadOnlyDepth | DsvFlags.ReadOnlyStencil;
+
             case DepthFormat.R32:
                 return DsvFlags.ReadOnlyDepth;
         }
     }
 
-    protected unsafe override ID3D12Resource1* OnCreateTexture()
+    protected override unsafe void OnCreateTexture(ref ID3D12Resource1** ptrResources, ref uint numResources)
     {
         UpdateViewport();
-        return base.OnCreateTexture();
-    }
-
-    private void UpdateViewport()
-    {
-        Viewport = new ViewportF(0, 0, Desc.Width, Desc.Height);
+        base.OnCreateTexture(ref ptrResources, ref numResources);
     }
 
     public void Clear(GpuPriority priority, GpuCommandList cmd, DepthClearFlags clearFlags, float depthValue = 1, byte stencilValue = 0)
@@ -83,7 +83,7 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
         Device.PushTask(priority, ref task, cmd);
     }
 
-    protected override unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)
+    protected override unsafe void OnCreateHandle(ref ID3D12Resource1* ptr, ref ResourceHandleDX12 handle)
     {
         DepthStencilViewDesc desc = new()
         {
@@ -116,8 +116,7 @@ public class DepthSurfaceDX12 : Texture2DDX12, IDepthStencilSurface
 
         desc.Flags = GetReadOnlyFlags();
         dsv.ReadOnlyDSV.Initialize(ref desc);
-
-        return dsv;
+        handle = dsv;
     }
 
     protected override void SetSRVDescription(ref ShaderResourceViewDesc desc)

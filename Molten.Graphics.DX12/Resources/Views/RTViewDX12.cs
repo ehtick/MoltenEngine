@@ -9,11 +9,11 @@ internal class RTViewDX12 : ViewDX12<RenderTargetViewDesc>
 
     protected override unsafe void OnCreate(ref RenderTargetViewDesc desc, ID3D12Resource1* resource, ref CpuDescriptorHandle heapHandle, uint resourceIndex)
     {
-        Handle.Device.Handle->CreateRenderTargetView((ID3D12Resource*)resource, desc, heapHandle);
+        Handle.Device.Handle->CreateRenderTargetView((ID3D12Resource*)resource, ref desc, heapHandle);
     }
 
-    private protected override void OnAllocateHandle(uint numDescriptors, out HeapHandleDX12 handle)
+    private protected override void OnAllocateHandle(out HeapHandleDX12 handle)
     {
-        handle = Handle.Device.Heap.GetRTHandle(numDescriptors);
+        handle = Handle.Device.Heap.GetRTHandle(1);
     }
 }

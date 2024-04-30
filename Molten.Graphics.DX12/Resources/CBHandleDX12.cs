@@ -3,8 +3,8 @@
 namespace Molten.Graphics.DX12;
 internal class CBHandleDX12 : ResourceHandleDX12
 {
-    internal unsafe CBHandleDX12(BufferDX12 cBuffer, params ID3D12Resource1*[] resources) : 
-        base(cBuffer, resources)
+    internal unsafe CBHandleDX12(BufferDX12 cBuffer, ID3D12Resource1* ptr) : 
+        base(cBuffer, ptr)
     {
         CBV = new CBViewDX12(this);
     }

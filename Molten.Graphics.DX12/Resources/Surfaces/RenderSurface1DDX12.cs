@@ -19,15 +19,13 @@ public unsafe class RenderSurface1DDX12 : Texture1DDX12, IRenderSurface1D
         Name = $"Surface_{name ?? GetType().Name}";
     }
 
-    protected override ID3D12Resource1* OnCreateTexture()
-    {       
+    protected override unsafe void OnCreateTexture(ref ID3D12Resource1** ptrResources, ref uint numResources)
+    {
         Viewport = new ViewportF(Viewport.X, Viewport.Y, Desc.Width, Desc.Height);
-        return base.OnCreateTexture();
+        base.OnCreateTexture(ref ptrResources, ref numResources);
     }
 
-    protected virtual void SetRTVDescription(ref RenderTargetViewDesc desc) { }
-
-    protected override unsafe ResourceHandleDX12 OnCreateHandle(ID3D12Resource1* ptr)
+    protected override unsafe void OnCreateHandle(ref ID3D12Resource1* ptr, ref ResourceHandleDX12 handle)
     {
         RenderTargetViewDesc desc = new RenderTargetViewDesc()
         {
@@ -41,11 +39,9 @@ public unsafe class RenderSurface1DDX12 : Texture1DDX12, IRenderSurface1D
             },
         };
 
-        SetRTVDescription(ref desc);
-        RTHandleDX12 handle = new RTHandleDX12(this, ptr);
-        handle.RTV.Initialize(ref desc);
-
-        return handle;
+        RTHandleDX12 rtHandle = new RTHandleDX12(this, ptr);
+        rtHandle.RTV.Initialize(ref desc);
+        handle = rtHandle;
     }
 
     public void Clear(GpuPriority priority, GpuCommandList cmd, Color color)
