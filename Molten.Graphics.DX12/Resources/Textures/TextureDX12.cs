@@ -135,10 +135,9 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         if (_handles != null)
         {
             for (int i = 0; i < _handles.Length; i++)
-            {
                 _handles[i]?.Dispose();
-                _handles[i] = null;
-            }
+
+            _handles = null;
         }
 
         Apply(cmd);
@@ -151,10 +150,9 @@ public abstract class TextureDX12 : GpuTexture, ITexture
         if (_handles != null)
         {
             for (int i = 0; i < _handles.Length; i++)
-            {
                 _handles[i]?.Dispose();
-                _handles[i] = null;
-            }
+
+            _handles = null;
         }
 
         EngineUtil.FreePtrArray(ref _ptrs);
