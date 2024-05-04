@@ -89,4 +89,9 @@ public interface ITexture : IGpuResource
     /// Gets the dimensions of the texture.
     /// </summary>
     TextureDimensions Dimensions { get; }
+
+    /// <summary>
+    /// Gets the dimensions of the texture that are pending a resize operation.
+    /// </summary>
+    ref readonly TextureDimensions PendingDimensions { get; }
 }

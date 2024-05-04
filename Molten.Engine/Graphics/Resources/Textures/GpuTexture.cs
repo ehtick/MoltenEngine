@@ -12,6 +12,7 @@ public delegate void TextureHandler<T>(T texture) where T : ITexture;
 public abstract class GpuTexture : GpuResource, ITexture
 {
     TextureDimensions _dimensions;
+    TextureDimensions _pendingDimensions;
     GpuResourceFormat _format;
 
     /// <summary>
@@ -88,15 +89,20 @@ public abstract class GpuTexture : GpuResource, ITexture
             dim.Depth = 1;
         }
 
-        ResourceFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
-        ResizeTextureTask task = new ResizeTextureTask()
+        if (dim != _pendingDimensions)
         {
-            Texture = this,
-            NewDimensions = dim,
-            NewFormat = newFormat,
-            OnCompleted = completeCallback
-        };
-        Device.PushTask(priority, ref task, cmd);
+            _pendingDimensions = dim;
+
+            ResourceFormat = newFormat == GpuResourceFormat.Unknown ? ResourceFormat : newFormat;
+            ResizeTextureTask task = new ResizeTextureTask()
+            {
+                Texture = this,
+                NewDimensions = dim,
+                NewFormat = newFormat,
+                OnCompleted = completeCallback
+            };
+            Device.PushTask(priority, ref task, cmd);
+        }
     }
 
     protected internal abstract void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t);
@@ -304,6 +310,11 @@ public abstract class GpuTexture : GpuResource, ITexture
         get => _dimensions;
         protected set => _dimensions = value;
     }
+
+    /// <summary>
+    /// Gets the pending dimensions of the texture. This is the dimensions that the texture should be resized to.
+    /// </summary>
+    public ref readonly TextureDimensions PendingDimensions => ref _pendingDimensions;
 
     /// <inheritdoc/>
     public override ulong SizeInBytes { get; protected set; }
