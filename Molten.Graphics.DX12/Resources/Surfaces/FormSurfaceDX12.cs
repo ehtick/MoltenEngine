@@ -152,17 +152,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         }
     }
 
-    protected override void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t)
-    {
-        base.ProcessResize(cmd, ref t);
-        //RequestFormResize(t.NewDimensions.Width, t.NewDimensions.Height);
-    }
-
-    private void RequestFormResize(uint newWidth, uint newHeight)
-    {
-        _pendingSize = new Size((int)newWidth, (int)newHeight);
-    }
-
     private void UpdateFormMode()
     {
         if (_curMode != _requestedMode)
