@@ -88,7 +88,6 @@ public abstract class SurfaceTracker<T> : IDisposable
 
             if (surface.PendingDimensions.Width != _width || surface.PendingDimensions.Height != _height)
                 surface.Resize(GpuPriority.StartOfFrame, null, _width, _height);
-            //throw new NotImplementedException("Implement PendingWidth and PendingHeight so that the delay in executing resize requests does not cause repeated queuing of ResizeTextureTask");
 
             return surface;
         }

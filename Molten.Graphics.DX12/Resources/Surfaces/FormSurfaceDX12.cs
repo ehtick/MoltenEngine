@@ -57,7 +57,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
     SurfaceForm _form;
     Control _parent;
     nint? _parentHandle;
-    bool _propertiesDirty = true;
 
     string _title;
     string _ctrlName;
@@ -156,12 +155,11 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
     protected override void ProcessResize(GpuCommandList cmd, ref ResizeTextureTask t)
     {
         base.ProcessResize(cmd, ref t);
-        RequestFormResize(t.NewDimensions.Width, t.NewDimensions.Height);
+        //RequestFormResize(t.NewDimensions.Width, t.NewDimensions.Height);
     }
 
     private void RequestFormResize(uint newWidth, uint newHeight)
     {
-        _propertiesDirty = true;
         _pendingSize = new Size((int)newWidth, (int)newHeight);
     }
 
@@ -295,7 +293,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
 
         // Request a texture resize to be done in the next Present().
         _requestedTexDim = dim;
-        _propertiesDirty = true;
     }
 
     void _form_FormClosing(object sender, FormClosingEventArgs e)
@@ -383,17 +380,10 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
             _normalSize = _pendingSize;
         }
 
-        if (_requestedTexDim.Width != Width || _requestedTexDim.Height != Height)
-        {
-            uint fbMax = Device.FrameBufferSize;
-            uint fbIndex = Math.Min(Device.FrameBufferIndex, fbMax - 1);
 
-            ResizeTextureTask task = new ResizeTextureTask()
-            {
-                NewDimensions = _requestedTexDim,
-                Texture = this,
-            };
-            Device.PushTask(GpuPriority.Immediate, ref task, cmd);
+        if (_requestedTexDim.Width != PendingDimensions.Width || _requestedTexDim.Height != PendingDimensions.Height)
+        {
+            Resize(GpuPriority.Immediate, cmd, _requestedTexDim.Width, _requestedTexDim.Height);
             InvokeOnResize();
         }
 
@@ -412,8 +402,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         // Update basic form properties
         _form.Name = _ctrlName;
         _form.Text = _title;
-
-        _propertiesDirty = false;
 
         if (NextFrame())
         {
@@ -486,11 +474,7 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
     public WindowMode Mode
     {
         get => _requestedMode;
-        set
-        {
-            _requestedMode = value;
-            _propertiesDirty = true;
-        }
+        set => _requestedMode = value;
     }
 
     /// <summary>Gets the bounds of the window surface.</summary>
@@ -519,8 +503,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
                     _parent = System.Windows.Forms.Control.FromHandle(_parentHandle.Value);
                 else
                     _parent = null;
-
-                _propertiesDirty = true;
             }
         }
     }
@@ -528,24 +510,13 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
     public bool IsFocused
     {
         get => _focused;
-        protected set
-        {
-            if (_focused != value)
-            {
-                _focused = value;
-                _propertiesDirty = true;
-            }
-        }
+        protected set => _focused = value;
     }
 
     /// <summary>Gets or sets the form title.</summary>
     public string Title
     {
         get => _title;
-        set
-        {
-            _title = value;
-            _propertiesDirty = true;
-        }
+        set => _title = value;
     }
 }

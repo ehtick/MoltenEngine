@@ -80,12 +80,12 @@ public abstract class GpuTexture : GpuResource, ITexture
 
         if (this is ITexture3D)
         {
-            dim.Depth = newArraySizeOrDepth;
+            dim.Depth = newArraySizeOrDepth > 0 ? newArraySizeOrDepth : Depth;
             dim.ArraySize = 1;
         }
         else
         {
-            dim.ArraySize = newArraySizeOrDepth;
+            dim.ArraySize = newArraySizeOrDepth > 0 ? newArraySizeOrDepth : ArraySize;
             dim.Depth = 1;
         }
 

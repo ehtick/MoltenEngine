@@ -70,16 +70,6 @@ public abstract class TextureDX12 : GpuTexture, ITexture
             OnCreateResource();
     }
 
-    public void Resize(GpuPriority priority, GpuCommandList cmd,
-    uint newWidth,
-    uint newMipMapCount = 0,
-    uint newArraySize = 0,
-    GpuResourceFormat newFormat = GpuResourceFormat.Unknown, 
-    GpuTaskCallback completeCallback = null)
-    {
-        Resize(priority, cmd, newWidth, Dimensions.Height, newMipMapCount, newArraySize, newFormat, completeCallback);
-    }
-
     protected unsafe void OnCreateResource()
     {
         OnCreateTexture(ref _ptrs, ref _numResources);

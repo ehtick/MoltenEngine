@@ -17,6 +17,16 @@ public class Texture1DDX12 : TextureDX12, ITexture1D
             format, flags, name, protectedSession)
     { }
 
+    public void Resize(GpuPriority priority, GpuCommandList cmd,
+        uint newWidth,
+        uint newMipMapCount = 0,
+        uint newArraySize = 0,
+        GpuResourceFormat newFormat = GpuResourceFormat.Unknown,
+        GpuTaskCallback completeCallback = null)
+    {
+        Resize(priority, cmd, newWidth, Dimensions.Height, newMipMapCount, newArraySize, newFormat, completeCallback);
+    }
+
     protected override void SetSRVDescription(ref ShaderResourceViewDesc desc)
     {
         desc.ViewDimension = SrvDimension.Texture1Darray;
