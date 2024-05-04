@@ -453,6 +453,11 @@ public unsafe class DeviceVK : GpuDevice
         }
     }
 
+    protected override void OnPresent(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    {
+        throw new NotImplementedException();
+    }
+
     public static implicit operator PhysicalDevice(DeviceVK device)
     {
         return device.Adapter;

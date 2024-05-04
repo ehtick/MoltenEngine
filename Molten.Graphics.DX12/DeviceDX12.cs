@@ -170,22 +170,34 @@ public unsafe class DeviceDX12 : DeviceDXGI
         surfaces.For(0, (index, surface) =>
         {
             if (surface.IsEnabled)
-                (surface as SwapChainSurfaceDX12).Prepare(cmd as CommandListDX12);
+                (surface as SwapChainSurfaceDX12).PrepareBeginFrame(cmd as CommandListDX12);
         });
     }
 
     protected override void OnEndFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
+        CommandListDX12 dxCmd = (CommandListDX12)cmd;
+
+        surfaces.For(0, (index, surface) =>
+        {
+            if (surface.IsEnabled)
+                (surface as SwapChainSurfaceDX12).PrepareEndFrame(dxCmd);
+        });
+    }
+
+    protected override void OnPresent(IReadOnlyThreadedList<ISwapChainSurface> surfaces)
+    {        
         // Call Present() on each DX12 swapchain to present their contents to the screen.
         surfaces.For(0, (index, surface) =>
         {
             if (surface.IsEnabled)
-                (surface as SwapChainSurfaceDX12).Present(cmd as CommandListDX12);
+                (surface as SwapChainSurfaceDX12).Present();
         });
 
         // TODO Only wait if there are no available frames to process.
         Wait(_presentFence);
     }
+
 
     /// <summary>
     /// The underlying, native device pointer.

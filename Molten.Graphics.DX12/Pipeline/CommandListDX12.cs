@@ -180,17 +180,27 @@ public unsafe class CommandListDX12 : GpuCommandList
             barrierStartIndex = _nextBarrierIndex;
             _nextBarrierIndex += handle.State.NumSubResources;
             _pendingBarrierLookup.Add(handle, barrierStartIndex);
+
+            // Set the barrier to the current global state of the resource.
+            for (uint i = barrierStartIndex; i < _nextBarrierIndex; i++)
+                _pendingBarriers[i] = handle.State[i];
         }
 
         // If all sub resources should be set to the same state, iterate over all.
-        if (subResourceIndex == D3D12.ResourceBarrierAllSubresources && handle.State.NumSubResources > 1)
+        if (subResourceIndex == D3D12.ResourceBarrierAllSubresources)
         {
             ResourceBarrier* barriers = stackalloc ResourceBarrier[(int)handle.State.NumSubResources];
+            uint changeCount = 0;
+
             for(int i = 0; i < handle.State.NumSubResources; i++)
             {
                 ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex + i];
 
-                barriers[i] = new ResourceBarrier()
+                // Skip setting the subresource barrier if it's already in the desired state.
+                if (beforeState == newState)
+                    continue;
+
+                barriers[changeCount++] = new ResourceBarrier()
                 {
                     Flags = ResourceBarrierFlags.None,
                     Type = ResourceBarrierType.Transition,
@@ -206,31 +216,31 @@ public unsafe class CommandListDX12 : GpuCommandList
                 beforeState = newState;
             }
 
-            // Store the new state in pending states.
-            uint lastIndex = barrierStartIndex + handle.State.NumSubResources;
-            for (uint i = barrierStartIndex; i < lastIndex; i++)
-                _pendingBarriers[i] = newState;
-
-            _handle->ResourceBarrier(handle.State.NumSubResources, barriers);
+            if(changeCount > 0)
+                _handle->ResourceBarrier(changeCount, barriers);
         }
         else
         {
             ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex];
-
-            ResourceBarrier barrier = new ResourceBarrier()
+            if (beforeState != newState)
             {
-                Flags = ResourceBarrierFlags.None,
-                Type = ResourceBarrierType.Transition,
-                Transition = new ResourceTransitionBarrier()
-                {
-                    PResource = handle,
-                    StateAfter = newState,
-                    StateBefore = beforeState,
-                    Subresource = 0,
-                },
-            };
 
-            _handle->ResourceBarrier(1, &barrier);
+                ResourceBarrier barrier = new ResourceBarrier()
+                {
+                    Flags = ResourceBarrierFlags.None,
+                    Type = ResourceBarrierType.Transition,
+                    Transition = new ResourceTransitionBarrier()
+                    {
+                        PResource = handle,
+                        StateAfter = newState,
+                        StateBefore = beforeState,
+                        Subresource = subResourceIndex,
+                    },
+                };
+
+                beforeState = newState;
+                _handle->ResourceBarrier(1, &barrier);
+            }
         }
     }
 

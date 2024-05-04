@@ -111,7 +111,7 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         _vsync = newValue ? 1U : 0;
     }
 
-    internal void Prepare(CommandListDX12 cmd)
+    internal void PrepareBeginFrame(CommandListDX12 cmd)
     {
         Apply(cmd);
 
@@ -121,13 +121,19 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         cmd.Transition(this, ResourceStates.RenderTarget);
     }
 
-    DxgiError _lastError;
-    internal void Present(CommandListDX12 cmd)
+    internal void PrepareEndFrame(CommandListDX12 cmd)
     {
-        if (OnPresent(cmd) && SwapChainHandle != null)
-        {
-            cmd.Transition(this, ResourceStates.Present);
+        IsPresentable = OnPrepareEndFrame(cmd);
 
+        if(IsPresentable)
+            cmd.Transition(this, ResourceStates.Present);
+    }
+
+    DxgiError _lastError;
+    internal void Present()
+    {
+        if (IsPresentable && SwapChainHandle != null)
+        {
             // TODO implement partial-present - Partial Presentation (using scroll or dirty rects)
             // is not valid until first submitting a regular Present without scroll or dirty rects.
             // Otherwise, the preserved back-buffer data would be uninitialized.
@@ -165,8 +171,10 @@ public unsafe abstract class SwapChainSurfaceDX12 : RenderSurface2DDX12, ISwapCh
         base.OnGpuRelease();
     }
 
-    protected abstract bool OnPresent(CommandListDX12 cmd);
+    protected abstract bool OnPrepareEndFrame(CommandListDX12 cmd);
 
     /// <inheritdoc/>
     public bool IsEnabled { get; set; }
+
+    public bool IsPresentable { get; private set; }
 }

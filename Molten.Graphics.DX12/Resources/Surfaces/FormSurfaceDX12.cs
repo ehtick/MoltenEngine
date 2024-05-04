@@ -342,7 +342,7 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
         _form?.Dispose();
     }
 
-    protected override bool OnPresent(CommandListDX12 cmd)
+    protected override bool OnPrepareEndFrame(CommandListDX12 cmd)
     {
         if (_disposing)
         {
@@ -354,7 +354,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
             DisposeForm();
             return false;
         }
-
 
         // Apply requested form size.
         if (_pendingSize != _normalSize)
@@ -368,7 +367,6 @@ public class FormSurfaceDX12 : SwapChainSurfaceDX12, INativeSurface
 
             _normalSize = _pendingSize;
         }
-
 
         if (_requestedTexDim.Width != PendingDimensions.Width || _requestedTexDim.Height != PendingDimensions.Height)
         {

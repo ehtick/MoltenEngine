@@ -59,9 +59,10 @@ public unsafe class CommandQueueDX12 : GpuObject<DeviceDX12>
         }
 
         _handle->ExecuteCommandLists(1, lists);
-        dxCmd.ApplyBarrierStates();
         _prevCmdList = dxCmd;
         _lockerExecute.Unlock();
+
+        dxCmd.ApplyBarrierStates();
     }
 
     protected override void OnGpuRelease()

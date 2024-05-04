@@ -391,8 +391,9 @@ public abstract partial class GpuDevice : EngineObject
     internal void EndFrame()
     {
         GpuCommandList cmd = _cmdMain.Value;
-        Execute(cmd);
         OnEndFrame(cmd, Resources.OutputSurfaces);
+        Execute(cmd);
+        OnPresent(Resources.OutputSurfaces);
 
         ProcessTasks(GpuPriority.EndOfFrame);
         _frameIndex = (_frameIndex + 1U) % FrameBufferSize;
@@ -401,6 +402,8 @@ public abstract partial class GpuDevice : EngineObject
     protected abstract void OnBeginFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces);
 
     protected abstract void OnEndFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces);
+
+    protected abstract void OnPresent(IReadOnlyThreadedList<ISwapChainSurface> surfaces);
 
     /// <summary>
     /// Gets the amount of VRAM that has been allocated on the current <see cref="GpuDevice"/>. 
