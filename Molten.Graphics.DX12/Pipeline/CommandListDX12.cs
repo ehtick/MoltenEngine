@@ -172,17 +172,77 @@ public unsafe class CommandListDX12 : GpuCommandList
     }
 
     internal void Transition(GpuResource resource, ResourceStates newState, 
-        ResourceBarrierFlags newFlags = ResourceBarrierFlags.None, 
-        uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
+        ResourceBarrierFlags newFlags = ResourceBarrierFlags.None,
+        uint startSubIndex = 0,
+        uint endSubIndex = D3D12.ResourceBarrierAllSubresources)
     {
         ResourceHandleDX12 handle = resource.Handle as ResourceHandleDX12;
-        Transition(handle, newState, newFlags, subResourceIndex);
+        Transition(handle, newState, newFlags, startSubIndex, endSubIndex);
     }
 
     internal void Transition(ResourceHandleDX12 handle, ResourceStates newState, 
         ResourceBarrierFlags newFlags = ResourceBarrierFlags.None,
-        uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
+        uint startSubIndex = 0,
+        uint endSubIndex = D3D12.ResourceBarrierAllSubresources)
     {
+#if DEBUG
+        if (_isClosed)
+            throw new InvalidOperationException("Cannot transition a resource while the command list is closed.");
+
+        if (startSubIndex >= endSubIndex)
+            throw new IndexOutOfRangeException("startSubIndex must be less than endSubIndex");
+        else if (endSubIndex < D3D12.ResourceBarrierAllSubresources && endSubIndex > handle.State.NumSubResources)
+            throw new IndexOutOfRangeException("endSubIndex must be less than the number of sub-resources in the resource.");
+#endif
+
+        // Local method for setting a barrier.
+        bool SetBarrier(ref BarrierStateDX12 prevBarrier, ref BarrierStateDX12 newBarrier, ref ResourceBarrier barrier, uint subIndex)
+        {
+            // Validate flag pairing.
+            if (prevBarrier.Flags == newBarrier.Flags)
+            {
+                if (prevBarrier.Flags == ResourceBarrierFlags.BeginOnly)
+                    throw new InvalidOperationException("Cannot use BEGIN_ONLY flags again before END_ONLY flags were used.");
+                else if (prevBarrier.Flags == ResourceBarrierFlags.EndOnly)
+                    throw new InvalidOperationException("Cannot use END_ONLY flags again before BEGIN_ONLY flags were used.");
+
+                // Skip setting the subresource barrier if it's already in the desired state.
+                if (prevBarrier == newBarrier)
+                    return false;
+            }
+            else if (prevBarrier.Flags != ResourceBarrierFlags.None && newBarrier.Flags == ResourceBarrierFlags.None) // Transitioning too none.
+            {
+                if (prevBarrier == newBarrier)
+                    return false;
+            }
+            else if (prevBarrier.Flags == ResourceBarrierFlags.None && newBarrier.Flags != ResourceBarrierFlags.None) // Transitioning from none.
+            {
+                if (prevBarrier == newBarrier)
+                    return false;
+            }
+
+            //Device.Log.Debug($"[Frame {Device.Renderer.FrameID}] Transitioning {handle.Resource.Name}[{subIndex}] from {prevBarrier.State} to {newState} - Flags: {newFlags}.");
+
+            barrier = new ResourceBarrier()
+            {
+                Flags = newFlags,
+                Type = ResourceBarrierType.Transition,
+                Transition = new ResourceTransitionBarrier()
+                {
+                    PResource = handle,
+                    StateAfter = newState,
+                    StateBefore = prevBarrier.State,
+                    Subresource = subIndex,
+                },
+            };
+
+            prevBarrier.State = newState;
+            if(newFlags != ResourceBarrierFlags.None)
+                prevBarrier.Flags = newFlags; 
+
+            return true;
+        }
+
         if(!_pendingBarrierLookup.TryGetValue(handle, out uint barrierStartIndex))
         {
             barrierStartIndex = _nextBarrierIndex;
@@ -196,65 +256,30 @@ public unsafe class CommandListDX12 : GpuCommandList
 
         BarrierStateDX12 newBarrier = new BarrierStateDX12(newState, newFlags);
 
-        // If all sub resources should be set to the same state, iterate over all.
-        if (subResourceIndex == D3D12.ResourceBarrierAllSubresources)
+        // If all sub resources should be set to the same state,
+        // we use the special D3D12.ResourceBarrierAllSubresources value to do it in a single API call.
+        if (endSubIndex == D3D12.ResourceBarrierAllSubresources)
         {
-
-            ResourceBarrier* barriers = stackalloc ResourceBarrier[(int)handle.State.NumSubResources];
-            uint changeCount = 0;
-
-            for(int i = 0; i < handle.State.NumSubResources; i++)
-            {
-                ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex + i];
-
-                Device.Log.Debug($"[Frame {Device.Renderer.FrameID}] Transitioning {handle.Resource.Name}[{i}] from {prevBarrier.State} | {prevBarrier.Flags} to {newState} | {newFlags}.");
-
-                // Skip setting the subresource barrier if it's already in the desired state.
-                if (prevBarrier == newBarrier)
-                    continue;
-
-                barriers[changeCount++] = new ResourceBarrier()
-                {
-                    Flags = newFlags,
-                    Type = ResourceBarrierType.Transition,
-                    Transition = new ResourceTransitionBarrier()
-                    {
-                        PResource = handle,
-                        StateAfter = newState,
-                        StateBefore = prevBarrier.State,
-                        Subresource = (uint)i,
-                    },
-                };
-
-                prevBarrier = newBarrier;
-            }
-
-            if(changeCount > 0)
-                _handle->ResourceBarrier(changeCount, barriers);
+            ResourceBarrier barrier = new();
+            ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex];
+            if (SetBarrier(ref prevBarrier, ref newBarrier, ref barrier, endSubIndex))
+                _handle->ResourceBarrier(1, &barrier);
         }
         else
         {
-            ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex];
-            if (prevBarrier != newBarrier)
+            uint maxChangeCount = endSubIndex - startSubIndex;
+            ResourceBarrier* barriers = stackalloc ResourceBarrier[(int)maxChangeCount];
+            uint changeCount = 0;
+
+            for (uint i = startSubIndex; i < endSubIndex; i++)
             {
-                Device.Log.Debug($"[Frame {Device.Renderer.FrameID}] Transitioning {handle.Resource.Name}[{barrierStartIndex}] from {prevBarrier.State} | {prevBarrier.Flags} to {newState} | {newFlags}.");
-
-                ResourceBarrier barrier = new ResourceBarrier()
-                {
-                    Flags = ResourceBarrierFlags.None,
-                    Type = ResourceBarrierType.Transition,
-                    Transition = new ResourceTransitionBarrier()
-                    {
-                        PResource = handle,
-                        StateAfter = newState,
-                        StateBefore = prevBarrier.State,
-                        Subresource = subResourceIndex,
-                    },
-                };
-
-                prevBarrier = newBarrier;
-                _handle->ResourceBarrier(1, &barrier);
+                ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex + i];
+                if (SetBarrier(ref prevBarrier, ref newBarrier, ref barriers[changeCount], i))
+                    changeCount++;
             }
+
+            if (changeCount > 0)
+                _handle->ResourceBarrier(changeCount, barriers);
         }
     }
 
@@ -347,7 +372,6 @@ public unsafe class CommandListDX12 : GpuCommandList
                 {
                     RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
                     _rtvs[_numRTVs] = rsHandle.RTV.CpuHandle;
-                    Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.BeginOnly);
                     _numRTVs++;
                 }
             }
@@ -396,16 +420,6 @@ public unsafe class CommandListDX12 : GpuCommandList
                 callback();
                 Profiler.DrawCalls++;
                 EndEvent();
-            }
-        }
-
-        // Transition render surfaces (END_ONLY).
-        for (int i = 0; i < State.Surfaces.Length; i++)
-        {
-            if (State.Surfaces.BoundValues[i] != null)
-            {
-                RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
-                Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.EndOnly);
             }
         }
 

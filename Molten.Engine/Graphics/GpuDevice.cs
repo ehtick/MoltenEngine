@@ -384,6 +384,7 @@ public abstract partial class GpuDevice : EngineObject
         ProcessTasks(GpuPriority.StartOfFrame);
 
         GpuCommandList cmd = _cmdMain.Prepare();
+        cmd.Begin();
         OnBeginFrame(cmd, Resources.OutputSurfaces);
         return cmd;
     }
@@ -392,6 +393,8 @@ public abstract partial class GpuDevice : EngineObject
     {
         GpuCommandList cmd = _cmdMain.Value;
         OnEndFrame(cmd, Resources.OutputSurfaces);
+        cmd.End();
+
         Execute(cmd);
         OnPresent(Resources.OutputSurfaces);
 

@@ -172,15 +172,11 @@ public abstract class RenderService : EngineService
             device = _devices[i];
             GpuCommandList cmd = device.BeginFrame(framesToWait, time.FrameID);
 
-            cmd.Begin();
-
             // Only perform main render on the primary GPU device.
             if (device == Device)
                 MainRender(cmd, time);
 
             // TODO Further improvements to include rendering scenes on secondary devices using device-specific resources.
-
-            cmd.End();
             device.EndFrame();
 
             // Accumulate profiling information.
