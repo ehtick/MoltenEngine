@@ -31,7 +31,6 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
     {
         SRV?.Dispose();
         UAV?.Dispose();
-        State.Dispose();
         NativeUtil.ReleasePtr(ref _ptr);
     }
 

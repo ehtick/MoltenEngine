@@ -1,6 +1,7 @@
 ﻿using Silk.NET.Core.Native;
 using Silk.NET.Direct3D12;
 using Silk.NET.Maths;
+using System.Runtime.InteropServices;
 
 namespace Molten.Graphics.DX12;
 
@@ -18,8 +19,7 @@ public unsafe class CommandListDX12 : GpuCommandList
     D3DPrimitiveTopology _boundTopology;
     GpuDepthWritePermission _boundDepthMode;
 
-
-    ResourceStates[] _pendingBarriers;
+    BarrierStateDX12[] _pendingBarriers;
     Dictionary<ResourceHandleDX12, uint> _pendingBarrierLookup;
     uint _nextBarrierIndex;
 
@@ -27,7 +27,7 @@ public unsafe class CommandListDX12 : GpuCommandList
         base(allocator.Device)
     {
         _pendingBarrierLookup = new Dictionary<ResourceHandleDX12, uint>();
-        _pendingBarriers = new ResourceStates[256];
+        _pendingBarriers = new BarrierStateDX12[256];
 
         Device = allocator.Device;
         Allocator = allocator;
@@ -172,9 +172,18 @@ public unsafe class CommandListDX12 : GpuCommandList
         //throw new NotImplementedException();
     }
 
-    internal void Transition(GpuResource resource, ResourceStates newState, uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
+    internal void Transition(GpuResource resource, ResourceStates newState, 
+        ResourceBarrierFlags newFlags = ResourceBarrierFlags.None, 
+        uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
     {
         ResourceHandleDX12 handle = resource.Handle as ResourceHandleDX12;
+        Transition(handle, newState, newFlags, subResourceIndex);
+    }
+
+    internal void Transition(ResourceHandleDX12 handle, ResourceStates newState, 
+        ResourceBarrierFlags newFlags = ResourceBarrierFlags.None,
+        uint subResourceIndex = D3D12.ResourceBarrierAllSubresources)
+    {
         if(!_pendingBarrierLookup.TryGetValue(handle, out uint barrierStartIndex))
         {
             barrierStartIndex = _nextBarrierIndex;
@@ -182,9 +191,11 @@ public unsafe class CommandListDX12 : GpuCommandList
             _pendingBarrierLookup.Add(handle, barrierStartIndex);
 
             // Set the barrier to the current global state of the resource.
-            for (uint i = barrierStartIndex; i < _nextBarrierIndex; i++)
-                _pendingBarriers[i] = handle.State[i];
+            for (uint i = 0; i < handle.State.NumSubResources; i++)
+                _pendingBarriers[barrierStartIndex + i] = handle.State[i];
         }
+
+        BarrierStateDX12 newBarrier = new BarrierStateDX12(newState, newFlags);
 
         // If all sub resources should be set to the same state, iterate over all.
         if (subResourceIndex == D3D12.ResourceBarrierAllSubresources)
@@ -194,26 +205,26 @@ public unsafe class CommandListDX12 : GpuCommandList
 
             for(int i = 0; i < handle.State.NumSubResources; i++)
             {
-                ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex + i];
+                ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex + i];
 
                 // Skip setting the subresource barrier if it's already in the desired state.
-                if (beforeState == newState)
+                if (prevBarrier == newBarrier)
                     continue;
 
                 barriers[changeCount++] = new ResourceBarrier()
                 {
-                    Flags = ResourceBarrierFlags.None,
+                    Flags = newFlags,
                     Type = ResourceBarrierType.Transition,
                     Transition = new ResourceTransitionBarrier()
                     {
                         PResource = handle,
                         StateAfter = newState,
-                        StateBefore = beforeState,
+                        StateBefore = prevBarrier.State,
                         Subresource = (uint)i,
                     },
                 };
 
-                beforeState = newState;
+                prevBarrier = newBarrier;
             }
 
             if(changeCount > 0)
@@ -221,8 +232,8 @@ public unsafe class CommandListDX12 : GpuCommandList
         }
         else
         {
-            ref ResourceStates beforeState = ref _pendingBarriers[barrierStartIndex];
-            if (beforeState != newState)
+            ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex];
+            if (prevBarrier != newBarrier)
             {
 
                 ResourceBarrier barrier = new ResourceBarrier()
@@ -233,12 +244,12 @@ public unsafe class CommandListDX12 : GpuCommandList
                     {
                         PResource = handle,
                         StateAfter = newState,
-                        StateBefore = beforeState,
+                        StateBefore = prevBarrier.State,
                         Subresource = subResourceIndex,
                     },
                 };
 
-                beforeState = newState;
+                prevBarrier = newBarrier;
                 _handle->ResourceBarrier(1, &barrier);
             }
         }
@@ -410,7 +421,7 @@ public unsafe class CommandListDX12 : GpuCommandList
             State.ScissorRects.IsDirty = false;
         }
 
-
+        // Bind and transition render surfaces (BEGIN_ONLY).
         if (State.Surfaces.Bind(this))
         {
             _numRTVs = 0;
@@ -421,11 +432,13 @@ public unsafe class CommandListDX12 : GpuCommandList
                 {
                     RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
                     _rtvs[_numRTVs] = rsHandle.RTV.CpuHandle;
+                    Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.BeginOnly);
                     _numRTVs++;
                 }
             }
         }
 
+        // Bind depth surface.
         GpuDepthWritePermission depthWriteMode = pass.WritePermission;
         if (State.DepthSurface.Bind(this) || (_boundDepthMode != depthWriteMode))
         {
@@ -468,6 +481,22 @@ public unsafe class CommandListDX12 : GpuCommandList
                 callback();
                 Profiler.DrawCalls++;
                 EndEvent();
+            }
+        }
+
+        // Transition render surfaces (END_ONLY).
+        if (State.Surfaces.Bind(this))
+        {
+            _numRTVs = 0;
+
+            for (int i = 0; i < State.Surfaces.Length; i++)
+            {
+                if (State.Surfaces.BoundValues[i] != null)
+                {
+                    RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
+                    Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.EndOnly);
+                    _numRTVs++;
+                }
             }
         }
 
