@@ -1,10 +1,10 @@
 ﻿namespace Molten.Graphics.DX12;
-internal unsafe class ResourceStateTrackerDX12
+internal unsafe class BarrierStateTrackerDX12
 {
     BarrierStateDX12[] _ptrStates;
     uint _numSubResources;
 
-    internal ResourceStateTrackerDX12(uint numSubResources)
+    internal BarrierStateTrackerDX12(uint numSubResources)
     {
         _ptrStates = new BarrierStateDX12[numSubResources];
         _numSubResources = numSubResources;

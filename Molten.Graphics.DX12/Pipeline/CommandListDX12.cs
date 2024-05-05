@@ -1,7 +1,6 @@
 ﻿using Silk.NET.Core.Native;
 using Silk.NET.Direct3D12;
 using Silk.NET.Maths;
-using System.Runtime.InteropServices;
 
 namespace Molten.Graphics.DX12;
 
@@ -200,12 +199,15 @@ public unsafe class CommandListDX12 : GpuCommandList
         // If all sub resources should be set to the same state, iterate over all.
         if (subResourceIndex == D3D12.ResourceBarrierAllSubresources)
         {
+
             ResourceBarrier* barriers = stackalloc ResourceBarrier[(int)handle.State.NumSubResources];
             uint changeCount = 0;
 
             for(int i = 0; i < handle.State.NumSubResources; i++)
             {
                 ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex + i];
+
+                Device.Log.Debug($"[Frame {Device.Renderer.FrameID}] Transitioning {handle.Resource.Name}[{i}] from {prevBarrier.State} | {prevBarrier.Flags} to {newState} | {newFlags}.");
 
                 // Skip setting the subresource barrier if it's already in the desired state.
                 if (prevBarrier == newBarrier)
@@ -235,6 +237,7 @@ public unsafe class CommandListDX12 : GpuCommandList
             ref BarrierStateDX12 prevBarrier = ref _pendingBarriers[barrierStartIndex];
             if (prevBarrier != newBarrier)
             {
+                Device.Log.Debug($"[Frame {Device.Renderer.FrameID}] Transitioning {handle.Resource.Name}[{barrierStartIndex}] from {prevBarrier.State} | {prevBarrier.Flags} to {newState} | {newFlags}.");
 
                 ResourceBarrier barrier = new ResourceBarrier()
                 {
@@ -278,94 +281,6 @@ public unsafe class CommandListDX12 : GpuCommandList
         _boundDepthMode = GpuDepthWritePermission.Enabled;
     }
 
-    protected override GpuBindResult DoComputePass(ShaderPass pass)
-    {
-        throw new NotImplementedException();
-    }
-
-    protected override GpuBindResult CheckInstancing()
-    {
-        if (_inputLayout != null && _inputLayout.IsInstanced)
-            return GpuBindResult.Successful;
-        else
-            return GpuBindResult.NonInstancedVertexLayout;
-    }
-
-    private void BindVertexBuffers()
-    {
-        int count = State.VertexBuffers.Length;
-        VertexBufferView* pBuffers = stackalloc VertexBufferView[count];
-        GpuBuffer buffer = null;
-
-        for (int i = 0; i < count; i++)
-        {
-            buffer = State.VertexBuffers.BoundValues[i];
-
-            if (buffer != null)
-                pBuffers[i] = ((VBHandleDX12)buffer.Handle).View;
-            else
-                pBuffers[i] = default;
-        }
-
-        _handle->IASetVertexBuffers(0, (uint)count, pBuffers);
-    }
-
-    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
-    {
-        //Box* destBox = null;
-
-        //if (region != null)
-        //{
-        //    ResourceRegion value = region.Value;
-        //    destBox = (Box*)&value;
-        //}
-
-        // TODO Calculate byte offset and number of bytes from resource region.
-
-        using (GpuStream stream = MapResource(resource, subresource, 0, GpuMapType.Write))
-        {
-            stream.Write(ptrData, (long)slicePitch);
-            Profiler.SubResourceUpdateCalls++;
-        }
-    }
-
-    public override unsafe void CopyResourceRegion(GpuResource source, uint srcSubresource, ResourceRegion? sourceRegion, GpuResource dest, uint destSubresource, Vector3UI destStart)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override GpuBindResult Draw(Shader shader, uint vertexCount, uint vertexStartIndex = 0)
-    {
-        return ApplyState(shader, QueueValidationMode.Unindexed, () =>
-            _handle->DrawInstanced(vertexCount, 1, vertexStartIndex, 0));
-    }
-
-    public override GpuBindResult DrawInstanced(Shader shader, uint vertexCountPerInstance,
-        uint instanceCount,
-        uint vertexStartIndex = 0,
-        uint instanceStartIndex = 0)
-    {
-        return ApplyState(shader, QueueValidationMode.Instanced, () =>
-            _handle->DrawInstanced(vertexCountPerInstance, instanceCount, vertexStartIndex, instanceStartIndex));
-    }
-
-    public override GpuBindResult DrawIndexed(Shader shader, uint indexCount, int vertexIndexOffset = 0, uint startIndex = 0)
-    {
-        return ApplyState(shader, QueueValidationMode.Indexed, () =>
-            _handle->DrawIndexedInstanced(indexCount, 1, startIndex, vertexIndexOffset, 0));
-    }
-
-    public override GpuBindResult DrawIndexedInstanced(Shader shader, uint indexCountPerInstance, uint instanceCount, uint startIndex = 0, int vertexIndexOffset = 0, uint instanceStartIndex = 0)
-    {
-        return ApplyState(shader, QueueValidationMode.InstancedIndexed, () =>
-            _handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndex, vertexIndexOffset, instanceStartIndex));
-    }
-
-    public override GpuBindResult Dispatch(Shader shader, Vector3UI groups)
-    {
-        DrawInfo.Custom.ComputeGroups = groups;
-        return ApplyState(shader, QueueValidationMode.Compute, null);
-    }
 
     protected override GpuBindResult DoRenderPass(ShaderPass hlslPass, QueueValidationMode mode, Action callback)
     {
@@ -485,23 +400,106 @@ public unsafe class CommandListDX12 : GpuCommandList
         }
 
         // Transition render surfaces (END_ONLY).
-        if (State.Surfaces.Bind(this))
+        for (int i = 0; i < State.Surfaces.Length; i++)
         {
-            _numRTVs = 0;
-
-            for (int i = 0; i < State.Surfaces.Length; i++)
+            if (State.Surfaces.BoundValues[i] != null)
             {
-                if (State.Surfaces.BoundValues[i] != null)
-                {
-                    RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
-                    Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.EndOnly);
-                    _numRTVs++;
-                }
+                RTHandleDX12 rsHandle = State.Surfaces.BoundValues[i].Handle as RTHandleDX12;
+                Transition(rsHandle, ResourceStates.AllShaderResource, ResourceBarrierFlags.EndOnly);
             }
         }
 
         // Validate pipeline state.
         return vResult;
+    }
+
+    protected override GpuBindResult DoComputePass(ShaderPass pass)
+    {
+        throw new NotImplementedException();
+    }
+
+    protected override GpuBindResult CheckInstancing()
+    {
+        if (_inputLayout != null && _inputLayout.IsInstanced)
+            return GpuBindResult.Successful;
+        else
+            return GpuBindResult.NonInstancedVertexLayout;
+    }
+
+    private void BindVertexBuffers()
+    {
+        int count = State.VertexBuffers.Length;
+        VertexBufferView* pBuffers = stackalloc VertexBufferView[count];
+        GpuBuffer buffer = null;
+
+        for (int i = 0; i < count; i++)
+        {
+            buffer = State.VertexBuffers.BoundValues[i];
+
+            if (buffer != null)
+                pBuffers[i] = ((VBHandleDX12)buffer.Handle).View;
+            else
+                pBuffers[i] = default;
+        }
+
+        _handle->IASetVertexBuffers(0, (uint)count, pBuffers);
+    }
+
+    protected override unsafe void UpdateResource(GpuResource resource, uint subresource, ResourceRegion? region, void* ptrData, ulong rowPitch, ulong slicePitch)
+    {
+        //Box* destBox = null;
+
+        //if (region != null)
+        //{
+        //    ResourceRegion value = region.Value;
+        //    destBox = (Box*)&value;
+        //}
+
+        // TODO Calculate byte offset and number of bytes from resource region.
+
+        using (GpuStream stream = MapResource(resource, subresource, 0, GpuMapType.Write))
+        {
+            stream.Write(ptrData, (long)slicePitch);
+            Profiler.SubResourceUpdateCalls++;
+        }
+    }
+
+    public override unsafe void CopyResourceRegion(GpuResource source, uint srcSubresource, ResourceRegion? sourceRegion, GpuResource dest, uint destSubresource, Vector3UI destStart)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override GpuBindResult Draw(Shader shader, uint vertexCount, uint vertexStartIndex = 0)
+    {
+        return ApplyState(shader, QueueValidationMode.Unindexed, () =>
+            _handle->DrawInstanced(vertexCount, 1, vertexStartIndex, 0));
+    }
+
+    public override GpuBindResult DrawInstanced(Shader shader, uint vertexCountPerInstance,
+        uint instanceCount,
+        uint vertexStartIndex = 0,
+        uint instanceStartIndex = 0)
+    {
+        return ApplyState(shader, QueueValidationMode.Instanced, () =>
+            _handle->DrawInstanced(vertexCountPerInstance, instanceCount, vertexStartIndex, instanceStartIndex));
+    }
+
+    public override GpuBindResult DrawIndexed(Shader shader, uint indexCount, int vertexIndexOffset = 0, uint startIndex = 0)
+    {
+        return ApplyState(shader, QueueValidationMode.Indexed, () =>
+            _handle->DrawIndexedInstanced(indexCount, 1, startIndex, vertexIndexOffset, 0));
+    }
+
+    public override GpuBindResult DrawIndexedInstanced(Shader shader, uint indexCountPerInstance, uint instanceCount, uint startIndex = 0, int vertexIndexOffset = 0, uint instanceStartIndex = 0)
+    {
+        return ApplyState(shader, QueueValidationMode.InstancedIndexed, () =>
+            _handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndex, vertexIndexOffset, instanceStartIndex));
+    }
+
+    public override GpuBindResult Dispatch(Shader shader, Vector3UI groups)
+    {
+        DrawInfo.Custom.ComputeGroups = groups;
+        return ApplyState(shader, QueueValidationMode.Compute, null);
     }
 
     /// <summary>Retrieves or creates a usable input layout for the provided vertex buffers and sub-effect.</summary>

@@ -18,7 +18,7 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
         if (resource is TextureDX12 tex)
             numSubResources = tex.ArraySize * tex.MipMapCount;
 
-        State = new ResourceStateTrackerDX12(numSubResources);
+        State = new BarrierStateTrackerDX12(numSubResources);
 
         if (!resource.Flags.Has(GpuResourceFlags.DenyShaderAccess))
             SRV = new SRViewDX12(this);
@@ -62,5 +62,5 @@ public unsafe class ResourceHandleDX12 : GpuResourceHandle
     /// <summary>
     /// Gets the resoruce barrier state tracker for the current resource handle.
     /// </summary>
-    internal ResourceStateTrackerDX12 State { get; }
+    internal BarrierStateTrackerDX12 State { get; }
 }
