@@ -14,7 +14,7 @@ internal abstract class RootSignaturePopulatorDX12
     /// <param name="psoDesc"></param>
     /// <param name="versionedDesc"></param>
     /// <returns></returns>
-    internal abstract void Populate(ref VersionedRootSignatureDesc versionedDesc, 
+    internal abstract RootSigMetaDX12 Populate(ref VersionedRootSignatureDesc versionedDesc, 
         ref readonly GraphicsPipelineStateDesc psoDesc, 
         ShaderPassDX12 pass,
         PipelineInputLayoutDX12 layout);

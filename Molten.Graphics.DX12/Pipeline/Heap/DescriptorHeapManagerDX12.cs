@@ -126,10 +126,6 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                     // Increment GPU heap handle
                     resBindCount++;
                 }
-                else
-                {
-
-                }
 
                 gpuResHandle.Ptr += resHeap.IncrementSize;
             }
@@ -148,7 +144,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
             }
         }
 
-        state.RootSignature.LayoutToLog();
+        state.RootSignature.Meta.ToLog(Device.Log);
 
         // Populate SRV, UAV, and CBV descriptors first.
         // TODO Pull descriptor info from our pass, render targets, samplers, depth-stencil, etc.

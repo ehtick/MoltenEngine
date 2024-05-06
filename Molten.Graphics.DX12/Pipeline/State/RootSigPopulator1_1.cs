@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace Molten.Graphics.DX12;
 internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
 {
-    internal override unsafe void Populate(ref VersionedRootSignatureDesc versionedDesc, 
-        ref readonly GraphicsPipelineStateDesc psoDesc, 
+    internal override unsafe RootSigMetaDX12 Populate(ref VersionedRootSignatureDesc versionedDesc,
+        ref readonly GraphicsPipelineStateDesc psoDesc,
         ShaderPassDX12 pass,
         PipelineInputLayoutDX12 layout)
     {
@@ -35,6 +35,42 @@ internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
         Span<DescriptorRange1> rangeSpan = CollectionsMarshal.AsSpan(ranges);
         Span<DescriptorRange1> tableRanges = new(param.DescriptorTable.PDescriptorRanges, ranges.Count);
         rangeSpan.CopyTo(tableRanges);
+
+        RootSigMetaDX12 meta = new(desc.NumParameters, (uint)ranges.Count, D3DRootSignatureVersion.Version10);
+        RootSigMetaDX12.BindDescriptorRange* baseRange = meta.Ranges;
+
+        // Populate metadata
+        uint rangeIndex = 0;
+        for (int i = 0; i < desc.NumParameters; i++)
+        {
+            ref RootParameter1 pDesc = ref desc.PParameters[i];
+            ref RootSigMetaDX12.BindParameter pMeta = ref meta.Parameters[i];
+            pMeta.Type = pDesc.ParameterType;
+
+            // Parse as descriptor table
+            if (pMeta.Type == RootParameterType.TypeDescriptorTable)
+            {
+                ref RootDescriptorTable1 pTable = ref pDesc.DescriptorTable;
+                ref RootSigMetaDX12.BindDescriptorTable metaTable = ref pMeta.DescriptorTable;
+                metaTable.NumRanges = pTable.NumDescriptorRanges;
+                metaTable.Ranges = baseRange + rangeIndex;
+
+                for (int r = 0; r < pTable.NumDescriptorRanges; r++)
+                {
+                    ref DescriptorRange1 rangeDesc = ref pTable.PDescriptorRanges[r];
+                    ref RootSigMetaDX12.BindDescriptorRange rangeMeta = ref meta.Ranges[r];
+                    rangeMeta.Type = rangeDesc.RangeType;
+                    rangeMeta.Flags = rangeDesc.Flags;
+                    rangeMeta.NumDescriptors = rangeDesc.NumDescriptors;
+                    rangeMeta.BaseShaderRegister = rangeDesc.BaseShaderRegister;
+                    rangeMeta.RegisterSpace = rangeDesc.RegisterSpace;
+                    rangeMeta.OffsetInDescriptorsFromTableStart = rangeDesc.OffsetInDescriptorsFromTableStart;
+                    rangeIndex++;
+                }
+            }
+        }
+
+        return meta;
     }
 
     private void PopulateRanges<V>(DescriptorRangeType type, List<DescriptorRange1> ranges, ShaderBind<V>[] variables, ref uint numDescriptors)

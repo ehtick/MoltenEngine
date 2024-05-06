@@ -47,14 +47,14 @@ internal class PipelineStateBuilderDX12
     };
 
     D3DRootSignatureVersion _rootSignatureVersion;
-    RootSignaturePopulatorDX12 _rootSigPopulator;
+    RootSignaturePopulatorDX12 _rootParser;
 
     internal PipelineStateBuilderDX12(DeviceDX12 device)
     {
         _rootSignatureVersion = device.CapabilitiesDX12.RootSignatureVersion;
 
         // Decrease root signature version until we find one the engine supports.
-        while (!_rootPopulators.TryGetValue(_rootSignatureVersion, out _rootSigPopulator))
+        while (!_rootPopulators.TryGetValue(_rootSignatureVersion, out _rootParser))
         {
             _rootSignatureVersion--;
             if(_rootSignatureVersion <= 0)
@@ -200,7 +200,7 @@ internal class PipelineStateBuilderDX12
         // TODO Check root signature cache for existing root signature.
 
         VersionedRootSignatureDesc sigDesc = new(_rootSignatureVersion);
-        _rootSigPopulator.Populate(ref sigDesc, in psoDesc, pass, layout);
+        RootSigMetaDX12 rootMeta = _rootParser.Populate(ref sigDesc, in psoDesc, pass, layout);
 
         // Serialize the root signature.
         ID3D10Blob* signature = null;
@@ -222,7 +222,7 @@ internal class PipelineStateBuilderDX12
         if (!device.Log.CheckResult(hr, () => "Failed to create root signature"))
             hr.Throw();
 
-        return new RootSignatureDX12(device, (ID3D12RootSignature*)ptr, sigDesc);
+        return new RootSignatureDX12(device, (ID3D12RootSignature*)ptr, rootMeta);
     }
 
     private unsafe void ParseErrors(ShaderPassDX12 pass, HResult hr, ID3D10Blob* errors)
