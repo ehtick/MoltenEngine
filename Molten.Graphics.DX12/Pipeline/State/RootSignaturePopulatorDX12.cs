@@ -19,8 +19,6 @@ internal abstract class RootSignaturePopulatorDX12
         ShaderPassDX12 pass,
         PipelineInputLayoutDX12 layout);
 
-    internal abstract void Free(ref VersionedRootSignatureDesc versionedDesc);
-
     protected unsafe void PopulateStaticSamplers(ref StaticSamplerDesc* samplers, ref uint numSamplers, ShaderPassDX12 pass)
     {
         // Finalize sampler visibility. Iterate over all samplers used in the pass.

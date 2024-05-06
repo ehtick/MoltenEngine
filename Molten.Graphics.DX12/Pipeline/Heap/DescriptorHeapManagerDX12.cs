@@ -73,14 +73,16 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
     /// <summary>
     /// Consolidates all of the CPU-side descriptors into a single GPU descriptor heap ready for use.
     /// </summary>
-    internal unsafe void PrepareGpuHeap(ShaderPassDX12 pass, CommandListDX12 cmd)
+    internal unsafe void PrepareGpuHeap(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
     {
         DeviceDX12 device = pass.Device as DeviceDX12;
         DescriptorHeapDX12 resHeap = _gpuResourceHeap.Prepare();
         CpuDescriptorHandle gpuResHandle = resHeap.CpuStartHandle;
+        uint resBindCount = 0;
 
         DescriptorHeapDX12 samplerHeap = _gpuSamplerHeap.Prepare();
         CpuDescriptorHandle gpuSamplerHandle = samplerHeap.CpuStartHandle;
+        uint samplerBindCount = 0;
 
         // TODO Replace this once DX11 is removed and resources can be created during instantiation instead of during Apply().
         // Apply resources.
@@ -103,27 +105,32 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                     case ShaderBindType.ConstantBuffer:
                         CBHandleDX12 cbHandle = resHandle as CBHandleDX12;
                         cpuHandle = cbHandle.CBV.CpuHandle;
+                        cmd.Transition(resHandle, ResourceStates.VertexAndConstantBuffer);
                         break;
 
                     case ShaderBindType.Resource:
                         cpuHandle = resHandle.SRV.CpuHandle;
+                        cmd.Transition(resHandle, ResourceStates.AllShaderResource);
                         break;
 
                     case ShaderBindType.UnorderedAccess:
                         cpuHandle = resHandle.UAV.CpuHandle;
+                        // TODO Handle UAV barriers?
                         break;
                 }
-
-                // TODO transition resources to PIXEL_SHADER_RESOURCE
-                // TODO transition CBs to VERTEX_AND_CONSTANT_BUFFER
-                // TODO Move cmd.Transition into ResourceHandleDX12.Transition(cmd, ResourceState) - Track per-resource barrier state.
 
                 if (cpuHandle.Ptr != 0)
                 {
                     device.Handle->CopyDescriptorsSimple(1, gpuResHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);
+
+                    // Increment GPU heap handle
+                    resBindCount++;
+                }
+                else
+                {
+
                 }
 
-                // Increment GPU heap handle
                 gpuResHandle.Ptr += resHeap.IncrementSize;
             }
         }
@@ -137,8 +144,11 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                 ShaderSampler heapSampler = bind.Object.Sampler;
                 // TODO _handleBuffer[index] = heapSampler.View.CpuHandle; 
                 gpuSamplerHandle.Ptr += samplerHeap.IncrementSize;
+                samplerBindCount++;
             }
         }
+
+        state.RootSignature.LayoutToLog();
 
         // Populate SRV, UAV, and CBV descriptors first.
         // TODO Pull descriptor info from our pass, render targets, samplers, depth-stencil, etc.

@@ -37,17 +37,6 @@ internal class RootSigPopulator1_1 : RootSignaturePopulatorDX12
         rangeSpan.CopyTo(tableRanges);
     }
 
-    internal override unsafe void Free(ref VersionedRootSignatureDesc versionedDesc)
-    {
-        ref RootSignatureDesc1 desc = ref versionedDesc.Desc11;
-
-        for (int i = 0; i < desc.NumParameters; i++)
-            EngineUtil.Free(ref desc.PParameters[i].DescriptorTable.PDescriptorRanges);
-
-        EngineUtil.Free(ref desc.PParameters);
-        EngineUtil.Free(ref desc.PStaticSamplers);
-    }
-
     private void PopulateRanges<V>(DescriptorRangeType type, List<DescriptorRange1> ranges, ShaderBind<V>[] variables, ref uint numDescriptors)
         where V: ShaderVariable
     {

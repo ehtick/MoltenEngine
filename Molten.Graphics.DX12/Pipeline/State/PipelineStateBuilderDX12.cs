@@ -52,8 +52,14 @@ internal class PipelineStateBuilderDX12
     internal PipelineStateBuilderDX12(DeviceDX12 device)
     {
         _rootSignatureVersion = device.CapabilitiesDX12.RootSignatureVersion;
-        if (!_rootPopulators.TryGetValue(_rootSignatureVersion, out _rootSigPopulator))
-            throw new NotSupportedException($"Unsupported root signature version: {_rootSignatureVersion}.");
+
+        // Decrease root signature version until we find one the engine supports.
+        while (!_rootPopulators.TryGetValue(_rootSignatureVersion, out _rootSigPopulator))
+        {
+            _rootSignatureVersion--;
+            if(_rootSignatureVersion <= 0)
+                throw new NotSupportedException("The current device does not support any known root signature versions.");
+        }
     }
 
     internal unsafe PipelineStateDX12 Build(
@@ -168,7 +174,7 @@ internal class PipelineStateBuilderDX12
 
         Guid guid = ID3D12PipelineState.Guid;
         void* ptr = null;
-        HResult hr = device.Handle->CreateGraphicsPipelineState(desc, &guid, &ptr);
+        HResult hr = device.Handle->CreateGraphicsPipelineState(ref desc, &guid, &ptr);
         if (!device.Log.CheckResult(hr, () => "Failed to create pipeline state object (PSO)"))
             return null;
 
@@ -216,10 +222,7 @@ internal class PipelineStateBuilderDX12
         if (!device.Log.CheckResult(hr, () => "Failed to create root signature"))
             hr.Throw();
 
-        RootSignatureDX12 result = new RootSignatureDX12(device, (ID3D12RootSignature*)ptr);
-        _rootSigPopulator.Free(ref sigDesc);
-
-        return result;
+        return new RootSignatureDX12(device, (ID3D12RootSignature*)ptr, sigDesc);
     }
 
     private unsafe void ParseErrors(ShaderPassDX12 pass, HResult hr, ID3D10Blob* errors)

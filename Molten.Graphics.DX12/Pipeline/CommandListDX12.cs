@@ -403,7 +403,7 @@ public unsafe class CommandListDX12 : GpuCommandList
         _handle->SetPipelineState(state.Handle);
         _handle->SetGraphicsRootSignature(state.RootSignature.Handle);
 
-        Device.Heap.PrepareGpuHeap(pass, this);
+        Device.Heap.PrepareGpuHeap(pass, state, this);
 
         CpuDescriptorHandle* dsvHandle = _dsv->Ptr != 0 ? _dsv : null;
         _handle->OMSetRenderTargets(_numRTVs, _rtvs, false, dsvHandle);
