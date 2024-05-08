@@ -36,6 +36,7 @@ internal unsafe class RootSignatureBuilderDX12
 
         VersionedRootSignatureDesc sigDesc = new(_rootSignatureVersion);
         RootSigMetaDX12 rootMeta = _rootParser.Populate(ref sigDesc, in psoDesc, pass, layout);
+        rootMeta.Prepare();
 
         // Serialize the root signature.
         ID3D10Blob* signature = null;

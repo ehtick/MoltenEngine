@@ -56,6 +56,7 @@ public class ShaderBindManager
         int index = points.Length;
         Array.Resize(ref points, points.Length + 1);
         points[index] = new ShaderBind<ShaderResourceVariable>(bindPoint, bindSpace, variable);
+        TotalResourceBindings++;
 
         return variable;
     }
@@ -167,4 +168,6 @@ public class ShaderBindManager
     public ShaderBind<ShaderSamplerVariable>[] Samplers => _samplers;
 
     public ref ShaderBind<ShaderResourceVariable>[] this[ShaderBindType type] => ref _resources[(int)type];
+
+    public uint TotalResourceBindings { get; private set; }
 }

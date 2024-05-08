@@ -75,6 +75,8 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
     /// </summary>
     internal unsafe void PrepareGpuHeap(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
     {
+        //    throw new Exception("The number of resource bindings in the pass does not match the number of bind points in the root signature.");
+
         DeviceDX12 device = pass.Device as DeviceDX12;
         DescriptorHeapDX12 resHeap = _gpuResourceHeap.Prepare();
         CpuDescriptorHandle gpuResHandle = resHeap.CpuStartHandle;
@@ -144,7 +146,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
             }
         }
 
-        state.RootSignature.Meta.ToLog(Device.Log);
+        //state.RootSignature.Meta.ToLog(Device.Log);
 
         // Populate SRV, UAV, and CBV descriptors first.
         // TODO Pull descriptor info from our pass, render targets, samplers, depth-stencil, etc.

@@ -40,7 +40,9 @@ public class ShaderPassDX12 : ShaderPass, IEquatable<ShaderPassDX12>
         return this == other 
             || (_stateRasterizer == other._stateRasterizer
             && _stateBlend == other._stateBlend
-            && _stateDepth == other._stateDepth);
+            && _stateDepth == other._stateDepth
+            && Name == other.Name
+            && Parent.Name == other.Parent.Name);
     }
 
     public override bool Equals(object obj)

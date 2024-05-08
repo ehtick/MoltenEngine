@@ -61,6 +61,13 @@ internal unsafe class RootSigMetaDX12 : IDisposable
         EngineUtil.Free(ref Ranges);
     }
 
+    internal void Prepare()
+    {
+        NumBindPoints = 0;
+        for(uint i = 0; i < NumRanges; i++)
+            NumBindPoints += Ranges[i].NumDescriptors;
+    }
+
     /// <summary>
     /// Outputs a root signature layout to the log, based on data held in the current <see cref="RootSigMetaDX12"/>.
     /// </summary>
@@ -95,4 +102,6 @@ internal unsafe class RootSigMetaDX12 : IDisposable
     internal D3DRootSignatureVersion Version { get; }
 
     internal uint NumRanges { get; }
+
+    internal uint NumBindPoints { get; private set; }
 }
