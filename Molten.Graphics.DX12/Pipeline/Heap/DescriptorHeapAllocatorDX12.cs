@@ -7,7 +7,7 @@ internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
     DescriptorHeapType _type;
     DescriptorHeapDesc _desc;
 
-    internal DescriptorHeapAllocatorDX12(DeviceDX12 device, DescriptorHeapType type, DescriptorHeapFlags flags) : 
+    internal DescriptorHeapAllocatorDX12(DeviceDX12 device, DescriptorHeapType type, DescriptorHeapFlags flags, uint numDescriptors) : 
         base(device)
     {
         _heaps = new List<DescriptorHeapDX12>();
@@ -17,8 +17,14 @@ internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
             NodeMask = 0,
             Type = type,
             Flags = flags,
-            NumDescriptors = 64,
+            NumDescriptors = numDescriptors,
         };
+    }
+
+    internal void Reset()
+    {
+        for (int i = 0; i < _heaps.Count; i++)
+            _heaps[i].Reset();
     }
 
     internal HeapHandleDX12 Allocate(uint numDescriptors)

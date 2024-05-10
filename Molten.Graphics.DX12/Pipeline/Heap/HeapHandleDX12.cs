@@ -1,10 +1,11 @@
 ﻿using Molten.Graphics.DX12;
 using Silk.NET.Direct3D12;
+using System.Runtime.CompilerServices;
 
 namespace Molten.Graphics;
 internal struct HeapHandleDX12
 {
-    public CpuDescriptorHandle CpuHandle;
+    public CpuDescriptorHandle Handle;
 
     public uint StartIndex;
 
@@ -19,6 +20,20 @@ internal struct HeapHandleDX12
 
     internal CpuDescriptorHandle GetCpuHandle(uint index)
     {
-        return new CpuDescriptorHandle(CpuHandle.Ptr + (index * Heap.IncrementSize));
+        return new CpuDescriptorHandle(Handle.Ptr + (index * Heap.IncrementSize));
+    }
+
+    internal GpuDescriptorHandle GetGpuHandle()
+    {
+        GpuDescriptorHandle handle = Heap.GetGpuHandle();
+        handle.Ptr += (StartIndex * Heap.IncrementSize);
+        return handle;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Increment()
+    {
+        StartIndex++;
+        Handle.Ptr += Heap.IncrementSize;
     }
 }

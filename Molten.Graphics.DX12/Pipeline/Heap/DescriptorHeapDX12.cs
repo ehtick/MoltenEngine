@@ -29,6 +29,11 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
         _cpuStartHandle = _handle->GetCPUDescriptorHandleForHeapStart();
     }
 
+    internal void Reset()
+    {
+        _availabilityMask = 0;
+    }
+
     internal bool TryAllocate(uint numSlots, out HeapHandleDX12 handle)
     {
         handle = default;
@@ -55,7 +60,7 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
                     if ((i + 1) - startIndex == numSlots)
                     {
                         _availabilityMask |= slotMask;
-                        handle.CpuHandle = new CpuDescriptorHandle(_cpuStartHandle.Ptr + (startIndex * _incrementSize));
+                        handle.Handle = new CpuDescriptorHandle(_cpuStartHandle.Ptr + (startIndex * _incrementSize));
                         handle.Heap = this;
                         handle.StartIndex = startIndex;
                         handle.NumSlots = numSlots;
