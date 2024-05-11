@@ -40,7 +40,7 @@ public class CapsuleLightComponent : SceneComponent
 
         // Add mesh to render data if possible.
         if (_visible && obj.Scene != null)
-            _instance = obj.Scene.RenderData.CapsuleLights.New(_data);
+            _instance = obj.Scene.RenderData.CapsuleLights.New(ref _data);
     }
 
     private void RemoveFromScene(SceneObject obj)

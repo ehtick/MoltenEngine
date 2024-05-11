@@ -110,11 +110,20 @@ public class SceneRenderData
     *  - Renderer will upload the latest data to the GPU 
     */
 
-    public LightList PointLights { get; } = new LightList(100, 100);
+    /// <summary>
+    /// Gets the management list for point lights
+    /// </summary>
+    public LightList PointLights { get; } = new(100);
 
-    public LightList CapsuleLights { get; } = new LightList(50, 100);
+    /// <summary>
+    /// Gets the management list for capsule lights.
+    /// </summary>
+    public LightList CapsuleLights { get; } = new(50);
 
-    public List<RenderCamera> Cameras { get; } = new List<RenderCamera>();
+    /// <summary>
+    /// Gets a list of cameras that are part of the scene.
+    /// </summary>
+    public List<RenderCamera> Cameras { get; } = new();
 
     /// <summary>
     /// Gets or sets the skybox cube-map texture.

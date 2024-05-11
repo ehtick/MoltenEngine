@@ -6,11 +6,11 @@
 /// </summary>
 /// <typeparam name="T">The type of element to store in the list.</typeparam>
 public class ValueFreeRefList<T>
-    where T : unmanaged
+    where T : struct
 {
     T[] _items;
     uint[] _free;
-    int _freeIndex;
+    uint _freeIndex;
     uint _capacity;
     uint _count;
 
@@ -37,13 +37,18 @@ public class ValueFreeRefList<T>
         }
     }
 
-    public void Add(ref T item)
+    /// <summary>
+    /// Adds the provided value to the list and returns the index it was added at.
+    /// </summary>
+    /// <param name="item">The item to be added.</param>
+    /// <returns>The index of the item within the list.</returns>
+    public uint Add(ref T item)
     {
+        uint index = 0;
+
         if (_freeIndex > 0)
         {
-            uint index = _free[--_freeIndex];
-            _items[index] = item;
-            return;
+            index = _free[--_freeIndex];
         }
         else
         {
@@ -53,41 +58,65 @@ public class ValueFreeRefList<T>
                 Array.Resize(ref _items, (int)_capacity);
             }
 
-            _items[_count++] = item;
+            index = _count++;
         }
+
+        _items[index] = item;
+        return index;
     }
 
-    public void Add(T item)
+    /// <summary>
+    /// Adds the provided value to the list and returns the index it was added at.
+    /// </summary>
+    /// <param name="item">The item to be added.</param>
+    /// <returns>The index of the item within the list.</returns>
+    public uint Add(T item)
     {
-        Add(ref item);
+        return Add(ref item);
     }
 
-    public void AddRange(IEnumerable<T> values)
+    /// <summary>
+    /// Adds the provided items to the list and returns the start index they were added at.
+    /// </summary>
+    /// <param name="items">The items to be added.</param>
+    /// <returns>The start index of the range within the list.</returns>
+    public uint AddRange(List<T> items)
     {
-        switch (values)
-        {
-            case List<T> list:
-                if(_capacity - _count < list.Count)
-                    EnsureCapacity(_capacity + (uint)list.Count);
+        uint count = (uint)items.Count;
+        if (_capacity - _count < items.Count)
+            EnsureCapacity(_capacity + count);
 
-                list.CopyTo(_items, (int)_count);
-                break;
+        uint startIndex = _count;
+        items.CopyTo(_items, (int)startIndex);
+        _count += count;
 
-            case T[] array:
-                if (_capacity - _count < array.LongLength)
-                    EnsureCapacity(_capacity + (uint)array.LongLength);
-
-                array.CopyTo(_items, _count);
-                break;
-
-            default:
-                foreach (T value in values)
-                    Add(value);
-                break;
-        }
+        return startIndex;
     }
 
-    public unsafe void RemoveAt(uint index)
+    /// <summary>
+    /// Adds the provided items to the list and returns the start index they were added at.
+    /// </summary>
+    /// <param name="items">The items to be added.</param>
+    /// <returns>The start index of the range within the list.</returns>
+    public uint AddRange(T[] items)
+    {
+        uint count = (uint)items.LongLength;
+        if (_capacity - _count < items.LongLength)
+            EnsureCapacity(_capacity + (uint)items.LongLength);
+
+        uint startIndex = _count;
+        Array.Copy(items, 0, _items, startIndex, items.Length);
+        _count += count;
+
+        return startIndex;
+    }
+
+    /// <summary>
+    /// Removes an item at the specified index and adds it to an internal free stack.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <exception cref="IndexOutOfRangeException"></exception>
+    public void RemoveAt(uint index)
     {
         if (index >= _count)
             throw new IndexOutOfRangeException();
@@ -103,6 +132,30 @@ public class ValueFreeRefList<T>
                 Array.Resize(ref _free, _free.Length * 2);
 
             _free[_freeIndex++] = index;
+        }
+    }
+
+    public void RemoveRange(uint startIndex, uint count)
+    {
+        uint end = startIndex + count;
+
+        if (startIndex >= _count || end > _count)
+            throw new IndexOutOfRangeException();
+
+        if(end == _count)
+        {
+            for(uint i = startIndex; i < count; i++)
+                _items[i] = default;
+
+            _count -= count;
+        }
+        else
+        {
+            if(_freeIndex == _free.Length)
+                Array.Resize(ref _free, (int)Math.Max(_free.Length * 2, _free.Length + count));
+
+            for(uint i = startIndex; i < end; i++)
+                _free[_freeIndex++] = i;
         }
     }
 
@@ -132,9 +185,19 @@ public class ValueFreeRefList<T>
     public uint Count => _count;
 
     /// <summary>
+    /// Gets the number of free indices in the list.
+    /// </summary>
+    public uint FreeCount => _freeIndex;
+
+    /// <summary>
     /// Gets the capacity of the current <see cref="ValueFreeRefList{T}"/>.
     /// </summary>
     public uint Capacity => _capacity;
+
+    /// <summary>
+    /// Gets the underlying array of items. Note: directly manipulating this array may cause unexpected behaviour.
+    /// </summary>
+    public T[] Items => _items;
 
     /// <summary>
     /// Gets or sets an item at the specified index by reference.

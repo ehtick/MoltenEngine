@@ -48,23 +48,21 @@ internal class LightingStep : RenderStep
 
         // Calculate camera-specific information for each point light
         LightInstance instance;
-        LightData ld;
-        for(int i = 0; i < scene.PointLights.ElementCount; i++)
+
+        for(int i = 0; i < scene.PointLights.Data.Count; i++)
         {
             instance = scene.PointLights.Instances[i];
-            ld = scene.PointLights.Data[instance.ID];
+            ref LightData ld = ref scene.PointLights.Data[instance.ID];
 
             float distFromCam = Vector3F.Distance(camera.Position, scene.PointLights.Data[i].Position);
             float distPercent = Math.Min(1.0f, distFromCam / camera.MaxDrawDistance);
             ld.Transform = Matrix4F.Scaling(instance.Range) * Matrix4F.CreateTranslation(ld.Position) * camera.ViewProjection;
             ld.Transform.Transpose();
-
             ld.TessFactor = GraphicsSettings.MAX_LIGHT_TESS_FACTOR - (GraphicsSettings.LIGHT_TESS_FACTOR_RANGE * distPercent);
-            scene.PointLights.Data[i] = ld;
         }
 
-        GpuBuffer lightData = cmd.Device.UploadBuffer.Get<LightData>(scene.PointLights.Data.Length);
-        lightData.SetData(GpuPriority.Immediate, cmd, scene.PointLights.Data);
+        GpuBuffer lightData = cmd.Device.UploadBuffer.Get<LightData>(scene.PointLights.Data.Count);
+        lightData.SetData(GpuPriority.Immediate, cmd, scene.PointLights.Data.Items);
 
         // Set data buffer on domain and pixel shaders
         _matPoint.Light.Data.Value = lightData; // TODO Need to implement a dynamic structured buffer we can reuse here.
@@ -83,7 +81,7 @@ internal class LightingStep : RenderStep
         //set correct buffers and shaders
         cmd.State.VertexBuffers[0] = null;
         cmd.State.IndexBuffer.Value = null;
-        uint pointCount = scene.PointLights.ElementCount * 2;
+        uint pointCount = scene.PointLights.Data.Count * 2;
 
         cmd.Draw(_matPoint, pointCount, 0);
         //cmd.Sync();

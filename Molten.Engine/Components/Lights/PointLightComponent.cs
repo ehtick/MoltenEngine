@@ -39,7 +39,7 @@ public class PointLightComponent : SceneComponent
         // Add mesh to render data if possible.
         if (_visible && obj.Scene != null)
         {
-            _instance = obj.Scene.RenderData.PointLights.New(_data);
+            _instance = obj.Scene.RenderData.PointLights.New(ref _data);
             _instance.Range = _range;
         }
     }
