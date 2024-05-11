@@ -23,16 +23,16 @@
       },
       "Magick.NET-Q8-AnyCPU": {
         "type": "Transitive",
-        "resolved": "13.7.0",
-        "contentHash": "lwKELCVkcHBEkzipFdSB7QVc0AaiAMvW9jXXQ5wKIv+o+/Q4uT41Wo2nsz0dRs+SGGOeXXa0gOKIwNyNhYuZ9Q==",
+        "resolved": "13.8.0",
+        "contentHash": "YcmatKDklm6IEHiVoDf9x8bGNXf1jfUATNgYjsEyPYiSRiWJkhTXvwJJobKxulpDQwuXpndafUh86fBt9nv8iw==",
         "dependencies": {
-          "Magick.NET.Core": "13.7.0"
+          "Magick.NET.Core": "13.8.0"
         }
       },
       "Magick.NET.Core": {
         "type": "Transitive",
-        "resolved": "13.7.0",
-        "contentHash": "TzuzYWJpc+dkOrJeFE6KwYfPAyV6dGWA3SHHrCCHgUSIGyoAS3+HMOPyJy0r7lrMM/B1yqQpheWiy1SufmntQA=="
+        "resolved": "13.8.0",
+        "contentHash": "XOr+EMV12PF4A5v88sbZlu/mRrqh+XYYyWay8dcjulu6ooNdQuxBv/2LIHoDqeWrrn290tyivT8OWrKAZB76sA=="
       },
       "Microsoft.CSharp": {
         "type": "Transitive",
@@ -137,7 +137,7 @@
       "molten.engine": {
         "type": "Project",
         "dependencies": {
-          "Magick.NET-Q8-AnyCPU": "[13.7.0, )",
+          "Magick.NET-Q8-AnyCPU": "[13.8.0, )",
           "Molten.Math": "[0.8.0, )",
           "Molten.Utility": "[0.8.0, )",
           "Newtonsoft.Json": "[13.0.3, )"
