@@ -16,6 +16,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
 
     DescriptorHeapAllocatorDX12 _prevGpuResourceHeap;
     DescriptorHeapAllocatorDX12 _prevGpuSamplerHeap;
+    Stack<HeapHandleDX12> _heapHandlePool;
 
     /// <summary>
     /// Creates a new instance of <see cref="DescriptorHeapAllocatorDX12"/>.
@@ -25,14 +26,14 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
     internal unsafe DescriptorHeapManagerDX12(DeviceDX12 device) :
         base(device)
     {
-        _resourceHeap = new DescriptorHeapAllocatorDX12(device, DescriptorHeapType.CbvSrvUav, DescriptorHeapFlags.None, 64);
-        _samplerHeap = new DescriptorHeapAllocatorDX12(device, DescriptorHeapType.Sampler, DescriptorHeapFlags.None, 64);
-        _dsvHeap = new DescriptorHeapAllocatorDX12(device, DescriptorHeapType.Dsv, DescriptorHeapFlags.None, 64);
-        _rtvHeap = new DescriptorHeapAllocatorDX12(device, DescriptorHeapType.Rtv, DescriptorHeapFlags.None, 64);
+        _resourceHeap = new DescriptorHeapAllocatorDX12(this, DescriptorHeapType.CbvSrvUav, DescriptorHeapFlags.None, 64);
+        _samplerHeap = new DescriptorHeapAllocatorDX12(this, DescriptorHeapType.Sampler, DescriptorHeapFlags.None, 64);
+        _dsvHeap = new DescriptorHeapAllocatorDX12(this, DescriptorHeapType.Dsv, DescriptorHeapFlags.None, 64);
+        _rtvHeap = new DescriptorHeapAllocatorDX12(this, DescriptorHeapType.Rtv, DescriptorHeapFlags.None, 64);
 
         _gpuResourceHeap = new GpuFrameBuffer<DescriptorHeapAllocatorDX12>(device, (creationDevice) =>
         {
-            return new DescriptorHeapAllocatorDX12(creationDevice as DeviceDX12, 
+            return new DescriptorHeapAllocatorDX12(this, 
                 DescriptorHeapType.CbvSrvUav, 
                 DescriptorHeapFlags.ShaderVisible, 
                 RESOURCE_HEAP_SIZE);
@@ -40,11 +41,26 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
 
         _gpuSamplerHeap = new GpuFrameBuffer<DescriptorHeapAllocatorDX12>(device, (creationDevice) =>
         {
-            return new DescriptorHeapAllocatorDX12(creationDevice as DeviceDX12, 
+            return new DescriptorHeapAllocatorDX12(this, 
                 DescriptorHeapType.Sampler, 
                 DescriptorHeapFlags.ShaderVisible, 
                 SAMPLER_HEAP_SIZE);
         });
+    }
+
+    internal HeapHandleDX12 GetHandleInstance()
+    {
+        if (_heapHandlePool.Count > 0)
+            return _heapHandlePool.Pop();
+        else 
+            return new HeapHandleDX12();
+    }
+
+    internal void PoolHandle(HeapHandleDX12 handle)
+    {
+        handle.Heap = null;
+        handle.Next = null;
+        _heapHandlePool.Push(handle);
     }
 
     internal HeapHandleDX12 GetResourceHandle(uint numDescriptors)
@@ -148,7 +164,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
 
                 if (cpuHandle.Ptr != 0)
                 {
-                    Device.Handle->CopyDescriptorsSimple(1, gpuResHandle.Handle, cpuHandle, DescriptorHeapType.CbvSrvUav);
+                    Device.Handle->CopyDescriptorsSimple(1, gpuResHandle.CpuHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);
                 }
 
                 gpuResHandle.Increment();
@@ -193,7 +209,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                 CpuDescriptorHandle cpuHandle = new();  // TODO Retrieve heap handle for HeapSamplerDX12 and copy it to the sampler heap.
 
                 if (cpuHandle.Ptr != 0)
-                    Device.Handle->CopyDescriptorsSimple(1, gpuSamplerHandle.Handle, cpuHandle, DescriptorHeapType.Sampler);
+                    Device.Handle->CopyDescriptorsSimple(1, gpuSamplerHandle.CpuHandle, cpuHandle, DescriptorHeapType.Sampler);
 
                 gpuSamplerHandle.Increment();
             }

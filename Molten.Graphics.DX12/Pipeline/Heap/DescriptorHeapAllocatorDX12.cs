@@ -3,15 +3,15 @@
 namespace Molten.Graphics.DX12;
 internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
 {
+    DescriptorHeapManagerDX12 _manager;
     List<DescriptorHeapDX12> _heaps;
-    DescriptorHeapType _type;
     DescriptorHeapDesc _desc;
 
-    internal DescriptorHeapAllocatorDX12(DeviceDX12 device, DescriptorHeapType type, DescriptorHeapFlags flags, uint numDescriptors) : 
-        base(device)
+    internal DescriptorHeapAllocatorDX12(DescriptorHeapManagerDX12 manager, DescriptorHeapType type, DescriptorHeapFlags flags, uint numDescriptors) : 
+        base(manager.Device)
     {
+        _manager = manager;
         _heaps = new List<DescriptorHeapDX12>();
-        _type = type;
         _desc = new DescriptorHeapDesc()
         {
             NodeMask = 0,
@@ -44,7 +44,7 @@ internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
         }
 
         // Allocate a new heap.
-        heap = new DescriptorHeapDX12(Device, _desc);
+        heap = new DescriptorHeapDX12(_manager, _desc);
         _heaps.Add(heap);
         if(!heap.TryAllocate(numDescriptors, out handle))
             throw new InvalidOperationException("Failed to allocate a new descriptor heap.");

@@ -3,9 +3,10 @@ using Silk.NET.Direct3D12;
 using System.Runtime.CompilerServices;
 
 namespace Molten.Graphics;
-internal struct HeapHandleDX12
+
+internal class HeapHandleDX12
 {
-    public CpuDescriptorHandle Handle;
+    public CpuDescriptorHandle CpuHandle;
 
     public uint StartIndex;
 
@@ -13,14 +14,21 @@ internal struct HeapHandleDX12
 
     public DescriptorHeapDX12 Heap;
 
+    internal HeapHandleDX12 Next;
+
+    internal bool IsFree;
+
     internal void Free()
     {
-        Heap?.Free(ref this);
+        IsFree = true;
     }
 
     internal CpuDescriptorHandle GetCpuHandle(uint index)
     {
-        return new CpuDescriptorHandle(Handle.Ptr + (index * Heap.IncrementSize));
+        if (index >= NumSlots)
+            throw new IndexOutOfRangeException("Index cannot be greater than the number of slots allocated to the heap handle.");
+
+        return new CpuDescriptorHandle(CpuHandle.Ptr + (index * Heap.IncrementSize));
     }
 
     internal GpuDescriptorHandle GetGpuHandle()
@@ -34,6 +42,6 @@ internal struct HeapHandleDX12
     internal void Increment()
     {
         StartIndex++;
-        Handle.Ptr += Heap.IncrementSize;
+        CpuHandle.Ptr += Heap.IncrementSize;
     }
 }
