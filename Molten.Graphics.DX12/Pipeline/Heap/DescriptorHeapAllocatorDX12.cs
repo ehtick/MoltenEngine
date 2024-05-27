@@ -27,6 +27,12 @@ internal class DescriptorHeapAllocatorDX12 : GpuObject<DeviceDX12>
             _heaps[i].Reset();
     }
 
+    internal void Defragment()
+    {
+        for (int i = 0; i < _heaps.Count; i++)
+            _heaps[i].Defragment();
+    }
+
     internal HeapHandleDX12 Allocate(uint numDescriptors)
     {
         if(numDescriptors > _desc.NumDescriptors)

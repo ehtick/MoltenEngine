@@ -24,7 +24,7 @@ public abstract class ViewDX12<DESC> : IDisposable
     /// <param name="numDescriptors"></param>
     internal unsafe void Initialize(ref DESC desc)
     {
-        if (_heapHandle.Heap == null)
+        if (_heapHandle == null)
             OnAllocateHandle(out _heapHandle);
 
         for (uint i = 0; i < _heapHandle.NumSlots; i++)

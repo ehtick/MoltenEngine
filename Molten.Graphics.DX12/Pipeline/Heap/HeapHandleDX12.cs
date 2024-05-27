@@ -20,7 +20,7 @@ internal class HeapHandleDX12
 
     internal void Free()
     {
-        IsFree = true;
+        Heap.Free(this);
     }
 
     internal CpuDescriptorHandle GetCpuHandle(uint index)

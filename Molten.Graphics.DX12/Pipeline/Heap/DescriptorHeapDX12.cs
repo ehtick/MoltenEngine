@@ -12,6 +12,7 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
     CpuDescriptorHandle _cpuStartHandle;
 
     HeapHandleDX12 _startAllocation;
+    List<HeapHandleDX12> _freeAllocations;
     DescriptorHeapManagerDX12 _manager;
 
     internal DescriptorHeapDX12(DescriptorHeapManagerDX12 manager, DescriptorHeapDesc desc) : 
@@ -31,12 +32,14 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
         _isGpuVisible = (desc.Flags & DescriptorHeapFlags.ShaderVisible) == DescriptorHeapFlags.ShaderVisible;
         _cpuStartHandle = _handle->GetCPUDescriptorHandleForHeapStart();
 
+        _freeAllocations = new List<HeapHandleDX12>();
         _startAllocation = _manager.GetHandleInstance();
         _startAllocation.CpuHandle = _cpuStartHandle;
         _startAllocation.StartIndex = 0;
         _startAllocation.NumSlots = _capacity;
         _startAllocation.IsFree = true;
         _startAllocation.Heap = this;
+        _freeAllocations.Add(_startAllocation);
     }
 
     internal void Reset()
@@ -45,7 +48,7 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
         HeapHandleDX12 current = _startAllocation;
         while(current != null)
         {
-            // Use the last allocation as the first.
+            // Use the last allocation as the first. 
             if(current.Next == null)
             {
                 _startAllocation = current;
@@ -54,78 +57,113 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
                 _startAllocation.StartIndex = 0;
                 _startAllocation.NumSlots = _capacity;
                 _startAllocation.Next = null;
+                break;
             }
             else // Put all other allocations back in the pool.
             {
                 current.IsFree = true;
+                HeapHandleDX12 next = current.Next;
                 _manager.PoolHandle(current);
+                current = next;
             }
-
-            current = current.Next;
         }
     }
 
-    internal void Prepare()
+    internal void Defragment()
     {
-        // TODO Defragment the heap (merge adjacent free slots).
-        // TODO Implement system that allows allocated heap handles to be moved next to each other and have their reference update in their consumer (e.g. view, texture, etc).
+        if (_freeAllocations.Count > 1)
+        {
+            // Clear and re-populate the free list to ensure it is up-to-date during defragmentation.
+            _freeAllocations.Clear();
+
+            // TODO Implement system that allows allocated heap handles to be moved next to each other and have their reference update in their consumer (e.g. view, texture, etc).
+
+            // Merge adjacent free handles to reduce fragmentation.
+            HeapHandleDX12 current = _startAllocation;
+            bool newFree = true;
+
+            while (current != null)
+            {
+                if (current.IsFree)
+                {
+                    // Update _freeAllocation list, but only if we've hit a new free allocation.
+                    if (newFree)
+                    {
+                        _freeAllocations.Add(current);
+                        newFree = false;
+                    }
+
+                    // Merge adjacent free allocations.
+                    if (current.Next?.IsFree == true)
+                    {
+                        current.NumSlots += current.Next.NumSlots;
+                        current.Next = current.Next.Next;
+                        _manager.PoolHandle(current.Next);
+
+                        // Don't move to the next handle until there are no more adjacent free to merge.
+                        continue;
+                    }
+                }
+
+                // Move to next handle.
+                newFree = true;
+                current = current.Next;
+            }
+        }
+    }
+
+    internal void Free(HeapHandleDX12 handle)
+    {
+        handle.IsFree = true;
+        _freeAllocations.Add(handle);
     }
 
     internal bool TryAllocate(uint numSlots, out HeapHandleDX12 handle)
     {
-        handle = default;
+        HeapHandleDX12 bestFit = null;
+        int bestFitIndex = 0;
 
-        HeapHandleDX12 current = _startAllocation;
-        while (current != null)
+        // Find exact or best-fit allocation.
+        for (int i = 0; i < _freeAllocations.Count; i++)
         {
-            // If the allocation is an exact fit, return it as-is.
+            HeapHandleDX12 current = _freeAllocations[i];
             if (current.NumSlots == numSlots)
             {
                 current.IsFree = false;
                 current.Heap = this;
                 handle = current;
+                _freeAllocations.RemoveAt(i);
                 return true;
             }
-            else if (current.NumSlots > numSlots)
+            else if (bestFit == null || current.NumSlots < bestFit.NumSlots)
             {
-
+                bestFit = current;
+                bestFitIndex = i;
             }
-
-            current = current.Next;
         }
 
-        // If the heap is full, return false.
-        //if (_availabilityMask != ulong.MaxValue)
-        //{
-        //    uint startIndex = 0; // The first slot of the requested range.
-        //    ulong mask;
-        //    ulong slotMask = 0;
+        // Take a slice from the best fit.
+        if (bestFit != null)
+        {
+            // Create new allocation.
+            uint startIndex = bestFit.NumSlots - numSlots;
+            HeapHandleDX12 newHandle = _manager.GetHandleInstance();
+            newHandle.CpuHandle = bestFit.GetCpuHandle(startIndex);
+            newHandle.StartIndex = bestFit.StartIndex + startIndex;
+            newHandle.Heap = this;
+            newHandle.NumSlots = numSlots;
+            newHandle.IsFree = false;
+            newHandle.Next = bestFit.Next;
 
-        //    for (int i = 0; i < _capacity; i++)
-        //    {
-        //        mask = (1UL << i);
+            // Update current allocation.
+            bestFit.NumSlots -= numSlots;
+            bestFit.Next = newHandle;
+            handle = newHandle;
 
-        //        // If the slot is already taken, reset the free slot count.
-        //        if ((_availabilityMask & mask) == mask)
-        //        {
-        //            startIndex = (uint)i;
-        //        }
-        //        else
-        //        {
-        //            slotMask |= mask;
-        //            if ((i + 1) - startIndex == numSlots)
-        //            {
-        //                _availabilityMask |= slotMask;
-        //                handle.Handle = new CpuDescriptorHandle(_cpuStartHandle.Ptr + (startIndex * _incrementSize));
-        //                handle.Heap = this;
-        //                handle.StartIndex = startIndex;
-        //                handle.NumSlots = numSlots;
-        //                return true;
-        //            }
-        //        }
-        //    }
-        //}
+            return true;
+        }
 
+        handle = default;
         return false;
     }
 

@@ -165,6 +165,7 @@ public unsafe class DeviceDX12 : DeviceDXGI
     protected override void OnBeginFrame(GpuCommandList cmd, IReadOnlyThreadedList<ISwapChainSurface> surfaces)
     {
         CommandAllocator = _cmdAllocators.Prepare();
+        Heap.Prepare();
 
         // Call Prepare() on each DX12 swapchain to transition them into the correct state for rendering.
         surfaces.For(0, (index, surface) =>
