@@ -130,15 +130,17 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
             if (current.NumSlots == numSlots)
             {
                 current.IsFree = false;
-                current.Heap = this;
                 handle = current;
                 _freeAllocations.RemoveAt(i);
                 return true;
             }
             else if (bestFit == null || current.NumSlots < bestFit.NumSlots)
             {
-                bestFit = current;
-                bestFitIndex = i;
+                if (current.NumSlots > numSlots)
+                {
+                    bestFit = current;
+                    bestFitIndex = i;
+                }
             }
         }
 
@@ -148,9 +150,9 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
             // Create new allocation.
             uint startIndex = bestFit.NumSlots - numSlots;
             HeapHandleDX12 newHandle = _manager.GetHandleInstance();
-            newHandle.CpuHandle = bestFit.GetCpuHandle(startIndex);
             newHandle.StartIndex = bestFit.StartIndex + startIndex;
             newHandle.Heap = this;
+            newHandle.CpuHandle = bestFit.GetOffsetCpuHandle(startIndex);
             newHandle.NumSlots = numSlots;
             newHandle.IsFree = false;
             newHandle.Next = bestFit.Next;

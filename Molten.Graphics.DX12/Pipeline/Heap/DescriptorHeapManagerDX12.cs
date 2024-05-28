@@ -89,8 +89,8 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
     /// </summary>
     internal unsafe void PrepareGpuHeap(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
     {
-        HeapHandleDX12 resTable = PrepareResourceTable(pass, state, cmd);
-        HeapHandleDX12 samplerTable = PrepareSamplerTable(pass, state, cmd);
+        HeapHandleDX12 resTable = BuildGpuResourceTable(pass, state, cmd);
+        HeapHandleDX12 samplerTable = BuildGpuSamplerTable(pass, state, cmd);
         //state.RootSignature.Meta.ToLog(Device.Log);
 
         if (resTable.Heap != null && samplerTable.Heap != null)
@@ -132,13 +132,13 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
         _gpuSamplerHeap.Defragment();
     }
 
-    private unsafe HeapHandleDX12 PrepareResourceTable(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
+    private unsafe HeapHandleDX12 BuildGpuResourceTable(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
     {
         if(pass.Bindings.TotalResourceBindings == 0)
             return new HeapHandleDX12();
 
         HeapHandleDX12 gpuResHandle = _gpuResourceHeap.Allocate(pass.Bindings.TotalResourceBindings);
-        HeapHandleDX12 resTableHandle = gpuResHandle;
+        CpuDescriptorHandle destHandle = gpuResHandle.CpuHandle;
 
         // TODO Replace this once DX11 is removed and resources can be created during instantiation instead of during Apply().
         // Apply resources.
@@ -153,41 +153,40 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
                 ref ShaderBind<ShaderResourceVariable> bind = ref resources[r];
                 bind.Object.Resource?.Apply(cmd);
 
-                // TODO Improve this
+                // TODO Improve this - Batch copy instead of copying 1 at a time. This requires batched resource handles in shaders.
                 ResourceHandleDX12 resHandle = bind.Object.Resource.Handle as ResourceHandleDX12;
-                CpuDescriptorHandle cpuHandle = default;
+                CpuDescriptorHandle srcHandle = default;
+
                 switch (bindType)
                 {
                     case ShaderBindType.ConstantBuffer:
                         CBHandleDX12 cbHandle = resHandle as CBHandleDX12;
-                        cpuHandle = cbHandle.CBV.CpuHandle;
+                        srcHandle = cbHandle.CBV.CpuHandle;
                         cmd.Transition(resHandle, ResourceStates.VertexAndConstantBuffer);
                         break;
 
                     case ShaderBindType.Resource:
-                        cpuHandle = resHandle.SRV.CpuHandle;
+                        srcHandle = resHandle.SRV.CpuHandle;
                         cmd.Transition(resHandle, ResourceStates.AllShaderResource);
                         break;
 
                     case ShaderBindType.UnorderedAccess:
-                        cpuHandle = resHandle.UAV.CpuHandle;
+                        srcHandle = resHandle.UAV.CpuHandle;
                         // TODO Handle UAV barriers?
                         break;
                 }
 
-                if (cpuHandle.Ptr != 0)
-                {
-                    Device.Handle->CopyDescriptorsSimple(1, gpuResHandle.CpuHandle, cpuHandle, DescriptorHeapType.CbvSrvUav);
-                }
+                if (srcHandle.Ptr != 0)
+                    Device.Handle->CopyDescriptorsSimple(1, destHandle, srcHandle, DescriptorHeapType.CbvSrvUav);
 
-                gpuResHandle.Increment();
+                destHandle.Ptr += gpuResHandle.Heap.IncrementSize;
             }
         }
 
-        return resTableHandle;
+        return gpuResHandle;
     }
 
-    private unsafe HeapHandleDX12 PrepareSamplerTable(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
+    private unsafe HeapHandleDX12 BuildGpuSamplerTable(ShaderPassDX12 pass, PipelineStateDX12 state, CommandListDX12 cmd)
     {
         uint numSamplers = (uint)pass.Bindings.Samplers.Length;
         uint numHeapSamplers = 0;
@@ -205,7 +204,7 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
             return new HeapHandleDX12();
 
         HeapHandleDX12 gpuSamplerHandle = _gpuSamplerHeap.Allocate(numHeapSamplers);
-        HeapHandleDX12 samplerTableHandle = gpuSamplerHandle;
+        CpuDescriptorHandle destHandle = gpuSamplerHandle.CpuHandle;
 
         // Iterate over samplers and bind heap-based ones.
         for (int i = 0; i < pass.Bindings.Samplers.Length; i++)
@@ -214,16 +213,16 @@ internal class DescriptorHeapManagerDX12 : GpuObject<DeviceDX12>
             if (!bind.Object.IsImmutable && bind.Object?.Value != null)
             {
                 ShaderSampler heapSampler = bind.Object.Sampler;
-                CpuDescriptorHandle cpuHandle = new();  // TODO Retrieve heap handle for HeapSamplerDX12 and copy it to the sampler heap.
+                CpuDescriptorHandle srcHandle = new();  // TODO Retrieve heap handle for HeapSamplerDX12 and copy it to the sampler heap.
 
-                if (cpuHandle.Ptr != 0)
-                    Device.Handle->CopyDescriptorsSimple(1, gpuSamplerHandle.CpuHandle, cpuHandle, DescriptorHeapType.Sampler);
+                if (srcHandle.Ptr != 0)
+                    Device.Handle->CopyDescriptorsSimple(1, destHandle, srcHandle, DescriptorHeapType.Sampler);
 
-                gpuSamplerHandle.Increment();
+                destHandle.Ptr += gpuSamplerHandle.Heap.IncrementSize;
             }
         }
 
-        return samplerTableHandle;
+        return gpuSamplerHandle;
     }
 
     protected unsafe override void OnGpuRelease()

@@ -23,7 +23,7 @@ internal class HeapHandleDX12
         Heap.Free(this);
     }
 
-    internal CpuDescriptorHandle GetCpuHandle(uint index)
+    internal CpuDescriptorHandle GetOffsetCpuHandle(uint index)
     {
         if (index >= NumSlots)
             throw new IndexOutOfRangeException("Index cannot be greater than the number of slots allocated to the heap handle.");
@@ -36,12 +36,5 @@ internal class HeapHandleDX12
         GpuDescriptorHandle handle = Heap.GetGpuHandle();
         handle.Ptr += (StartIndex * Heap.IncrementSize);
         return handle;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Increment()
-    {
-        StartIndex++;
-        CpuHandle.Ptr += Heap.IncrementSize;
     }
 }

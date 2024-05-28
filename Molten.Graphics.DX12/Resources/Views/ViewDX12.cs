@@ -29,7 +29,7 @@ public abstract class ViewDX12<DESC> : IDisposable
 
         for (uint i = 0; i < _heapHandle.NumSlots; i++)
         {
-            _cpuHandle = _heapHandle.GetCpuHandle(i);
+            _cpuHandle = _heapHandle.GetOffsetCpuHandle(i);
             OnCreate(ref desc, Handle, ref _cpuHandle, i);
         }
     }
