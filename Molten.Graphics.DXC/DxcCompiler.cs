@@ -133,7 +133,7 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
         LoadErrors(context, dxcResult, NativeStringEncoding.UTF8);
         NativeUtil.ReleasePtr(ref pdbData);
 
-        if (!context.HasErrors && GetDxcOutput(context, OutKind.Object, dxcResult, ref byteCode))
+        if (!context.HasErrors && GetDxcOutput(context, OutKind.Object, dxcResult, ref byteCode, out _))
         {
             LoadPdbData(context, dxcResult, ref pdbData, ref pdbPath);
 
@@ -153,15 +153,10 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
 
     private void LoadPdbData(ShaderCompilerContext context, IDxcResult* dxcResult, ref IDxcBlob* data, ref string pdbPath)
     {
-        IDxcBlobUtf16* pPdbPath = null;
-
-        if (GetDxcOutput(context, OutKind.Pdb, dxcResult, ref data, &pPdbPath))
+        if (GetDxcOutput(context, OutKind.Pdb, dxcResult, ref data, out pdbPath))
         {
-            pdbPath = pPdbPath->GetStringPointerS();
             nuint dataSize = data->GetBufferSize();
             context.AddDebug($"\t Loaded DXC PDB data -- Bytes: {dataSize} -- Path: {pdbPath}");
-
-            NativeUtil.ReleasePtr(ref pPdbPath);
         }
     }
 
@@ -170,7 +165,7 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
         IDxcBlob* outData = null;
         ShaderReflection result = null;
 
-        if (GetDxcOutput(context, OutKind.Reflection, dxcResult, ref outData))
+        if (GetDxcOutput(context, OutKind.Reflection, dxcResult, ref outData, out _))
         {
             DxcBuffer reflectionBuffer = new DxcBuffer()
             {
@@ -225,12 +220,16 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
     /// <summary>
     /// Retrieves the debug PDB data from a shader compilation result (<see cref="IDxcResult"/>).
     /// </summary>
-    /// <param name="result"></param>
+    /// <param name="context"></param>
+    /// <param name="outputType"></param>
+    /// <param name="dxcResult"></param>
     /// <param name="outData"></param>
     /// <param name="outPath"></param>
     private bool GetDxcOutput(ShaderCompilerContext context, OutKind outputType, IDxcResult* dxcResult,
-        ref IDxcBlob* outData, IDxcBlobUtf16** outPath = null)
+        ref IDxcBlob* outData, out string outPath)
     {
+        outPath = null;
+
         if (!dxcResult->HasOutput(outputType))
         {
             context.AddWarning($"Unable to retrieve '{outputType}' data: Not found");
@@ -240,17 +239,28 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
         void* pData = null;
         IDxcBlobUtf16* pDataPath = null;
         Guid iid = IDxcBlob.Guid;
-        dxcResult->GetOutput(outputType, &iid, &pData, outPath);
+
+        IDxcBlobUtf16* ptrOutPath = null;
+        dxcResult->GetOutput(outputType, &iid, &pData, &ptrOutPath);
         outData = (IDxcBlob*)pData;
+
+        // Parse output path, if provided.
+        if (ptrOutPath != null)
+        {
+            nuint len = ptrOutPath->GetStringLength();
+            char* ptrOutChars = ptrOutPath->GetStringPointer();
+            outPath = new string(ptrOutChars, 0, (int)len);
+        }
 
         return true;
     }
 
     /// <summary>
-    /// (Re)builds the HLSL source code in the current <see cref="HlslSource"/> instance. 
+    /// (Re)builds the HLSL source code in the current <see cref="ShaderSource"/> instance. 
     /// This generates a (new) <see cref="DxcBuffer"/> object.
     /// </summary>
-    /// <param name="compiler"></param>
+    /// <param name="source"></param>
+    /// <param name="encoding"></param>
     /// <returns></returns>
     internal DxcBuffer BuildSource(ShaderSource source, Encoding encoding)
     {
@@ -271,7 +281,13 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
         return buffer;
     }
 
+    /// <summary>
+    /// Gets the DXC utility instance bound to the current <see cref="DxcCompiler"/>.
+    /// </summary>
     protected IDxcUtils* Utils => _utils;
 
+    /// <summary>
+    /// Gets the DXC API that the current <see cref="DxcCompiler"/> instance is bound to.
+    /// </summary>
     protected DXC Api => _dxc;
 }

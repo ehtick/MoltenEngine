@@ -118,10 +118,6 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
     internal void Free(HeapHandleDX12 handle)
     {
         handle.IsFree = true;
-        if(handle.Heap == null)
-        {
-
-        }
         _freeAllocations.Add(handle);
     }
 
