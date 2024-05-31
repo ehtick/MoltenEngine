@@ -37,9 +37,8 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
         _startAllocation.CpuHandle = _cpuStartHandle;
         _startAllocation.StartIndex = 0;
         _startAllocation.NumSlots = _capacity;
-        _startAllocation.IsFree = true;
         _startAllocation.Heap = this;
-        _freeAllocations.Add(_startAllocation);
+        Free(_startAllocation);
     }
 
     internal void Reset()
@@ -67,6 +66,9 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
                 current = next;
             }
         }
+
+        _freeAllocations.Clear();
+        _freeAllocations.Add(_startAllocation);
     }
 
     internal void Defragment()
@@ -97,8 +99,9 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
                     if (current.Next?.IsFree == true)
                     {
                         current.NumSlots += current.Next.NumSlots;
-                        current.Next = current.Next.Next;
-                        _manager.PoolHandle(current.Next);
+                        HeapHandleDX12 next = current.Next;
+                        current.Next = next.Next;
+                        _manager.PoolHandle(next);
 
                         // Don't move to the next handle until there are no more adjacent free to merge.
                         continue;
@@ -115,6 +118,10 @@ internal unsafe class DescriptorHeapDX12 : GpuObject<DeviceDX12>
     internal void Free(HeapHandleDX12 handle)
     {
         handle.IsFree = true;
+        if(handle.Heap == null)
+        {
+
+        }
         _freeAllocations.Add(handle);
     }
 
