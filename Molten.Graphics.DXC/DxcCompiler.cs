@@ -113,7 +113,7 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
         char** ptrArgs = args.GetArgsPtr(argEncoding, out uint argCount);
 
         DxcBuffer srvBuffer = BuildSource(context.Source, Encoding.UTF8);
-        HResult hResult = (HResult)_native->Compile(srvBuffer, ptrArgs, argCount, null, &dxcResultGuid, &ptrResult);
+        HResult hResult = (HResult)_native->Compile(ref srvBuffer, ptrArgs, argCount, null, &dxcResultGuid, &ptrResult);
         args.FreeArgsPtr(ref ptrArgs, argCount, argEncoding);
 
         IDxcResult* dxcResult = (IDxcResult*)ptrResult;
@@ -123,11 +123,11 @@ public unsafe abstract class DxcCompiler : ShaderCompiler
 
         // List all available outputs
         uint numOutputs = dxcResult->GetNumOutputs();
-        context.AddDebug($"{numOutputs} DXC outputs found: ");
+        context.AddDebug($"DXC result contains {numOutputs} outputs:");
         for (uint i = 0; i < numOutputs; i++)
         {
             OutKind kind = dxcResult->GetOutputByIndex(i);
-            context.AddDebug($"\t{kind}");
+            context.AddDebug($"\t{i}: {kind.ToString().Replace("Out", "")}");
         }
 
         LoadErrors(context, dxcResult, NativeStringEncoding.UTF8);

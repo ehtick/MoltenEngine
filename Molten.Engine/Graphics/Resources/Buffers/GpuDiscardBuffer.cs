@@ -85,9 +85,10 @@ public class GpuDiscardBuffer : GpuObject
         for (int i = 0; i < _curFrame.Pairs.Count; i++)
         {
             pair = _curFrame.Pairs[i];
-            ulong newOffset = pair.NextOffset % stride;
-            if(newOffset > 0)
-                newOffset += (stride - (pair.NextOffset % stride));
+            ulong alignmentOffset = pair.NextOffset % stride;
+            ulong newOffset = pair.NextOffset;
+            if(alignmentOffset > 0)
+                newOffset += (stride - alignmentOffset);
 
             // Check if we've hit the last ring buffer and need to allocate a new one.
             if (!pair.Ring.SetLocation(newOffset, stride, neededBytes) && i == (_curFrame.Pairs.Count - 1))
