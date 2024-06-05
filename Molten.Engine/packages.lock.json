@@ -4,11 +4,11 @@
     "net8.0": {
       "Magick.NET-Q8-AnyCPU": {
         "type": "Direct",
-        "requested": "[13.8.0, )",
-        "resolved": "13.8.0",
-        "contentHash": "YcmatKDklm6IEHiVoDf9x8bGNXf1jfUATNgYjsEyPYiSRiWJkhTXvwJJobKxulpDQwuXpndafUh86fBt9nv8iw==",
+        "requested": "[13.9.0, )",
+        "resolved": "13.9.0",
+        "contentHash": "4fFZXA2NG3uSp2qYcYZXiEX+3fM2MT2b8/eGt6534D6Txsoh+i4PcovG+5ghqfdoTebYFXJ4VoF4mBQIcR29Cg==",
         "dependencies": {
-          "Magick.NET.Core": "13.8.0"
+          "Magick.NET.Core": "13.9.0"
         }
       },
       "Newtonsoft.Json": {
@@ -19,8 +19,8 @@
       },
       "Magick.NET.Core": {
         "type": "Transitive",
-        "resolved": "13.8.0",
-        "contentHash": "XOr+EMV12PF4A5v88sbZlu/mRrqh+XYYyWay8dcjulu6ooNdQuxBv/2LIHoDqeWrrn290tyivT8OWrKAZB76sA=="
+        "resolved": "13.9.0",
+        "contentHash": "7NF8Ntd/68WQucvU46vCrbBdZDOkEWjCtCiqKj3bijrj/oaKeKxILgD7iTsaUVQm8E3EgotyQw9b12xuvA6fWA=="
       },
       "Microsoft.CSharp": {
         "type": "Transitive",

@@ -63,29 +63,33 @@ public unsafe class CommandListDX12 : GpuCommandList
             ulong rowPitch = 0;
             ulong depthPitch = 0;
 
+            void* ptrMap = null;
+            HResult hr = handle.Ptr1->Map(subresource, null, &ptrMap);
+            if (!Device.Log.CheckResult(hr, () => $"Failed to map resource {resource.Name} for {mapType} access"))
+                return new GpuResourceMap();
+
             if (resource is GpuTexture tex)
             {
                 // TODO Calculate row pitch based on texture size, subresource level, format and dimensions. Also consider block-compression size.
             }
             else if (resource is BufferDX12 buffer)
             {
-                if (buffer.RootBuffer != null)
-                    rowPitch = buffer.RootBuffer.SizeInBytes;
-                else
-                    rowPitch = buffer.SizeInBytes;
+                //if (buffer.RootBuffer != null)
+                //    rowPitch = buffer.RootBuffer.SizeInBytes;
+                //else
+                //    rowPitch = buffer.SizeInBytes;
 
+                rowPitch = buffer.SizeInBytes;
                 depthPitch = rowPitch;
+
+                byte* iPtrMap = (byte*)ptrMap + buffer.Offset;
+                ptrMap = iPtrMap;
             }
 
             // TODO Implement support for the read Range parameter. This determines the area of a sub-resouce that the CPU may want to read.
             //      Irrelevant for writing.
 
-            void* ptrMap = null;
-            HResult hr = handle.Ptr1->Map(subresource, null, &ptrMap);
-            if (!Device.Log.CheckResult(hr, () => $"Failed to map resource {resource.Name} for {mapType} access"))
-                return new GpuResourceMap();
-            else
-                return new GpuResourceMap(ptrMap, rowPitch, depthPitch);
+            return new GpuResourceMap(ptrMap, rowPitch, depthPitch);
         }
         else
         {

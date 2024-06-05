@@ -24,9 +24,7 @@ internal struct BufferSetTask<T> : IGpuTask<BufferSetTask<T>>
 
     public static bool Process(GpuCommandList cmd, ref BufferSetTask<T> t)
     {
-        ulong actualOffset = t.Buffer.Offset + t.ByteOffset;
-
-        using (GpuStream stream = cmd.MapResource(t.Buffer, 0, actualOffset, GpuMapType.Write))
+        using (GpuStream stream = cmd.MapResource(t.Buffer, 0, t.ByteOffset, GpuMapType.Write))
             stream.WriteRange(t.Data, t.DataStartIndex, t.ElementCount);
 
         return true;
